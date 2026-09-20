@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/partnerhub-icon.svg" alt="PartnerHub icon" width="128" height="128">
+<img src="./assets/partnerhub-event-icon.svg" alt="PartnerHub event icon" width="128" height="128">
 
 # PartnerHub
 
@@ -18,9 +18,9 @@ PartnerHub is in progress as a focused event and sponsorship coordination produc
 
 ## Application Preview
 
-User interface implementation is in progress. The verified visual asset below is the project icon.
+User interface implementation is in progress. The verified visual asset below is the project event icon.
 
-![PartnerHub icon](./assets/partnerhub-icon.svg)
+![PartnerHub event icon](./assets/partnerhub-event-icon.svg)
 
 ## Product Experience
 
@@ -49,7 +49,7 @@ PartnerHub/
 ├── AGENTS.md
 ├── README.md
 └── assets/
-    └── partnerhub-icon.svg
+    └── partnerhub-event-icon.svg
 ```
 
 ## Run Locally
@@ -80,4 +80,4 @@ Automated tests, lint configuration, build script, and runtime validation are in
 
 ## Data, Attribution, and License
 
-No external dataset, API, model, or third-party code is included in the current repository. The icon is an original project asset using a geometric blue and cyan direction informed by the referenced PBL-Himti visual language. License decision is in progress.
+No external dataset, API, model, or third-party code is included in the current repository. The event-ticket icon is an original project asset using a geometric blue and cyan direction informed by the referenced PBL-Himti visual language. License decision is in progress.
