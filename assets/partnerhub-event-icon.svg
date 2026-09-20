@@ -1,15 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
   <title id="title">PartnerHub event icon</title>
-  <desc id="desc">A geometric event ticket with stage lights in blue and cyan.</desc>
+  <desc id="desc">A simple event ticket in blue and cyan.</desc>
   <defs>
     <linearGradient id="ticket-gradient" x1="46" y1="38" x2="210" y2="218" gradientUnits="userSpaceOnUse">
       <stop stop-color="#4b66b3"/>
       <stop offset="1" stop-color="#0796d2"/>
     </linearGradient>
   </defs>
-  <path d="M128 18 224 74v108l-96 56-96-56V74z" fill="none" stroke="url(#ticket-gradient)" stroke-width="10" stroke-linejoin="round"/>
-  <path d="M128 18v42m96 14-44 26m44 82-44-26M128 238v-42m-96-14 44-26M32 74l44 26" fill="none" stroke="#4b66b3" stroke-width="10" stroke-linecap="round"/>
-  <path d="M66 76h124v32c-16 7-16 33 0 40v32H66v-32c16-7 16-33 0-40z" fill="#0d96d1" stroke="#f5fbff" stroke-width="7" stroke-linejoin="round"/>
-  <path d="M87 102h82M87 154h82" stroke="#d9f5ff" stroke-width="6" stroke-linecap="round"/>
-  <path d="m128 112 8 16 18 3-13 13 3 18-16-9-16 9 3-18-13-13 18-3z" fill="#526bb7" stroke="#f5fbff" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M38 72h180v38c-18 8-18 28 0 36v38H38v-38c18-8 18-28 0-36z" fill="#f7fbff" stroke="url(#ticket-gradient)" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M148 82v92" stroke="#0796d2" stroke-width="7" stroke-linecap="round" stroke-dasharray="2 14"/>
+  <path d="M70 105h48M70 132h32M169 107h18M169 133h18" fill="none" stroke="#4b66b3" stroke-width="9" stroke-linecap="round"/>
+  <circle cx="178" cy="158" r="10" fill="#0796d2"/>
 </svg>
