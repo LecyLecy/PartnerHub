@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
-  <title id="title">PartnerHub event icon</title>
+  <title id="title">PartnerHub event ticket</title>
   <desc id="desc">A simple event ticket in blue and cyan.</desc>
   <defs>
     <linearGradient id="ticket-gradient" x1="46" y1="38" x2="210" y2="218" gradientUnits="userSpaceOnUse">

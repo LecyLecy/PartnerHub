@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/partnerhub-event-icon.svg" alt="PartnerHub event icon" width="128" height="128">
+<img src="./assets/partnerhub-ticket.svg" alt="PartnerHub event ticket" width="128" height="128">
 
 # PartnerHub
 
@@ -18,9 +18,9 @@ PartnerHub is in progress as a focused event and sponsorship coordination produc
 
 ## Application Preview
 
-User interface implementation is in progress. The verified visual asset below is the project event icon.
+User interface implementation is in progress. The verified visual asset below is the project event ticket.
 
-![PartnerHub event icon](./assets/partnerhub-event-icon.svg)
+![PartnerHub event ticket](./assets/partnerhub-ticket.svg)
 
 ## Product Experience
 
@@ -49,7 +49,7 @@ PartnerHub/
 ├── AGENTS.md
 ├── README.md
 └── assets/
-    └── partnerhub-event-icon.svg
+    └── partnerhub-ticket.svg
 ```
 
 ## Run Locally
