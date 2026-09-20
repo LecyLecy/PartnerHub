@@ -8,31 +8,31 @@
 
 A fresh repository baseline for building a focused PartnerHub product for event and sponsorship coordination.
 
-[Repository](https://github.com/LecyLecy/PartnerHub) · Live demo: not available
+[Repository](https://github.com/LecyLecy/PartnerHub) · Live demo: in progress
 
 </div>
 
 ## Overview
 
-PartnerHub is being rebuilt as a focused event and sponsorship coordination product. This repository currently contains the project identity and documentation baseline only. No application runtime, API, database, or user workflow has been committed yet.
+PartnerHub is in progress as a focused event and sponsorship coordination product. This repository currently contains the project identity and documentation baseline. Application runtime, API, database, and user workflow work are in progress.
 
 ## Application Preview
 
-The repository has no user interface implementation yet. The verified visual asset below is the project icon.
+User interface implementation is in progress. The verified visual asset below is the project icon.
 
 ![PartnerHub icon](./assets/partnerhub-icon.svg)
 
 ## Product Experience
 
-Product features are not implemented in the current repository. Planned scope will be documented here after the first working workflow is committed and verified.
+Product features are in progress. Verified user-facing capabilities will be documented here as each workflow is committed.
 
 ## How It Works
 
-No executable workflow exists in the current repository, so no implementation diagram is included yet.
+Executable workflow documentation is in progress. A Mermaid diagram will be added after the first workflow is committed and verified.
 
 ## Technical Architecture
 
-No frontend, backend, persistence layer, authentication flow, or deployment configuration is present yet. Architecture claims will be added only after those parts exist in the repository.
+Frontend, backend, persistence layer, authentication flow, and deployment configuration are in progress. Architecture details will be added as each part is committed and verified.
 
 ## Technology
 
@@ -54,7 +54,7 @@ PartnerHub/
 
 ## Run Locally
 
-There is no application entry point or dependency manifest yet. To inspect the repository locally:
+Application entry point and dependency manifest are in progress. To inspect the repository locally:
 
 ```bash
 git clone https://github.com/LecyLecy/PartnerHub.git
@@ -63,13 +63,13 @@ cd PartnerHub
 
 ## Testing and Validation
 
-No automated tests, lint configuration, build script, or runtime validation exists yet.
+Automated tests, lint configuration, build script, and runtime validation are in progress.
 
 ## Limitations
 
-- The repository does not contain a runnable application.
-- Product workflows, data contracts, and technical architecture are not defined in code yet.
-- No live demo, metrics, screenshots, or deployment target is available.
+- Runnable application work is in progress.
+- Product workflows, data contracts, and technical architecture are in progress.
+- Live demo, metrics, screenshots, and deployment target are in progress.
 
 ## Future Improvements
 
@@ -80,4 +80,4 @@ No automated tests, lint configuration, build script, or runtime validation exis
 
 ## Data, Attribution, and License
 
-No external dataset, API, model, or third-party code is included in the current repository. The icon is an original project asset using a geometric blue and cyan direction informed by the referenced PBL-Himti visual language. No license file has been added yet.
+No external dataset, API, model, or third-party code is included in the current repository. The icon is an original project asset using a geometric blue and cyan direction informed by the referenced PBL-Himti visual language. License decision is in progress.
