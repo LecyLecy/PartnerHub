@@ -4,80 +4,115 @@
 
 # PartnerHub
 
-### Event and sponsorship coordination workspace
+### Event operations and sponsorship accountability, in progress
 
-A fresh repository baseline for building a focused PartnerHub product for event and sponsorship coordination.
+One workspace for preparing an event, issuing anonymous QR tickets, recording entry attendance, and tracking sponsor benefits.
 
-[Repository](https://github.com/LecyLecy/PartnerHub) · Live demo: in progress
+[Product requirements](./PRD.md) · [Architecture](./ARCHITECTURE.md) · [Architecture essentials](./ARCHITECTURE-ESSETIALS.md)
 
 </div>
 
 ## Overview
 
-PartnerHub is in progress as a focused event and sponsorship coordination product. This repository currently contains the project identity and documentation baseline. Application runtime, API, database, and user workflow work are in progress.
+PartnerHub is a focused event operations product for campus organizations, youth communities, and small event teams. The product foundation is implemented as a typed Next.js scaffold. Event workflows, database-backed mutations, QR generation, and deployment remain **In progress**.
 
-## Application Preview
+Current product boundaries are deliberate:
 
-User interface implementation is in progress. The verified visual asset below is the project event ticket.
+- Anonymous tickets, no personal-name prompt or personal account flow.
+- Entry attendance only, with duplicate scan protection designed into schema.
+- Sponsorship evidence as a core workflow.
+- No payments, file uploads, chat, notifications, marketplace, or generic form builder in MVP.
 
-![PartnerHub event ticket](./assets/partnerhub-ticket.svg)
+## Product flow
 
-## Product Experience
+```mermaid
+flowchart LR
+    A[Prepare event workspace] --> B[Publish event]
+    B --> C[Anonymous registration]
+    C --> D[Opaque QR ticket]
+    D --> E[Entry attendance]
+    B --> F[Sponsorship campaign]
+    F --> G[Benefit evidence]
+```
 
-Product features are in progress. Verified user-facing capabilities will be documented here as each workflow is committed.
+Implementation for this flow is **In progress**. Full scope and acceptance criteria live in [PRD.md](./PRD.md).
 
-## How It Works
+## Current foundation
 
-Executable workflow documentation is in progress. A Mermaid diagram will be added after the first workflow is committed and verified.
-
-## Technical Architecture
-
-Frontend, backend, persistence layer, authentication flow, and deployment configuration are in progress. Architecture details will be added as each part is committed and verified.
+- Next.js 16 App Router scaffold with TypeScript and Tailwind CSS.
+- Public foundation page and `GET /api/health` route.
+- PostgreSQL and Prisma data model for events, anonymous registrations, attendance, campaigns, prospects, benefits, and timeline entries.
+- Feature boundaries for event, registration, attendance, and sponsorship work.
+- Product, architecture, and concise architecture-reference documents.
 
 ## Technology
 
 | Area | Tools |
 | --- | --- |
-| Repository | Git and GitHub |
-| Documentation | Markdown |
-| Visual asset | SVG |
+| Interface and server routes | Next.js 16, React 19, TypeScript |
+| Styling | Tailwind CSS 4 |
+| Validation | Zod |
+| Database and migrations | PostgreSQL, Prisma |
+| Quality checks | TypeScript, ESLint, Next.js build |
 
-## Repository Structure
+## Repository structure
 
 ```text
 PartnerHub/
+├── PRD.md
+├── ARCHITECTURE.md
+├── ARCHITECTURE-ESSETIALS.md
 ├── AGENTS.md
-├── README.md
-└── assets/
-    └── partnerhub-ticket.svg
+├── prisma/
+│   └── schema.prisma
+├── src/
+│   ├── app/
+│   │   ├── api/health/route.ts
+│   │   ├── globals.css
+│   │   ├── layout.tsx
+│   │   └── page.tsx
+│   ├── features/
+│   │   ├── attendance/
+│   │   ├── event/
+│   │   ├── registration/
+│   │   └── sponsorship/
+│   └── lib/
+└── tests/
 ```
 
-## Run Locally
-
-Application entry point and dependency manifest are in progress. To inspect the repository locally:
+## Run locally
 
 ```bash
-git clone https://github.com/LecyLecy/PartnerHub.git
-cd PartnerHub
+npm install
+npm run dev
 ```
 
-## Testing and Validation
+Open `http://localhost:3000`.
 
-Automated tests, lint configuration, build script, and runtime validation are in progress.
+Database-backed work is **In progress**. Before running Prisma migrations, copy `.env.example` to `.env` and provide a PostgreSQL `DATABASE_URL` plus both secret peppers.
 
-## Limitations
+```bash
+npm run db:generate
+npm run db:migrate
+```
 
-- Runnable application work is in progress.
-- Product workflows, data contracts, and technical architecture are in progress.
-- Live demo, metrics, screenshots, and deployment target are in progress.
+## Validation
 
-## Future Improvements
+Current scaffold passes:
 
-- Add the first verified event and sponsorship workflow.
-- Add the selected frontend and backend stack with reproducible setup commands.
-- Add persistence, validation, and tests after the data model is decided.
-- Replace the placeholder preview with a verified application screenshot and workflow diagram.
+```bash
+npm run db:generate
+npm run typecheck
+npm run lint
+npm run build
+```
 
-## Data, Attribution, and License
+Feature-level unit, integration, and end-to-end tests are **In progress**. Planned coverage is documented in [ARCHITECTURE.md](./ARCHITECTURE.md).
 
-No external dataset, API, model, or third-party code is included in the current repository. The event-ticket icon is an original project asset using a geometric blue and cyan direction informed by the referenced PBL-Himti visual language. License decision is in progress.
+## Risks and decisions
+
+Capacity races, repeat scans, QR replay, secret leakage, time windows, and unavailable evidence links are documented with their planned safeguards in [PRD.md](./PRD.md) and [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+## License
+
+License decision is **In progress**. No external dataset, API, model, or third-party code is included in this repository.
