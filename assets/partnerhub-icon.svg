@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+  <title id="title">PartnerHub icon</title>
+  <desc id="desc">A geometric blue and cyan mark representing connected partners around a shared hub.</desc>
+  <defs>
+    <linearGradient id="hub-blue" x1="28" y1="26" x2="228" y2="232" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4b66b3"/>
+      <stop offset="1" stop-color="#0796d2"/>
+    </linearGradient>
+  </defs>
+  <path d="M128 16 226 72v112l-98 56-98-56V72z" fill="none" stroke="url(#hub-blue)" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M128 16v72m98-16-62 36m62 76-62-36m-36 56v-72m-98-24 62 36m-62 4 62-36" fill="none" stroke="url(#hub-blue)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M128 88 164 108v40l-36 20-36-20v-40z" fill="#0a9bd5" stroke="#f7fbff" stroke-width="8" stroke-linejoin="round"/>
+  <path d="m128 88 36 20-36 20-36-20z" fill="#5b73bd"/>
+  <path d="M128 128v40l36-20v-40z" fill="#167fbf"/>
+</svg>
