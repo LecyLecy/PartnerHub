@@ -55,4 +55,5 @@ Do not leave a product decision only in chat. Record it in matching document dur
 
 - Write product and technical documents in clear English.
 - Mark unfinished work as **In progress**. Do not invent features, metrics, integrations, screenshots, or deployment results.
+- Never use em dashes. Use commas, colons, semicolons, parentheses, or separate sentences.
 - `ARCHITECTURE.md` is complete reference. `ARCHITECTURE-ESSETIALS.md` stays short.
