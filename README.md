@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/partnerhub-ticket.svg" alt="PartnerHub event ticket" width="128" height="128">
+<img src="./assets/partnerhub-logo.svg" alt="PartnerHub" width="420" height="96">
 
 # PartnerHub
 
