@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="./assets/partnerhub-logo.svg" alt="PartnerHub" width="420" height="96">
+<img src="./assets/partnerhub-logo.svg" alt="PartnerHub" width="96" height="96">
 
 # PartnerHub
 
