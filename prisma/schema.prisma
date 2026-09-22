@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  CLOSED
+  ARCHIVED
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CANCELLED
+}
+
+enum QuestionKind {
+  SELECT_ONE
+  SELECT_MANY
+  CONSENT
+}
+
+enum CheckInKind {
+  ENTRY
+  EXIT
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum ProspectStage {
+  PLANNED
+  CONTACTED
+  NEGOTIATING
+  AGREED
+  DECLINED
+}
+
+enum BenefitStatus {
+  PLANNED
+  VERIFIED
+}
+
+model Event {
+  id                   String                 @id @default(cuid())
+  slug                 String                 @unique
+  title                String
+  summary              String?
+  startsAt             DateTime
+  endsAt               DateTime
+  venue                String?
+  registrationOpensAt  DateTime
+  registrationClosesAt DateTime
+  capacity             Int?
+  status               EventStatus            @default(DRAFT)
+  managementSecretHash String
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  registrations        Registration[]
+  questions            RegistrationQuestion[]
+  checkIns             AttendanceCheckIn[]
+  campaigns            SponsorshipCampaign[]
+  timelineEntries      TimelineEntry[]
+
+  @@index([status, startsAt])
+}
+
+model Registration {
+  id               String               @id @default(cuid())
+  eventId          String
+  ticketReference  String               @unique
+  ticketSecretHash String
+  status           RegistrationStatus   @default(REGISTERED)
+  consentedAt      DateTime
+  createdAt        DateTime             @default(now())
+  updatedAt        DateTime             @updatedAt
+  event            Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  answers          RegistrationAnswer[]
+  checkIns         AttendanceCheckIn[]
+
+  @@index([eventId, status])
+}
+
+model RegistrationQuestion {
+  id        String               @id @default(cuid())
+  eventId   String
+  prompt    String
+  kind      QuestionKind
+  options   Json?
+  required  Boolean              @default(false)
+  position  Int
+  createdAt DateTime             @default(now())
+  event     Event                @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  answers   RegistrationAnswer[]
+
+  @@unique([eventId, position])
+}
+
+model RegistrationAnswer {
+  id             String               @id @default(cuid())
+  registrationId String
+  questionId     String
+  selectedValues Json
+  createdAt      DateTime             @default(now())
+  registration   Registration         @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  question       RegistrationQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([registrationId, questionId])
+}
+
+model AttendanceCheckIn {
+  id             String       @id @default(cuid())
+  eventId        String
+  registrationId String
+  kind           CheckInKind  @default(ENTRY)
+  checkedInAt    DateTime     @default(now())
+  event          Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+
+  @@unique([registrationId, kind])
+  @@index([eventId, checkedInAt])
+}
+
+model SponsorshipCampaign {
+  id        String            @id @default(cuid())
+  eventId   String
+  title     String
+  summary   String?
+  status    CampaignStatus    @default(DRAFT)
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  event     Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  prospects SponsorProspect[]
+
+  @@index([eventId, status])
+}
+
+model SponsorOrganization {
+  id        String            @id @default(cuid())
+  label     String            @unique
+  website   String?
+  createdAt DateTime          @default(now())
+  prospects SponsorProspect[]
+}
+
+model SponsorProspect {
+  id                    String              @id @default(cuid())
+  campaignId            String
+  sponsorOrganizationId String
+  stage                 ProspectStage       @default(PLANNED)
+  proposalUrl           String?
+  nextFollowUpAt        DateTime?
+  notes                 String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  campaign              SponsorshipCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  sponsorOrganization   SponsorOrganization @relation(fields: [sponsorOrganizationId], references: [id], onDelete: Restrict)
+  benefits              SponsorBenefit[]
+
+  @@unique([campaignId, sponsorOrganizationId])
+  @@index([campaignId, stage])
+}
+
+model SponsorBenefit {
+  id          String          @id @default(cuid())
+  prospectId  String
+  description String
+  status      BenefitStatus   @default(PLANNED)
+  evidenceUrl String?
+  verifiedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  prospect    SponsorProspect @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+
+  @@index([prospectId, status])
+}
+
+model TimelineEntry {
+  id          String   @id @default(cuid())
+  eventId     String
+  subjectType String
+  subjectId   String
+  message     String
+  occurredAt  DateTime @default(now())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([eventId, occurredAt])
+}
