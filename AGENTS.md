@@ -2,11 +2,11 @@
 
 ## Product baseline
 
-PartnerHub is an event operations workspace with a sponsorship tracker. It is not a ticket marketplace, payment processor, social network, or generic CRM.
+PartnerHub is an event operations workspace with sponsorship management as its differentiator. It is not a national ticket marketplace, payment processor, social network, generic CRM, or full HR system.
 
-Initial build protects one complete flow: prepare an event workspace, publish an event, issue anonymous QR tickets, record entry attendance, and track sponsor benefits. Product must not ask for a personal name during onboarding or registration. It must not create a `User` model, account classification field, or personal profile in initial build.
+The approved Venture Creation direction protects one complete flow: create and publish an event, reuse consented participant profile data, collect event-specific registration, recruit a committee, issue opaque QR tickets, record optional entry attendance, and track sponsor benefits.
 
-Event titles and sponsor organization labels are operational data, not personal identity data. Do not add contact-person name, password, or personal phone fields without explicit product decision.
+Accounts may have different roles across different events. Do not add a permanent account classification field. Minimize personal data, separate reusable profile fields from event-specific answers, and never place personal data in QR payloads. Authentication fields, required profile fields, retention, deletion, and recovery need explicit decisions in `PRD.md` and `ARCHITECTURE.md` before implementation.
 
 ## Source of truth
 
@@ -37,10 +37,10 @@ Do not leave a product decision only in chat. Record it in matching document dur
 - Work on a feature branch. Current delivery branch is `adin`.
 - Keep App Router pages in `src/app`, feature behavior in `src/features`, shared infrastructure in `src/lib`, persistence through Prisma.
 - Keep route handlers thin: validate input, call feature logic, return response. Do not query database in page components.
-- Use opaque ticket secrets in QR payloads. Never place personal data, database URLs, or secrets in QR, client bundle, or log.
-- Validate all external input server-side. Enforce event management through workspace secret, not request-body IDs.
+- Use opaque ticket secrets in QR payloads. Never place personal data, database URLs, credentials, or secrets in QR, client bundle, or log.
+- Validate all external input server-side. Enforce event management through event-scoped authorization or the approved prepared-demo secret, never request-body IDs.
 - Model state changes explicitly. Do not permit arbitrary status replacement.
-- Keep evidence as URLs in MVP. File uploads, payments, notifications, chat, and public event creation are deferred.
+- Keep proposal, portfolio, and evidence attachments as URLs in the first version. File uploads, payments, matching notifications, chat, and sponsor marketplace behavior are deferred.
 - Do not copy source or Git history from `E:/Projects/PBL-Himti-2`. It is visual and conceptual reference only.
 
 ## Verification and Git
