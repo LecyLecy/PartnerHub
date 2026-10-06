@@ -1,0 +1,20 @@
+.boards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); align-items: start; }
+.panel { min-width: 0; padding: var(--space-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-card); background: var(--surface); }
+.panelHead { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.panelHead h2 { margin: 0; font-size: var(--text-h3); }
+.count { flex-shrink: 0; color: var(--muted); font-size: var(--text-body); font-variant-numeric: tabular-nums; }
+.hint { margin: var(--space-2) 0 var(--space-4); color: var(--muted); font-size: var(--text-caption); }
+.scroll { max-height: min(65svh, 32rem); overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; scrollbar-color: var(--control-border) var(--paper); }
+.list { list-style: none; margin: 0; padding: 0; }
+.list > li { padding: var(--space-2) 0; border-top: var(--border-width) solid var(--line); }
+.eventName { color: var(--muted); font-size: var(--text-caption); overflow-wrap: anywhere; }
+.dialogActions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--space-3); width: 100%; padding-top: var(--space-6); border-top: var(--border-width) solid var(--line); }
+.detailFacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); margin: 0; }
+.detailFacts > div:last-child { grid-column: 1 / -1; }
+.detailFacts dt { color: var(--muted); font-size: var(--text-caption); margin-bottom: var(--space-2); }
+.detailFacts dd { margin: 0; font-weight: var(--weight-label); overflow-wrap: anywhere; }
+.message { padding: var(--space-4); background: var(--subtle); border-radius: var(--radius-control); }
+.message h3 { margin: 0 0 var(--space-3); font-size: var(--text-body); }
+.message p { white-space: pre-wrap; line-height: var(--leading-body); }
+@media (max-width: 60rem) { .boards { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 40rem) { .panel { padding: var(--space-4); } .dialogActions > * { flex: 1 1 9rem; } }

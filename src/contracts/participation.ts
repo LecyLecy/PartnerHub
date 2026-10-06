@@ -13,11 +13,17 @@ export type PublicEvent = Pick<EventRecord, "id" | "title" | "category" | "summa
   sponsorNames: string[];
 };
 
+/** PENDING: paid event, waiting for the organizer to review the payment proof. REJECTED frees the person to register again. */
+export type RegistrationStatus = "PENDING" | "REGISTERED" | "REJECTED" | "CANCELLED";
+export type RegistrationDecision = { decision: "CONFIRM" | "REJECT"; note: string | null };
+
 export type MyRegistration = {
   id: string;
   /** Opaque, display-safe ticket reference. Never contains personal data. */
   ticketReference: string;
-  status: "REGISTERED" | "CANCELLED";
+  status: RegistrationStatus;
+  /** Organizer reason when status is REJECTED. */
+  note: string | null;
   createdAt: string;
   /** True once the organizer has issued and sent the QR for this event. The QR secret itself is never part of this list. */
   qrIssued: boolean;
@@ -52,7 +58,7 @@ export type Sponsorship = {
   benefits: { id: string; label: string; status: "PLANNED" | "VERIFIED" }[];
 };
 
-/** Opaque entry code for one registration. `payload` is `ticketReference.secret` and holds no personal data. */
+/** Opaque entry code for one registration. `payload` is `PH1.secret` and holds no personal data. */
 export type TicketQr = { payload: string };
 /** Organizer view of QR delivery for one event. */
 export type QrDelivery = { eventTitle: string; eventPublished: boolean; registered: number; issued: number };
@@ -68,5 +74,7 @@ export type RegistrationAnswers = Record<string, string>;
 /** The question text is copied at registration time, so later form edits never rewrite what someone answered. */
 export type RegistrationAnswer = { fieldId: string; label: string; type: FormFieldType; value: string };
 /** Organizer view of one registrant. Only the display name is shared, never the email. */
-export type Registrant = { id: string; name: string; ticketReference: string; status: "REGISTERED" | "CANCELLED"; createdAt: string; qrIssued: boolean; answers: RegistrationAnswer[] };
+export type Registrant = { id: string; name: string; ticketReference: string; status: RegistrationStatus; note: string | null; createdAt: string; qrIssued: boolean; checkedInAt: string | null; answers: RegistrationAnswer[] };
 export type RegistrantBoard = { eventTitle: string; priceIdr: number; items: Registrant[] };
+export type AttendanceBoard = { eventId: string; eventTitle: string; attendanceEnabled: boolean; items: Registrant[] };
+export type TicketScan = { eventId: string; eventTitle: string; participant: Registrant; attendance: "RECORDED" | "ALREADY_RECORDED" | "DISABLED" };

@@ -1,3 +1,3 @@
 # Attendance frontend
 
-**In progress**. Owns scanning UI and scan-result states. Backend owner: `src/backend/attendance`.
+**In progress**. `/events/[id]/scan` reads participant QR tickets from a camera or a local PNG/JPEG/WebP image with jsQR. Camera frames and selected images stay on the device. Camera tracks stop on result, dismissal, hidden page, and unmount. Event owners receive individual ticket details, form answers, and an attendance result. Valid scans record entry once when attendance is enabled; otherwise they only inspect the ticket. Demo records live in session storage, not a production database. Backend owner: `src/backend/attendance`; production authorization, hash lookup, atomic entry recording, and retention remain pending in `todobackend.md`.

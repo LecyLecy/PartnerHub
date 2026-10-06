@@ -157,6 +157,14 @@ Portfolio evidence remains a URL in the first version. File storage is deferred.
 
 ### Attendance model
 
+#### Approved frontend/demo ticket scan, 2026-10-06 (**In progress**)
+
+`src/features/attendance` owns the scanner, local jsQR decoder and validated services. Thin route `/events/[id]/scan` uses `GET /api/events/:id/attendance` and `POST /api/events/:id/ticket-scans` with `{payload}`. DTOs live in `src/contracts/participation.ts`: `AttendanceBoard`, `TicketScan`, and nullable `Registrant.checkedInAt`. `TicketScan.attendance` is `RECORDED`, `ALREADY_RECORDED`, or `DISABLED`. Ticket QR remains `PH1.` plus the existing opaque 24-character secret; scanning is not public token-based access to personal data. The organizer's authenticated, approved account and event ownership are required before lookup.
+
+jsQR reads bounded camera frames and local QR images, including browsers without BarcodeDetector. User-selected QR images are capped at 10 MB and downscaled to a 1600-pixel longest edge. Camera frames use a 960-pixel longest width and 250 ms decoding interval. Frames and file bytes are never submitted; only the decoded opaque payload is sent in a POST body, never a URL, log, or analytics event. Camera tracks stop on result, close, page hide, and unmount. Permission denial and image decode failure preserve retry controls.
+
+The demo stores optional `checkedInAt` on the registration and treats a repeat as a stable first-entry read. This is not database atomicity or security. Production must hash secrets, authorize the event, validate the issued active registration, and commit the unique entry plus return detail in one transactional operation. Attendance-disabled scans return details without inserting entry. Registration and scanner lists share the returned first-entry time. Existing Prisma models and migrations remain unchanged; real service, route, concurrency, retention and deletion work is in `todobackend.md`.
+
 An event needs an attendance mode. The first version supports `NONE` and `ENTRY_ONLY`. The existing `CheckInKind.EXIT` enum reserves a later extension, but exit attendance does not ship in the first version.
 
 `AttendanceCheckIn` keeps a unique registration and kind pair for idempotence. A scan is rejected when attendance is disabled.
@@ -181,6 +189,7 @@ The frontend owns transport types in `src/contracts/committee.ts` and `src/contr
 | `POST /api/events/:id/committee/applications/:applicationId/decision` | Move through the state machine; acceptance requires a note; notifies the applicant | Event owner |
 | `GET /api/sponsors/directory` | Verified sponsor companies (`id`, `companyName`, `industry` only) | Approved organizer |
 | `GET`/`POST /api/events/:id/sponsor-offers` | List and send organizer-initiated requests; notifies the sponsor | Event owner, published event for POST |
+| `GET /api/events/:id/sponsor-proposals` | Incoming sponsor proposals for one event, newest first; existing proposal fields plus `sponsorName`, no account identifiers or contact details | Event owner; foreign and missing events return 404 |
 | `GET /api/sponsor/offers` | Requests addressed to the signed-in sponsor | Approved sponsor |
 | `POST /api/sponsor/offers/:id/response` | Accept or decline once; notifies the organizer | Addressed sponsor |
 
@@ -189,6 +198,8 @@ Rules the backend must enforce, not only the UI: event ownership on every organi
 The demo backend (`src/mocks/demo/router.ts`, build flag `NEXT_PUBLIC_PARTNERHUB_DEMO=1`) simulates these rules for presentations and tests only. It is not security and not a production fallback. Its stored data gains `openings`, `applications`, and `offers`; older session data without them is discarded and reseeded.
 
 New frontend routes: `/committee` (user), `/events/[id]/committee` and `/events/[id]/sponsors` (organizer). `/committee` is added to the user area in `src/lib/navigation.ts`.
+
+Organizer sponsorship overview at `/organizer/sponsorship` composes the event-list service through the route adapter, so the sponsorship frontend never imports event internals. Its two panels independently load outgoing requests (`sponsor-offers`) and incoming proposals (`sponsor-proposals`) for those authorized event ids. Responses are validated by feature services; no production demo fallback or new decision mutation is added. The per-event reads are aggregated client-side for this initial dashboard; a paginated organizer-level endpoint is deferred until list size requires it. **In progress**: the demo router implements the new owner-scoped read, but real backend persistence remains pending. This presentation change adds no Prisma model or state transition.
 
 ### Timeline
 
@@ -199,7 +210,7 @@ New frontend routes: `/committee` (user), `/events/[id]/committee` and `/events/
 | Entity | Allowed transitions |
 | --- | --- |
 | Event | `DRAFT` to `PUBLISHED`, `PUBLISHED` to `CLOSED`, `CLOSED` to `ARCHIVED` |
-| Registration | `REGISTERED` to `CANCELLED` |
+| Registration | Paid event: `PENDING` to `REGISTERED` (organizer confirms, capacity rechecked) or `REJECTED` (organizer rejects, optional reason max 200 characters); only `PENDING` can be decided. Free event: created as `REGISTERED`. `REGISTERED` to `CANCELLED`. A `REJECTED` participant may create a new registration. QR issuance applies to `REGISTERED` only. Payment proof images are personal data: visible only to the event owner and the uploader, never in a public URL or log. **In progress** (demo router only; backend endpoint `POST /api/events/:id/registrants/:registrationId/decision` and the Prisma enum are pending) |
 | Committee application | `SUBMITTED` to `SHORTLISTED`, `INTERVIEW`, `ACCEPTED`, `REJECTED`, or `WITHDRAWN`; `SHORTLISTED` to `INTERVIEW`, `ACCEPTED`, `REJECTED`, or `WITHDRAWN`; `INTERVIEW` to `ACCEPTED`, `REJECTED`, or `WITHDRAWN` |
 | Sponsor prospect | Forward business decision, never arbitrary enum replacement |
 | Sponsor benefit | `PLANNED` to `VERIFIED` |

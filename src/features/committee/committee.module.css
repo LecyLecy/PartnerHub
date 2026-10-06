@@ -74,3 +74,9 @@
 .entry strong { font-family: var(--font-heading), sans-serif; font-size: var(--text-h1); line-height: 1.05; font-variant-numeric: tabular-nums; }
 .entryLabel { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--space-2); font-weight: var(--weight-label); }
 @media (prefers-reduced-motion: reduce) { .entry { transition: none; } .entry:hover { transform: none; } }
+/* The shared form rule sizes every input like a text field, which blew the division checkboxes up. Reset them here and lay the choices out as a compact grid. */
+.applyForm input[type="checkbox"] { width: 1.25rem; height: 1.25rem; min-height: 0; padding: 0; border-radius: var(--space-1); }
+.applyForm fieldset > div { grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: var(--space-2); }
+.applyForm fieldset label { min-height: var(--touch-min); align-items: center; padding: var(--space-2) var(--space-3); }
+.stepsCompact ol { grid-auto-columns: minmax(6.5rem, 1fr); }
+.stepsCompact li { padding: var(--space-2) var(--space-3); }

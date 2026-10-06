@@ -1,8 +1,9 @@
 import type { AccountStatus, Role } from "@/contracts/account";
 import type { EventRecord } from "@/contracts/event";
-import type { NotificationItem, Proposal, RegistrationAnswer, RegistrationField, Sponsorship } from "@/contracts/participation";
+import type { NotificationItem, Proposal, RegistrationAnswer, RegistrationField, RegistrationStatus, Sponsorship } from "@/contracts/participation";
 import type { CommitteeApplication, CommitteeOpening } from "@/contracts/committee";
 import type { SponsorOffer } from "@/contracts/sponsor-offer";
+import { DEMO_PROOF_IMAGE } from "./proof-image";
 
 /** Public, throwaway credentials for the demo build. They only work when NEXT_PUBLIC_PARTNERHUB_DEMO=1 at build time. */
 export const DEMO_PASSWORD = "DemoPass-2026!";
@@ -24,7 +25,7 @@ export type DemoAccount = {
 };
 export type OwnedEvent = EventRecord & { ownerId: string };
 /** `qrSecret` is set when the organizer sends the QR. Demo only: a real backend stores just a hash of it. */
-export type OwnedRegistration = { id: string; ownerId: string; eventId: string; ticketReference: string; status: "REGISTERED" | "CANCELLED"; createdAt: string; qrSecret: string | null; answers: RegistrationAnswer[]; registrantName: string | null };
+export type OwnedRegistration = { id: string; ownerId: string; eventId: string; ticketReference: string; status: RegistrationStatus; note?: string | null; createdAt: string; qrSecret: string | null; checkedInAt?: string | null; answers: RegistrationAnswer[]; registrantName: string | null };
 /** Registration form an organizer saved for one event. Events without an entry use the default form and are free. */
 export type StoredForm = { priceIdr: number; paymentNote: string | null; fields: RegistrationField[] };
 export type OwnedNotification = NotificationItem & { ownerId: string };
@@ -128,7 +129,10 @@ export function seed(): DemoDb {
       { id: "demo-reg-3", ownerId: demoIds.user, eventId: "demo-event-5", ticketReference: "PH-B2X6-H5VC", status: "CANCELLED", createdAt: at(-50), qrSecret: null, answers: [], registrantName: null },
       { id: "demo-reg-4", ownerId: "demo-registrant-1", eventId: "demo-event-1", ticketReference: "PH-M3N7-A2QX", status: "REGISTERED", createdAt: at(-5), qrSecret: null, answers: [{ fieldId: "field-default-1", label: "Asal institusi atau komunitas", type: "text", value: "Himpunan Teknik Demo" }], registrantName: "Peserta Demo Satu" },
       { id: "demo-reg-5", ownerId: "demo-registrant-2", eventId: "demo-event-1", ticketReference: "PH-T8W4-K6RD", status: "REGISTERED", createdAt: at(-4), qrSecret: null, answers: [{ fieldId: "field-default-1", label: "Asal institusi atau komunitas", type: "text", value: "Komunitas Baca Demo" }], registrantName: "Peserta Demo Dua" },
-      { id: "demo-reg-6", ownerId: "demo-registrant-3", eventId: "demo-event-2", ticketReference: "PH-C5P9-L2ZE", status: "REGISTERED", createdAt: at(-2), qrSecret: null, answers: [{ fieldId: "demo-f1", label: "Asal institusi atau komunitas", type: "text", value: "UKM Desain Demo" }, { fieldId: "demo-f2", label: "Tingkat pengalaman desain", type: "choice", value: "Menengah" }], registrantName: "Peserta Demo Tiga" },    ],
+      { id: "demo-reg-6", ownerId: "demo-registrant-3", eventId: "demo-event-2", ticketReference: "PH-C5P9-L2ZE", status: "REGISTERED", createdAt: at(-2), qrSecret: null, answers: [{ fieldId: "demo-f1", label: "Asal institusi atau komunitas", type: "text", value: "UKM Desain Demo" }, { fieldId: "demo-f2", label: "Tingkat pengalaman desain", type: "choice", value: "Menengah" }], registrantName: "Peserta Demo Tiga" },
+      { id: "demo-reg-7", ownerId: "demo-registrant-1", eventId: "demo-event-2", ticketReference: "PH-D4F8-N3VK", status: "PENDING", createdAt: at(-1), qrSecret: null, answers: [{ fieldId: "demo-f1", label: "Asal institusi atau komunitas", type: "text", value: "Himpunan Desain Demo" }, { fieldId: "demo-f2", label: "Tingkat pengalaman desain", type: "choice", value: "Pemula" }, { fieldId: "demo-f3", label: "Bukti pembayaran", type: "image", value: DEMO_PROOF_IMAGE }], registrantName: "Peserta Demo Satu" },
+      { id: "demo-reg-8", ownerId: "demo-registrant-2", eventId: "demo-event-2", ticketReference: "PH-G9H2-R5TB", status: "PENDING", createdAt: at(-0.5), qrSecret: null, answers: [{ fieldId: "demo-f1", label: "Asal institusi atau komunitas", type: "text", value: "Komunitas Kreatif Demo" }, { fieldId: "demo-f2", label: "Tingkat pengalaman desain", type: "choice", value: "Menengah" }, { fieldId: "demo-f3", label: "Bukti pembayaran", type: "image", value: DEMO_PROOF_IMAGE }], registrantName: "Peserta Demo Dua" },
+    ],
     notifications: [
       { id: "demo-n1", ownerId: demoIds.user, title: "Pendaftaran dikonfirmasi", body: "Tiket Seminar Kepemimpinan Mahasiswa sudah tersedia di halaman tiketmu.", createdAt: at(-6), read: true },
       { id: "demo-n2", ownerId: demoIds.user, title: "Pengingat acara", body: "Festival Literasi Kota dimulai dalam beberapa minggu.", createdAt: at(-1), read: false },

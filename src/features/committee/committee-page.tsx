@@ -25,7 +25,7 @@ function OpeningCard({ item, tone, applied, onDone }: { item: CommitteeOpening; 
       <DetailSection title="Kebutuhan panitia"><p className={styles.note}>{item.description}</p></DetailSection>
       <Chips label="Divisi dibuka" items={item.divisions.map((division) => division.name)} />
       <DetailSection title="Proses seleksi">
-        <SelectionSteps steps={selectionPath({ status: "SUBMITTED", stageId: null, stages: item.stages }).map((step, index) => ({ ...step, state: index === 0 ? "current" : "waiting" }))} label={`Tahapan seleksi ${item.eventTitle}`} />
+        <div className={styles.stepsCompact}><SelectionSteps steps={selectionPath({ status: "SUBMITTED", stageId: null, stages: item.stages }).map((step, index) => ({ ...step, state: index === 0 ? "current" : "waiting" }))} label={`Tahapan seleksi ${item.eventTitle}`} /></div>
         <p className={styles.note}>Penyelenggara menetapkan tahapan ini. Kamu akan diberi kabar setiap kali lamaranmu berpindah tahap.</p>
       </DetailSection>
       {!applied && <ApplyForm opening={item} onDone={() => { close(); onDone(); }} />}
@@ -79,7 +79,7 @@ function ApplyForm({ opening, onDone }: { opening: CommitteeOpening; onDone: () 
     } finally { setBusy(false); }
   }
   return <DetailSection title="Lamar sebagai panitia">
-    <form ref={form} className={uiStyles.form} onSubmit={submit} noValidate>
+    <form ref={form} className={`${uiStyles.form} ${styles.applyForm}`} onSubmit={submit} noValidate>
       <MultiSelect name={key("divisionIds")} label="Divisi yang kamu minati" value={values.divisionIds} onChange={(divisionIds) => { setValues({ ...values, divisionIds }); setErrors({ ...errors, divisionIds: "" }); }} options={opening.divisions.map((item) => ({ value: item.id, label: item.name }))} error={errors.divisionIds} disabled={busy} />
       <TextAreaField name={key("motivation")} label="Motivasi" value={values.motivation} onChange={(motivation) => { setValues({ ...values, motivation }); setErrors({ ...errors, motivation: "" }); }} maxLength={600} error={errors.motivation} hint="Ceritakan alasan dan pengalaman yang relevan. Minimal 20 karakter." disabled={busy} />
       {opening.question && <TextAreaField name={key("answer")} label={opening.question} value={values.answer} onChange={(answer) => { setValues({ ...values, answer }); setErrors({ ...errors, answer: "" }); }} maxLength={400} rows={3} error={errors.answer} disabled={busy} />}

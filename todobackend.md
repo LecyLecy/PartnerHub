@@ -89,6 +89,54 @@ Current frontend same-day schedule is WIB; capacity range is 1–100,000. Overni
 
 ## Current frontend support
 
+### Operational contracts added after the original integration, 2026-10-06
+
+**In progress**. The following is a backend handoff, not a claim that server routes exist. The later rules below supersede the earlier simplified registration and summary table. Shared DTOs are in `participation.ts`, `committee.ts`, and `sponsor-offer.ts`; feature services validate responses and carry endpoint annotations. Every private endpoint requires a verified, active account of the appropriate role and event-scoped authorization. Never trust body-supplied owner ids or frontend guards.
+
+| Endpoint | Contract and backend requirement |
+| --- | --- |
+| `GET /api/public/events/:id/registration-form` | Published event's price, payment note, questions and default marker; approved participant access |
+| `GET/PUT /api/events/:id/registration-form` | Owner only; price 0 is free; priced event needs payment instructions and payment-proof image question; up to ten validated questions with stable ids, order and choices; edits do not rewrite stored answer labels |
+| `POST /api/public/events/:id/registration-images` | Participant upload before submitting answers, scoped validated raster URL; authorize target event, private proof access, orphan cleanup, quotas and retention; not public logo storage |
+| `POST /api/public/events/:id/registrations` | `{answers}` validated against that event's form, registration period, publication and capacity; free starts REGISTERED, paid starts PENDING; PartnerHub does not process payment |
+| `GET /api/events/:id/registrants` | Owner only; display name, reference, registration status, nullable rejection note, immutable answer labels, qrIssued, nullable checkedInAt; no account email/phone or secret |
+| `POST /api/events/:id/registrants/:registrationId/decision` | `{decision:CONFIRM\|REJECT,note:null\|string}`; owner and same-event registration; only PENDING can move; confirm atomically rechecks capacity; reject permits a fresh registration/proof; optional reason max 200 characters; notify participant; never arbitrary status replacement |
+| `GET /api/events/:id/qr` | Owner-only delivery counts: eventTitle, eventPublished, registered, issued; count REGISTERED only |
+| `POST /api/events/:id/qr/send` | Published event owner; issue missing secrets only for REGISTERED; retry-safe; notify participants once; server generates high-entropy secrets, stores hashes, never sends secrets in list DTOs |
+| `GET /api/me/registrations/:id/qr` | Participant's own REGISTERED and issued ticket only; return `{payload:PH1.secret}`; pending/rejected/cancelled never receive QR; define secure retrieval/storage design before production |
+| `POST /api/events/:id/ticket-scans` | `{payload}` strict PH1 format; owner only; opaque secret hash lookup within authorized event; issued REGISTERED ticket required; transactionally record first ENTRY if enabled; return TicketScan details and RECORDED/ALREADY_RECORDED/DISABLED |
+| `GET /api/events/:id/attendance` | Owner only; AttendanceBoard with attendanceEnabled and checked-in registrants, no account contact fields or secret; paginate production lists |
+| `GET /api/committee/openings` | Approved participants, published open recruitment only |
+| `POST /api/committee/openings/:id/applications` | Validate divisions, motivation and answers; one active application per opening; portfolio remains a URL |
+| `GET /api/me/committee-applications` | Own applications, stage/status, selections and organizer note only |
+| `GET /api/events/:id/committee` | Owner-only opening and applicant board including allowed explicit transitions |
+| `PUT /api/events/:id/committee/opening` | Owner only; configure 0 to 5 stable ordered stages, divisions and opening; preserve active application history |
+| `POST /api/events/:id/committee/applications/:id/decision` | Owner only, same-event applicant; enforce allowed stage/accept/reject moves; organizer note and participant notification; no arbitrary status |
+| `GET /api/sponsors/directory` | Event organizer access; minimal approved company id, companyName, industry, never private verification documents |
+| `GET/POST /api/events/:id/sponsor-offers` | Owner-only outgoing requests; POST published event and approved sponsor, validate support category/message/amount/proposal URL; no duplicate open request; notify target sponsor |
+| `GET /api/sponsor/offers` | Approved sponsor's own received requests only |
+| `POST /api/sponsor/offers/:id/decision` | Target approved sponsor only; accept/reject a SENT request once; notify event owner; acceptance does not yet create benefit records |
+| `GET /api/events/:id/sponsor-proposals` | Owner-only incoming proposals, newest first, sponsorName added; foreign/missing event 404; no private account fields |
+| `GET/POST /api/sponsor/proposals` | Own proposal list or published-event submission by approved sponsor; validate category, offer, amountLabel; initial SENT; organizer decision API is not delivered |
+| `GET /api/sponsor/sponsorships` | Sponsor's own agreements and benefits; VERIFIED requires the approved organizer evidence-review transition, never frontend assertion |
+| `GET /api/organizer/summary` | Owner event counts include REGISTERED participants, committee applications and accepted offers/proposals; no placeholder metrics; do not count pending/rejected/cancelled as registered |
+
+#### Registration, tickets and attendance invariants
+
+- [ ] Model PENDING, REGISTERED, REJECTED, CANCELLED explicitly. Block duplicate PENDING and REGISTERED submissions, permit a new submission after rejection. Atomic confirmation and free registration must enforce capacity under concurrent requests. Decide pending reservation policy before production; demo pending submissions do not count as admitted participants.
+- [ ] Store payment proof privately with event-owner-only delivery. Bound image decode/storage, strip metadata, forbid arbitrary remote fetch and cross-event asset reuse. Answers may intentionally contain personal data; minimize collection and establish consent, retention and deletion before real use. Never copy sensitive proof to QR, exported secret, logs, or public event assets.
+- [ ] Store only a cryptographic hash for ticket lookup, compare securely and rate limit attempts. Resolve secure secret retrieval for the participant before production (a hash cannot reconstruct the QR). Never log scan bodies or raw secrets; use no-store on private ticket/result responses, CSRF protection and secure authenticated sessions.
+- [ ] Scan validates owner and event before disclosing detail. Malformed, unknown and other-event tickets disclose no participant information; inactive tickets cannot record entry. Valid active ticket inspection remains possible when attendance is disabled and creates no entry. Issued entry persists if module is later disabled; do not silently erase attendance.
+- [ ] Record ENTRY with a unique registration/kind constraint and atomic transaction/upsert. Repeat scans, concurrent gates and retries after response loss return ALREADY_RECORDED and the original server timestamp, not an error or a second record. Failure must never claim presence when commit did not happen. No EXIT, offline synchronization or public ticket lookup in this slice.
+- [ ] Keep registration, scan and attendance reads consistent and event-scoped. Decide treatment of a later-cancelled registration with historical entry; preserve audit history rather than silently rewriting it. Record minimal authorized operator/event/timestamp audit metadata without the ticket secret or proof image.
+- [ ] Enforce committee moves against current server state and stage history, including concurrent decisions and edits to recruitment. Notify once after commit; user-visible selection path must match persisted state.
+- [ ] Sponsor requests and sponsor-initiated proposals remain distinct. Do not create an agreement or mark benefits delivered solely from offer acceptance or sponsor-display logos. Agree proposal review, agreement creation and evidence verification transitions before adding their production mutations. Proposal, portfolio and evidence attachments remain URLs; chat, payments and matching are deferred.
+- [ ] Notifications are account-scoped, derive from committed decisions/delivery and tolerate retry without duplicate notices. Define delivery/read-state retention and deletion; mock notifications are not email delivery.
+- [ ] Add unauthorized-role, pending-account, foreign-event, inactive/unissued ticket, malformed-token, concurrent scan, duplicate confirmation, capacity race, storage failure, proof privacy and retry-after-commit tests. Verify log redaction and production builds without demo modules. Configure real services before accepting real data.
+- [ ] Resolve dependency audit findings before production. The current production audit reports critical Next.js and high postcss, sharp, and source-map-js findings. Coordinate a separately approved compatibility-checked dependency upgrade; do not use a force-upgrade as part of feature work.
+
+Design handoff: sponsor dialogs now separate labelled support facts, message and footer actions; this is presentation only, with no new sponsorship state. Scanner requires HTTPS/localhost for camera and uses jsQR locally; selected QR images are not server uploads. UI and demo verification do not prove real authorization, database concurrency or deployment readiness.
+
 Implemented frontend: connected account/recovery/verification/onboarding/settings pages, session-aware navigation, guarded dashboard, route-based event create/detail/edit and typed services. Editor retains four stages, raster validation, replace/remove and live preview. Local-copy save/restore/delete remains available for new drafts with complete legacy-format details; v1 text drafts are readable. Remote actions succeed only when APIs confirm them. Production workspace has no synthetic records or fallback. Publishing/operational modules remain In progress.
 
 ## Role registration, approval and demo mode (2026-10-05)

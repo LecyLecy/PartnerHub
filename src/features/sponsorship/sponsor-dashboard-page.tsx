@@ -6,7 +6,8 @@ import { listPublicEvents } from "@/lib/public-events";
 import { useResource } from "@/lib/use-resource";
 import { Badge, EmptyState, EventCard, EventGrid, Notice, PageHeader, ProtectedPage, SkeletonCards, StatGrid, uiStyles, useToast } from "@/lib/ui";
 import { listReceivedOffers, respondToOffer } from "./services/offer-service";
-import { offerLabel, offerTone } from "./offer-status";
+import { DetailRow } from "./detail-row";
+import { OfferRow } from "./offer-row";
 import { listProposals, listSponsorships } from "./services/sponsorship-service";
 import styles from "./sponsorship.module.css";
 
@@ -18,7 +19,7 @@ function ReceivedOffers() {
   const [busyId, setBusyId] = useState("");
   const [failure, setFailure] = useState("");
   const toast = useToast();
-  async function answer(id: string, status: "ACCEPTED" | "DECLINED") {
+  async function answer(id: string, status: "ACCEPTED" | "DECLINED"): Promise<void> {
     if (busyId) return;
     setBusyId(id); setFailure("");
     try { await respondToOffer(id, status); toast(status === "ACCEPTED" ? "Permintaan diterima." : "Permintaan ditolak."); offers.reload(); }
@@ -26,18 +27,12 @@ function ReceivedOffers() {
     finally { setBusyId(""); }
   }
   return <section className={styles.section} aria-labelledby="received-title">
-    <h2 id="received-title">Permintaan dari penyelenggara</h2><p className={styles.sectionHint}>Penyelenggara yang mengajak perusahaanmu mendukung acara mereka.</p>
+    <h2 id="received-title">Permintaan dari penyelenggara</h2>
     {failure && <Notice error>{failure}</Notice>}
     {offers.status === "loading" ? <SkeletonCards label="Memuat permintaan…" count={2} />
       : offers.status === "error" ? <Notice error>{errorMessage(offers.error)} <button className={uiStyles.secondary} onClick={offers.reload}>Muat ulang</button></Notice>
       : !offers.data?.length ? <EmptyState title="Belum ada permintaan.">Permintaan dari penyelenggara muncul di sini dan di notifikasi.</EmptyState>
-      : <ul className={styles.received}>{offers.data.map((item) => <li key={item.id}>
-        <div className={styles.proposalHeader}><h3>{item.eventTitle}</h3><Badge tone={offerTone(item.status)}>{offerLabel[item.status]}</Badge></div>
-        <p>{item.organizationName || "Penyelenggara"} · {item.category}{item.amountLabel ? ` · ${item.amountLabel}` : ""}</p>
-        <p>{item.message}</p>
-        {item.proposalUrl && <p><a href={item.proposalUrl} target="_blank" rel="noopener noreferrer">Buka dokumen proposal</a></p>}
-        {item.status === "SENT" && <div className={styles.receivedActions}><button className={uiStyles.primary} onClick={() => void answer(item.id, "ACCEPTED")} disabled={Boolean(busyId)}>Terima</button><button className={uiStyles.secondary} onClick={() => void answer(item.id, "DECLINED")} disabled={Boolean(busyId)}>Tolak</button></div>}
-      </li>)}</ul>}
+      : <ul className={styles.received} tabIndex={0} aria-label="Daftar permintaan">{offers.data.map((item) => <OfferRow key={item.id} item={item} busy={Boolean(busyId)} onAnswer={answer} />)}</ul>}
   </section>;
 }
 
@@ -55,7 +50,7 @@ function Dashboard() {
         : events.status === "error" ? <Notice error>{errorMessage(events.error)} <button className={uiStyles.secondary} onClick={events.reload}>Muat ulang acara</button></Notice>
         : !events.data?.length ? <EmptyState title="Belum ada acara terbuka.">Acara akan muncul di sini setelah tercatat sebagai terpublikasi.</EmptyState>
         : <EventGrid>{events.data.map((item, index) => <EventCard key={item.id} event={item} tone={index}
-          actions={() => <Link className={uiStyles.primary} href="/sponsor/proposals/new">Ajukan dukungan</Link>} />)}</EventGrid>}
+          actions={() => <Link className={uiStyles.primary} href={`/sponsor/proposals/new?eventId=${encodeURIComponent(item.id)}`}>Ajukan dukungan</Link>} />)}</EventGrid>}
     </section>
     <div className={styles.side}>
     <ReceivedOffers />
@@ -64,14 +59,20 @@ function Dashboard() {
       {sponsorships.status === "loading" ? <SkeletonCards label="Memuat komitmen…" count={2} />
         : sponsorships.status === "error" ? <Notice error>{errorMessage(sponsorships.error)} <button className={uiStyles.secondary} onClick={sponsorships.reload}>Muat ulang</button></Notice>
         : !sponsorships.data?.length ? <EmptyState title="Belum ada komitmen.">Komitmen muncul setelah penyelenggara menerima proposalmu.</EmptyState>
-        : <ul className={styles.commitments}>{sponsorships.data.map((item) => <li key={item.id}><h3>{item.eventTitle}</h3><p>{item.packageName}</p><ul className={styles.benefits}>{item.benefits.map((benefit) => <li key={benefit.id}>{benefit.label}: <Badge tone={benefit.status === "VERIFIED" ? "success" : "warning"}>{benefit.status === "VERIFIED" ? "terverifikasi" : "direncanakan"}</Badge></li>)}</ul></li>)}</ul>}
+        : <ul className={styles.commitments} tabIndex={0} aria-label="Daftar komitmen">{sponsorships.data.map((item) => <li key={item.id}><h3>{item.eventTitle}</h3><p>{item.packageName}</p><ul className={styles.benefits}>{item.benefits.map((benefit) => <li key={benefit.id}>{benefit.label}: <Badge tone={benefit.status === "VERIFIED" ? "success" : "warning"}>{benefit.status === "VERIFIED" ? "terverifikasi" : "direncanakan"}</Badge></li>)}</ul></li>)}</ul>}
     </section>
     <section className={styles.section} aria-labelledby="proposals-title">
       <h2 id="proposals-title">Proposal perusahaanmu</h2><p className={styles.sectionHint}>Status dan detail penawaran untuk setiap acara.</p>
       {proposals.status === "loading" ? <SkeletonCards label="Memuat proposal…" count={2} />
         : proposals.status === "error" ? <Notice error>{errorMessage(proposals.error)} <button className={uiStyles.secondary} onClick={proposals.reload}>Muat ulang</button></Notice>
         : !proposals.data?.length ? <EmptyState title="Belum ada proposal.">Pilih acara yang sesuai melalui tombol Kirim proposal baru, lalu jelaskan dukungan yang kamu tawarkan.</EmptyState>
-        : <ul className={styles.proposals}>{proposals.data.map((item) => <li key={item.id}><div className={styles.proposalHeader}><h3>{item.eventTitle}</h3><Badge tone={item.status === "ACCEPTED" ? "success" : item.status === "DECLINED" ? "danger" : item.status === "IN_REVIEW" ? "warning" : "info"}>{statusLabel[item.status]}</Badge></div><p>{item.category}{item.amountLabel ? ` · ${item.amountLabel}` : ""}</p><details><summary>Detail penawaran</summary><p>{item.offer}</p></details></li>)}</ul>}
+        : <ul className={styles.proposals} tabIndex={0} aria-label="Daftar proposal">{proposals.data.map((item) => <DetailRow key={item.id} title={item.eventTitle} label={`Detail proposal ${item.eventTitle}`} badge={<Badge tone={item.status === "ACCEPTED" ? "success" : item.status === "DECLINED" ? "danger" : item.status === "IN_REVIEW" ? "warning" : "info"}>{statusLabel[item.status]}</Badge>}>
+          {(close) => <>
+            <p>{item.category}{item.amountLabel ? ` · ${item.amountLabel}` : ""}</p>
+            <p>{item.offer}</p>
+            <div className={styles.receivedActions}><button type="button" className={uiStyles.secondary} onClick={close}>Tutup</button></div>
+          </>}
+        </DetailRow>)}</ul>}
     </section>
     </div>
     </div>

@@ -147,14 +147,20 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     const account = active(db, "user");
     const target = db.events.find((item) => item.id === joinMatch[1] && item.status === "PUBLISHED");
     if (!target) return fail(404, "NOT_FOUND");
-    if (db.registrations.some((item) => item.ownerId === account.id && item.eventId === target.id && item.status === "REGISTERED")) return fail(409, "ALREADY_REGISTERED");
+    if (db.registrations.some((item) => item.ownerId === account.id && item.eventId === target.id && (item.status === "REGISTERED" || item.status === "PENDING"))) return fail(409, "ALREADY_REGISTERED");
     if (target.capacity !== null && registeredCount(db, target.id) >= target.capacity) return fail(409, "EVENT_FULL");
     const form = formOf(db, target.id);
     const answers = checkAnswers(form.fields, json.answers);
-    const created = { id: next(db, "reg"), ownerId: account.id, eventId: target.id, ticketReference: ticketReference(), status: "REGISTERED" as const, createdAt: nowIso(), qrSecret: null, answers, registrantName: null };
+    const paid = form.priceIdr > 0;
+    const created = { id: next(db, "reg"), ownerId: account.id, eventId: target.id, ticketReference: ticketReference(), status: paid ? "PENDING" as const : "REGISTERED" as const, note: null, createdAt: nowIso(), qrSecret: null, answers, registrantName: null };
     db.registrations.push(created);
-    db.notifications.push({ id: next(db, "n"), ownerId: account.id, title: "Pendaftaran dikonfirmasi", body: `Tiket ${target.title} sudah tersedia di halaman Acara saya.`, createdAt: nowIso(), read: false });
-    notify(db, target.ownerId, "Pendaftar baru", `${account.fullName} mendaftar ke ${target.title}.`);
+    if (paid) {
+      notify(db, account.id, "Menunggu konfirmasi pembayaran", `Bukti pembayaran untuk ${target.title} sudah terkirim. Penyelenggara akan meninjaunya.`);
+      notify(db, target.ownerId, "Bukti pembayaran baru", `${account.fullName} mengirim bukti pembayaran untuk ${target.title}.`);
+    } else {
+      db.notifications.push({ id: next(db, "n"), ownerId: account.id, title: "Pendaftaran dikonfirmasi", body: `Tiket ${target.title} sudah tersedia di halaman Acara saya.`, createdAt: nowIso(), read: false });
+      notify(db, target.ownerId, "Pendaftar baru", `${account.fullName} mendaftar ke ${target.title}.`);
+    }
     return toRegistration(db, created);
   }
   const formPublicMatch = route.match(/^\/api\/public\/events\/([^/]+)\/registration-form$/);
@@ -227,6 +233,16 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
   const handled = await dispatchParticipation(db, method, route, json);
   if (handled !== NOT_HANDLED) return handled;
 
+  const eventProposalsMatch = route.match(/^\/api\/events\/([^/]+)\/sponsor-proposals$/);
+  if (eventProposalsMatch && method === "GET") {
+    const account = active(db, "organizer");
+    const event = db.events.find((item) => item.id === eventProposalsMatch[1] && item.ownerId === account.id);
+    if (!event) return fail(404, "NOT_FOUND");
+    return { items: db.proposals.filter((item) => item.eventId === event.id).map(({ ownerId, ...item }) => {
+      const sponsor = db.accounts.find((account) => account.id === ownerId);
+      return { ...item, sponsorName: sponsor?.summary.find((entry) => entry.label === "Perusahaan")?.value || sponsor?.fullName || "Sponsor" };
+    }).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
+  }
   if (route === "/api/sponsor/proposals" && method === "GET") {
     const account = active(db, "sponsor");
     return { items: db.proposals.filter((item) => item.ownerId === account.id).map(({ ownerId, ...item }) => { void ownerId; return item; }).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
@@ -308,11 +324,49 @@ function checkAnswers(fields: RegistrationField[], raw: unknown): RegistrationAn
 
 function registrantOf(db: DemoDb, item: DemoDb["registrations"][number]): Registrant {
   const account = db.accounts.find((entry) => entry.id === item.ownerId);
-  return { id: item.id, name: account?.fullName ?? item.registrantName ?? "Peserta", ticketReference: item.ticketReference, status: item.status, createdAt: item.createdAt, qrIssued: Boolean(item.qrSecret), answers: item.answers };
+  return { id: item.id, name: account?.fullName ?? item.registrantName ?? "Peserta", ticketReference: item.ticketReference, status: item.status, note: item.note ?? null, createdAt: item.createdAt, qrIssued: Boolean(item.qrSecret), checkedInAt: item.checkedInAt ?? null, answers: item.answers };
 }
 
 /** Organizer side of registration: price, custom form, and the list of registrants. */
 function dispatchRegistration(db: DemoDb, method: string, route: string, json: Record<string, unknown>): unknown {
+  const scanMatch = route.match(/^\/api\/events\/([^/]+)\/(ticket-scans|attendance)$/);
+  if (scanMatch) {
+    const owner = active(db, "organizer");
+    const event = db.events.find((item) => item.id === scanMatch[1] && item.ownerId === owner.id);
+    if (!event) return fail(404, "NOT_FOUND");
+    if (scanMatch[2] === "attendance" && method === "GET") return { eventId: event.id, eventTitle: event.title, attendanceEnabled: event.modules.attendance, items: db.registrations.filter((item) => item.eventId === event.id && item.checkedInAt).map((item) => registrantOf(db, item)) };
+    if (scanMatch[2] !== "ticket-scans" || method !== "POST") return fail(404, "NOT_FOUND");
+    if (typeof json.payload !== "string" || !/^PH1\.[a-zA-Z0-9]{24}$/.test(json.payload)) return fail(422, "INVALID_TICKET");
+    const found = db.registrations.find((item) => item.eventId === event.id && item.qrSecret === (json.payload as string).slice(4));
+    if (!found) return fail(404, "INVALID_TICKET");
+    if (found.status !== "REGISTERED") return fail(409, "TICKET_INACTIVE");
+    const attendance = !event.modules.attendance ? "DISABLED" : found.checkedInAt ? "ALREADY_RECORDED" : "RECORDED";
+    if (attendance === "RECORDED") found.checkedInAt = nowIso();
+    return { eventId: event.id, eventTitle: event.title, participant: registrantOf(db, found), attendance };
+  }
+  const decisionMatch = route.match(/^\/api\/events\/([^/]+)\/registrants\/([^/]+)\/decision$/);
+  if (decisionMatch && method === "POST") {
+    const owner = active(db, "organizer");
+    const event = db.events.find((item) => item.id === decisionMatch[1] && item.ownerId === owner.id);
+    const found = event && db.registrations.find((item) => item.id === decisionMatch[2] && item.eventId === event.id);
+    if (!event || !found) return fail(404, "NOT_FOUND");
+    const decision = json.decision;
+    const reason = text(json.note);
+    if (decision !== "CONFIRM" && decision !== "REJECT") return fail(422, "VALIDATION_ERROR", { decision: "Pilih konfirmasi atau tolak." });
+    if (reason.length > 200) return fail(422, "VALIDATION_ERROR", { note: "Maksimal 200 karakter." });
+    if (found.status !== "PENDING") return fail(409, "NOT_PENDING");
+    if (decision === "CONFIRM") {
+      if (event.capacity !== null && registeredCount(db, event.id) >= event.capacity) return fail(409, "EVENT_FULL");
+      found.status = "REGISTERED";
+      found.note = null;
+      notify(db, found.ownerId, "Pembayaran dikonfirmasi", `Pendaftaran ${event.title} sudah terkonfirmasi. QR masuk akan dikirim penyelenggara.`);
+    } else {
+      found.status = "REJECTED";
+      found.note = reason || null;
+      notify(db, found.ownerId, "Pembayaran ditolak", `Pendaftaran ${event.title} ditolak.${reason ? ` Alasan: ${reason}` : ""} Kamu bisa mendaftar lagi dengan bukti baru.`);
+    }
+    return registrantOf(db, found);
+  }
   const match = route.match(/^\/api\/events\/([^/]+)\/(registration-form|registrants)$/);
   if (!match) return NOT_HANDLED;
   const account = active(db, "organizer");
@@ -524,7 +578,7 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
 
 function toRegistration(db: DemoDb, item: DemoDb["registrations"][number]): MyRegistration {
   const target = db.events.find((entry) => entry.id === item.eventId);
-  return { id: item.id, ticketReference: item.ticketReference, status: item.status, createdAt: item.createdAt, qrIssued: Boolean(item.qrSecret), priceIdr: db.forms[item.eventId]?.priceIdr ?? 0, event: { id: item.eventId, title: target?.title ?? "Acara", startsAt: target?.startsAt ?? null, venue: target?.venue ?? "" } };
+  return { id: item.id, ticketReference: item.ticketReference, status: item.status, note: item.note ?? null, createdAt: item.createdAt, qrIssued: Boolean(item.qrSecret), priceIdr: db.forms[item.eventId]?.priceIdr ?? 0, event: { id: item.eventId, title: target?.title ?? "Acara", startsAt: target?.startsAt ?? null, venue: target?.venue ?? "" } };
 }
 
 /** Called by the demo banner. Clears every change and signs out. */

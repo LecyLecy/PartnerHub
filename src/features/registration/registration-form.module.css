@@ -1,4 +1,6 @@
-.form { gap: var(--space-4); }
+.form { gap: var(--space-4); width: 100%; flex: 1 1 100%; min-width: 0; }
+/* Field labels hold the text and an inline "(opsional)"; the shared form class would stack them as a column. */
+.form [data-field] > label[for] { display: block; }
 .price { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--line); border-radius: var(--radius-control); background: var(--paper); }
 .price span { color: var(--muted); font-size: var(--text-caption); }
 .price strong { font-family: var(--font-heading), sans-serif; font-size: var(--text-h3); font-variant-numeric: tabular-nums; }

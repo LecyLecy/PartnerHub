@@ -95,7 +95,10 @@ export function EventCard({ event, tone, badge, actions }: {
       <p className={styles.when}>{eventWhen(event.startsAt)}</p>
       <p className={styles.price} data-free={event.priceIdr <= 0}>{formatPrice(event.priceIdr)}</p>
       <p className={styles.muted}>{event.venue || "Lokasi belum ditentukan"}</p>
-      <p className={styles.muted}>{event.registeredCount}{event.capacity ? ` dari ${event.capacity}` : ""} pendaftar{full ? " (penuh)" : ""}</p>
+      <div className={styles.capacity}>
+        <p className={styles.muted}>{event.registeredCount}{event.capacity ? ` dari ${event.capacity}` : ""} pendaftar{full ? " (penuh)" : ""}</p>
+        {event.capacity ? <Meter value={event.registeredCount} max={event.capacity} label={`Kapasitas terisi ${event.registeredCount} dari ${event.capacity}`} /> : null}
+      </div>
     </>}
     detail={(close) => <>
       <DetailSection title="Tentang acara">

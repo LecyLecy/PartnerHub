@@ -61,6 +61,8 @@ test("every registration gets its own code", async () => {
   const free = await call("/api/public/events/demo-event-3/registrations", { method: "POST", body: {} });
   const paid = await call("/api/public/events/demo-event-2/registrations", { method: "POST", body: { answers: { "demo-f1": "UKM Desain Demo", "demo-f2": "Pemula", "demo-f3": "data:image/png;base64,iVBORw0KGgo=" } } });
   await login(ORGANIZER);
+  assert.equal(paid.status, "PENDING");
+  await call(`/api/events/demo-event-2/registrants/${paid.id}/decision`, { method: "POST", body: { decision: "CONFIRM" } });
   await call("/api/events/demo-event-3/qr/send", { method: "POST", body: {} });
   await call("/api/events/demo-event-2/qr/send", { method: "POST", body: {} });
   await login(USER);

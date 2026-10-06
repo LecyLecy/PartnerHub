@@ -63,7 +63,9 @@ function Preview({ src, alt }: { src: string; alt: string }) {
 }
 
 /** File picker with image preview for logos, file name and size for documents, plus replace and remove. */
-export function FileField({ kind, file, onChange, ...base }: Base & { kind: FileKind; file: File | null; onChange: (file: File | null) => void }) {
+/** `thumb` replaces the placeholder word in the empty preview; `help` replaces the default format and size rule text. */
+export function FileField({ kind, file, onChange, thumb, help, ...base }: Base & { kind: FileKind; file: File | null; onChange: (file: File | null) => void; thumb?: string; help?: string }) {
+  const rule = help ?? fileRules[kind].help;
   const input = useRef<HTMLInputElement>(null);
   const token = useRef(0);
   const [problem, setProblem] = useState("");
@@ -88,9 +90,9 @@ export function FileField({ kind, file, onChange, ...base }: Base & { kind: File
   }
   // The newest file check wins over a stale "file required" error from an earlier submit.
   const error = problem || base.error;
-  return <Shell {...base} error={error} hint={base.hint ? `${base.hint} ${fileRules[kind].help}` : fileRules[kind].help}>
+  return <Shell {...base} error={error} hint={base.hint ? `${base.hint} ${rule}` : rule}>
     <div className={`${styles.upload} ${error ? styles.invalid : ""}`} aria-busy={busy}>
-      <div className={styles.thumb}>{preview ? <Preview src={preview} alt={`Pratinjau ${base.label}`} /> : <span aria-hidden="true">{kind === "logo" ? "Logo" : "Berkas"}</span>}</div>
+      <div className={styles.thumb}>{preview ? <Preview src={preview} alt={`Pratinjau ${base.label}`} /> : <span aria-hidden="true">{thumb ?? (kind === "logo" ? "Logo" : "Berkas")}</span>}</div>
       <div className={styles.fileInfo}>
         <strong>{busy ? "Memeriksa file…" : file ? file.name : "Belum ada file"}</strong>
         <span>{file ? fileSize(file.size) : "Pilih file dari perangkatmu"}</span>
@@ -99,7 +101,7 @@ export function FileField({ kind, file, onChange, ...base }: Base & { kind: File
         <button type="button" className={styles.small} onClick={() => input.current?.click()} disabled={busy || base.disabled}>{file ? "Ganti file" : "Pilih file"}</button>
         {file && <button type="button" className={styles.small} onClick={() => { token.current++; setProblem(""); setBusy(false); onChange(null); }}>Hapus file</button>}
       </div>
-      <input ref={input} id={base.name} name={base.name} className={styles.fileInput} type="file" accept={fileRules[kind].accept} aria-invalid={Boolean(error)} aria-describedby={describe(base.name, error, base.hint || fileRules[kind].help)} aria-labelledby={`${id}-l`} onChange={(event) => { void pick(event.target.files); event.target.value = ""; }} />
+      <input ref={input} id={base.name} name={base.name} className={styles.fileInput} type="file" accept={fileRules[kind].accept} aria-invalid={Boolean(error)} aria-describedby={describe(base.name, error, base.hint || rule)} aria-labelledby={`${id}-l`} onChange={(event) => { void pick(event.target.files); event.target.value = ""; }} />
       <span id={`${id}-l`} className="sr-only">{base.label}</span>
     </div>
   </Shell>;

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { Icon, type IconName } from "./icons";
 import styles from "./account-menu.module.css";
 
@@ -14,6 +14,7 @@ export function AccountMenu({ name, detail, placement, busy, onLeave, onNavigate
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const leaveTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const panelId = useId().replace(/:/g, "");
   useEffect(() => {
     if (!open) return;
@@ -23,7 +24,15 @@ export function AccountMenu({ name, detail, placement, busy, onLeave, onNavigate
     document.addEventListener("keydown", escape);
     return () => { document.removeEventListener("pointerdown", outside); document.removeEventListener("keydown", escape); };
   }, [open]);
-  return <div ref={root} className={styles.root} data-placement={placement} data-open={open}>
+  useEffect(() => () => clearTimeout(leaveTimer.current), []);
+  // Mouse only: touch and keyboard users keep the menu until Escape, an outside tap, or a choice.
+  // The short delay covers the gap between the trigger and the panel.
+  const cancelClose = () => clearTimeout(leaveTimer.current);
+  const closeOnLeave = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.pointerType !== "mouse" || !open) return;
+    leaveTimer.current = setTimeout(() => setOpen(false), 150);
+  };
+  return <div ref={root} className={styles.root} data-placement={placement} data-open={open} onPointerEnter={cancelClose} onPointerLeave={closeOnLeave}>
     <button ref={button} type="button" className={styles.trigger} aria-expanded={open} aria-controls={panelId} aria-label={`Menu akun, ${name}`} onClick={() => setOpen(!open)}>
       <span className={styles.avatar} aria-hidden="true"><Icon name="user" /></span>
       <span className={`${styles.text} accountText`}><strong>{name}</strong>{detail && <span>{detail}</span>}</span>

@@ -13,3 +13,10 @@
 .fill > span:last-child { white-space: nowrap; }
 .noResults { padding: var(--space-8) 0; }
 .empty a { color: var(--navy); background: var(--surface); border-color: var(--control-border); }
+.rowActions { display: flex; align-items: center; gap: var(--space-1); width: max-content; }
+.rowStatus { white-space: nowrap; }
+.actionLink { position: relative; display: grid; place-items: center; width: var(--touch-min); height: var(--touch-min); border-radius: var(--radius-control); color: var(--muted); text-decoration: none; }
+.actionLink:hover, .actionLink:focus-visible { color: var(--navy); background: var(--subtle); }
+.actionTooltip { position: absolute; bottom: calc(100% + var(--space-1)); right: 0; z-index: 2; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--navy); color: var(--surface); white-space: nowrap; font-size: var(--text-caption); font-weight: var(--weight-body); visibility: hidden; }
+.actionTooltip::after { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: var(--space-1); }
+.actionLink:hover .actionTooltip, .actionLink:focus-visible .actionTooltip { visibility: visible; }

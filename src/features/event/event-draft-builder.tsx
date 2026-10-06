@@ -240,11 +240,11 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
     <div className={styles.builder}>
       <div className={styles.builderToolbar}>
         <p>
-          {onSave ? "Simpan draft melalui layanan event. Jadwal boleh menyusul. Layanan backend: In progress." : "Detail dan logo bisa disimpan di perangkat ini. Sinkronisasi server: In progress."}
+          {onSave ? "Simpan kapan saja. Jadwal boleh menyusul." : "Detail dan logo tersimpan di browser ini."}
         </p>
         <div>
           {onSave && <button className={styles.quickSave} type="button" onClick={() => void submit(undefined, true)} disabled={storageBusy}>Simpan draft sekarang</button>}
-          {allowLocal && <details className={styles.localStorage}><summary>Salinan lokal di browser</summary><div className={styles.localActions}>
+          {allowLocal && <details className={styles.localStorage}><summary>Salinan lokal</summary><div className={styles.localActions}>
           {onSave && <button type="button" onClick={saveBrowserCopy} disabled={storageBusy}>Simpan salinan lokal</button>}
           <button type="button" onClick={restore} disabled={storageBusy}>
             Buka salinan lokal

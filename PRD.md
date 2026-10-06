@@ -116,6 +116,14 @@ The first market is BEM, Himpunan, UKM, campus committees, youth communities, an
 
 ## Functional requirements
 
+### Ticket inspection and optional automatic entry, 2026-10-06
+
+**In progress** (frontend and demo only). The organizer can open Scan QR peserta from the event action table, registration page, or QR delivery page. Camera scanning and selecting a PNG/JPEG/WebP QR image resolve the existing issued `PH1.secret` ticket, never personal data inside the QR. Camera images are decoded locally, not uploaded; explicit permission is required, with denial and unsupported-camera feedback.
+
+Only the approved event owner can inspect a ticket. A valid, issued `REGISTERED` ticket displays the participant's display name, reference, event, and event-specific form answers, not account email or phone. When the event's attendance module is enabled, the same operation records entry once and returns the first entry time. Repeated scans display the original time and do not create duplicates. With attendance disabled, the operation only inspects the ticket. Unknown, malformed, other-event, pending, rejected, and cancelled tickets never create attendance or disclose participant details. Organizer registration includes a Hadir filter and entry time; the scanner includes the refreshed Hadir list. Camera stops on result, explicit close, page hide, or navigation. This is not identity verification, offline entry, exit tracking, or a production backend.
+
+Acceptance: generated participant QR resolves the same individual ticket; first and repeated scans produce one stable attendance entry; disabled module produces none; owner/role/event boundaries and inactive tickets are rejected; camera and local-image decoding work without sending image bytes; scanner and sponsor dialogs remain usable on phone and keyboard. Production persistence and concurrency requirements are tracked in `todobackend.md`.
+
 ### Approved connected frontend flow, 2026-10-05
 
 **In progress**. The owner approved frontend account/workspace/event integration and shared route/layout/style changes. Backend, API handlers, Prisma, dependencies and environment files are excluded from this task. This section supersedes the earlier browser-only navigation and unresolved frontend authentication direction.
@@ -139,6 +147,8 @@ Acceptance evidence must distinguish test-only mocked API responses from real ba
 - The applicant sees the current status and the organizer note under "Lamaran saya" and receives an in-app notification for each decision. Accepted applicants see the note as "Langkah berikutnya". Email delivery is not part of this flow.
 - Organizers can also start sponsorship: at `/events/:id/sponsors` an organizer sends a request to a verified sponsor company for a published event (category, message, optional value, optional https proposal URL). The sponsor sees it under "Permintaan dari penyelenggara", receives a notification, and accepts or declines once. The organizer is notified of the answer. The sponsor directory exposes only company name and industry.
 - Sponsor-initiated proposals (`/sponsor/proposals/new`) remain. The two directions are separate records; accepting a request does not yet create a `SponsorBenefit`. That link needs a backend decision.
+- Organizer status dashboard at `/organizer/sponsorship`: two independently scrollable panels show outgoing requests and incoming sponsor proposals across the organizer's events, newest first. Each row opens its details and identifies the sponsor, event, and status. Loading, empty, and retryable error states are separate for each panel. This is a read-only overview, not a new proposal decision flow. **In progress** (frontend and demo mode; production endpoints remain pending).
+- Organizer navigation replaces the sidebar's duplicate "Susun event" entry with "Status sponsor". Creation stays available through the plus-labelled button on "Event kamu" and `/events/new`. Event-table actions link to draft editing, registration, committee, sponsor requests, and QR delivery with labelled icons and hover/focus tooltips; editing remains draft-only.
 - Not included: file uploads (proposal and evidence stay URLs), chat, automatic matching, payments, and committee membership records beyond the accepted status. Account role rules are unchanged: event-level committee membership is not an account role.
 - Open backend decisions: how an accepted request becomes a sponsorship record, retention of applicant answers, and whether `WITHDRAWN` is offered to applicants.
 
@@ -186,13 +196,14 @@ UI acceptance criteria:
 | FR-09 | Create event membership only from an accepted application | Rejected or pending applications cannot become memberships |
 | FR-10 | Track sponsor prospects, follow-ups, commitments, and evidence URLs | Stage and evidence validation is enforced |
 | FR-11 | Display operational counts from persisted data | Counts exclude cancelled registrations and duplicate scans |
+| FR-12 | Organizer reviews payment proof for paid events and confirms or rejects the registrant | Paid registrations start `PENDING` with no QR; confirm gives `REGISTERED`; reject gives `REJECTED` with an optional reason and the participant may register again; free events stay `REGISTERED`. **In progress** (demo mode only; backend and `prisma/schema.prisma` enum still need alignment) |
 
 ## State model
 
 | Entity | Planned states |
 | --- | --- |
 | Event | `DRAFT`, `PUBLISHED`, `CLOSED`, `ARCHIVED` |
-| Registration | `REGISTERED`, `CANCELLED` |
+| Registration | `PENDING`, `REGISTERED`, `REJECTED`, `CANCELLED` |
 | Committee application | `SUBMITTED`, `SHORTLISTED`, `INTERVIEW`, `ACCEPTED`, `REJECTED`, `WITHDRAWN` |
 | Sponsor prospect | `PLANNED`, `CONTACTED`, `NEGOTIATING`, `AGREED`, `DECLINED` |
 | Sponsor benefit | `PLANNED`, `VERIFIED` |

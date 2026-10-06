@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import type { FormFieldType, Registrant, RegistrationForm } from "@/contracts/participation";
 import { ApiError, errorMessage } from "@/lib/api-client";
@@ -8,6 +9,8 @@ import { formatPrice } from "@/lib/money";
 import { useResource } from "@/lib/use-resource";
 import { Badge, Breadcrumb, DataTable, EmptyState, Notice, PageHeader, ProtectedPage, SkeletonCards, StatGrid, TabPanel, Tabs, uiStyles, useTabsId, useToast, type Column } from "@/lib/ui";
 import { Icon } from "@/lib/ui/icons";
+import { RegistrantReview } from "./registrant-review";
+import { statusLabel, statusTone } from "./registration-status";
 import { getOwnRegistrationForm, getRegistrants, saveRegistrationForm } from "./services/registration-service";
 import styles from "./organizer-registration.module.css";
 
@@ -28,13 +31,15 @@ function Page({ id }: { id: string }) {
   if (board.status === "error" || form.status === "error") return <Notice error>{errorMessage(board.error ?? form.error)} <button type="button" className={uiStyles.secondary} onClick={() => { board.reload(); form.reload(); }}>Coba lagi</button></Notice>;
   if (!board.data || !form.data) return null;
   const active = board.data.items.filter((item) => item.status === "REGISTERED");
+  const pending = board.data.items.filter((item) => item.status === "PENDING");
   return <>
     <Breadcrumb href={`/events/${id}`} parent={board.data.eventTitle} current="Pendaftaran" />
     <PageHeader title="Pendaftaran peserta." action={<ExportButton title={board.data.eventTitle} items={board.data.items} />}>Lihat siapa yang mendaftar, atur harga tiket, dan tentukan pertanyaan yang harus diisi peserta.</PageHeader>
-    <StatGrid label="Ringkasan pendaftaran" items={[{ label: "peserta terdaftar", value: active.length }, { label: "QR terkirim", value: active.filter((item) => item.qrIssued).length }]} />
-    <Tabs idBase={base} label="Bagian pendaftaran" value={tab} onChange={setTab} items={[{ key: "peserta", label: "Peserta" }, { key: "form", label: "Harga dan form" }]} />
+    <StatGrid label="Ringkasan pendaftaran" items={[{ label: "peserta terdaftar", value: active.length }, ...(board.data.priceIdr > 0 || pending.length ? [{ label: "menunggu konfirmasi", value: pending.length }] : []), { label: "QR terkirim", value: active.filter((item) => item.qrIssued).length }]} />
+    <p><Link className={uiStyles.secondary} href={`/events/${id}/scan`}><Icon name="qr" size={18} />Scan QR peserta</Link></p>
+    <Tabs idBase={base} label="Bagian pendaftaran" value={tab} onChange={setTab} items={[{ key: "peserta", label: "Peserta" }, { key: "hadir", label: "Hadir" }, { key: "form", label: "Harga dan form" }]} />
     <TabPanel idBase={base} value={tab}>
-      {tab === "peserta" ? <Registrants items={board.data.items} price={board.data.priceIdr} />
+      {tab === "hadir" && !board.data.items.some((item) => item.checkedInAt) ? <EmptyState title="Belum ada peserta hadir.">Scan QR tiket peserta untuk mencatat kehadiran jika modul kehadiran aktif.</EmptyState> : tab !== "form" ? <Registrants eventId={id} items={tab === "hadir" ? board.data.items.filter((item) => item.checkedInAt) : board.data.items} price={board.data.priceIdr} onChanged={board.reload} />
         : <FormEditor id={id} form={form.data} onSaved={() => { form.reload(); board.reload(); }} />}
     </TabPanel>
   </>;
@@ -49,27 +54,33 @@ function ExportButton({ title, items }: { title: string; items: Registrant[] }) 
       return value.startsWith("data:") ? "Gambar diunggah (lihat di PartnerHub)" : value;
     };
     downloadXlsx(`peserta-${fileSlug(title)}.xlsx`, [{ name: "Peserta", rows: [
-      ["No", "Nama", "Referensi tiket", "Status", "Waktu daftar", "QR terkirim", ...labels],
-      ...items.map((item, index) => [index + 1, item.name, item.ticketReference, item.status === "REGISTERED" ? "Terdaftar" : "Dibatalkan", exportTime(item.createdAt), item.qrIssued ? "Ya" : "Belum", ...labels.map((label) => answer(item, label))]),
+       ["No", "Nama", "Referensi tiket", "Status", "Waktu daftar", "QR terkirim", "Waktu hadir", ...labels],
+      ...items.map((item, index) => [index + 1, item.name, item.ticketReference, statusLabel[item.status], exportTime(item.createdAt), item.qrIssued ? "Ya" : "Belum", item.checkedInAt ? exportTime(item.checkedInAt) : "Belum hadir", ...labels.map((label) => answer(item, label))]),
     ] }]);
     toast(`${items.length} peserta diekspor ke Excel.`);
   }
   return <button type="button" className={uiStyles.secondary} onClick={run} disabled={!items.length}><Icon name="download" size={18} />Ekspor Excel</button>;
 }
 
-function Registrants({ items, price }: { items: Registrant[]; price: number }) {
+function Registrants({ eventId, items, price, onChanged }: { eventId: string; items: Registrant[]; price: number; onChanged: () => void }) {
+  const [reviewId, setReviewId] = useState<string | null>(null);
+  const reviewing = items.find((item) => item.id === reviewId);
   const columns: readonly Column<Registrant>[] = [
     { key: "name", header: "Nama", sortValue: (row) => row.name, render: (row) => <strong>{row.name}</strong> },
     { key: "ref", header: "Referensi tiket", render: (row) => <span className={styles.mono}>{row.ticketReference}</span> },
-    { key: "status", header: "Status", sortValue: (row) => row.status, render: (row) => <Badge tone={row.status === "REGISTERED" ? "success" : "neutral"}>{row.status === "REGISTERED" ? "Terdaftar" : "Dibatalkan"}</Badge> },
+    { key: "status", header: "Status", sortValue: (row) => row.status, render: (row) => <Badge tone={statusTone[row.status]}>{statusLabel[row.status]}</Badge> },
     { key: "when", header: "Waktu daftar", sortValue: (row) => row.createdAt, render: (row) => exportTime(row.createdAt) },
     { key: "qr", header: "QR", sortValue: (row) => Number(row.qrIssued), render: (row) => row.qrIssued ? "Terkirim" : "Belum" },
-    { key: "answers", header: "Jawaban form", render: (row) => row.answers.length ? <details><summary>Lihat {row.answers.length} jawaban</summary><dl className={styles.answers}>{row.answers.map((entry) => <div key={entry.fieldId}><dt>{entry.label}</dt><dd>{entry.type === "image" ? <a href={entry.value} target="_blank" rel="noopener noreferrer">Buka gambar</a> : entry.value}</dd></div>)}</dl></details> : <span className={styles.muted}>Tidak ada</span> },
+    { key: "attendance", header: "Kehadiran", render: (row) => row.checkedInAt ? <span>Hadir · {exportTime(row.checkedInAt)}</span> : "Belum hadir" },
+    { key: "review", header: "Bukti dan jawaban", render: (row) => row.answers.length || row.status === "PENDING"
+      ? <button type="button" className={row.status === "PENDING" ? uiStyles.primary : uiStyles.secondary} aria-haspopup="dialog" aria-label={`${row.status === "PENDING" ? "Tinjau" : "Lihat"} pendaftaran ${row.name}`} onClick={() => setReviewId(row.id)}>{row.status === "PENDING" ? "Tinjau" : "Lihat"}</button>
+      : <span className={styles.muted}>Tidak ada</span> },
   ];
   if (!items.length) return <EmptyState title="Belum ada peserta.">Peserta muncul di sini setelah mereka mendaftar lewat form acaramu.</EmptyState>;
   return <>
     <p className={styles.muted}>Harga tiket saat ini {formatPrice(price)}. Hanya nama tampilan yang dibagikan, email dan nomor telepon peserta tidak.</p>
     <DataTable caption="Peserta acara" columns={columns} rows={items} rowKey={(row) => row.id} />
+    {reviewing && <RegistrantReview key={reviewing.id} eventId={eventId} item={reviewing} onClose={() => setReviewId(null)} onChanged={onChanged} />}
   </>;
 }
 

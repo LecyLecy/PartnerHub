@@ -8,7 +8,9 @@
 .ticketList > li:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
 
 .ticketList > li { overflow: hidden; }
-.ticketList > li[data-status=CANCELLED] { opacity: .75; }
+.ticketList > li[data-status=CANCELLED], .ticketList > li[data-status=REJECTED] { opacity: .85; }
+.ticketList .statusNote { margin: 0; padding: var(--space-3) var(--space-6); border-top: var(--border-width) solid var(--line); background: var(--warning-surface); color: var(--navy); font-size: var(--text-caption); }
+.ticketList .statusNote[data-tone=danger] { background: var(--error-surface); }
 .ticketMain { padding: var(--space-6); display: grid; justify-items: start; gap: var(--space-2); }
 .ticketList h3 { margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
 .ticketList p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }

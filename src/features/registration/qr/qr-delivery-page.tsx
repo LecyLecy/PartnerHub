@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import { useState } from "react";
 import { errorMessage } from "@/lib/api-client";
 import { useResource } from "@/lib/use-resource";
@@ -30,6 +31,7 @@ function Delivery({ id }: { id: string }) {
     finally { setBusy(false); }
   }
   return <>
+    <p><Link className={uiStyles.secondary} href={`/events/${id}/scan`}><Icon name="qr" size={18} />Scan QR peserta</Link></p>
     <Breadcrumb href={`/events/${id}`} parent={data.eventTitle} current="QR tiket" />
     <PageHeader title="QR tiket peserta.">Buat QR masuk untuk setiap peserta yang terdaftar, lalu kirim. Peserta membukanya lewat tombol Tampilkan QR di halaman tiket mereka.</PageHeader>
     {!data.eventPublished && <Notice>QR hanya bisa dikirim untuk acara yang terpublikasi. Publikasi acara masih dalam pengembangan.</Notice>}

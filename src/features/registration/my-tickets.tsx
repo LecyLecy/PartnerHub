@@ -4,6 +4,7 @@ import { formatPrice } from "@/lib/money";
 import { eventWhen } from "@/lib/public-events";
 import { useResource } from "@/lib/use-resource";
 import { Badge, EmptyState, Notice, SkeletonCards, uiStyles } from "@/lib/ui";
+import { statusLabel, statusTone } from "./registration-status";
 import { TicketQr } from "./qr/ticket-qr-dialog";
 import { listMyRegistrations } from "./services/registration-service";
 import styles from "./me.module.css";
@@ -18,11 +19,13 @@ export function MyTickets() {
       : !tickets.data?.length ? <EmptyState title="Belum ada tiket." href="/me" action="Lihat acara">Daftar ke sebuah acara. Tiketmu muncul di sini.</EmptyState>
       : <ul className={styles.ticketList}>{tickets.data.map((item) => <li key={item.id} data-status={item.status}>
         <div className={styles.ticketMain}>
-          <Badge tone={item.status === "REGISTERED" ? "success" : "neutral"}>{item.status === "REGISTERED" ? "Terdaftar" : "Dibatalkan"}</Badge>
+          <Badge tone={statusTone[item.status]}>{statusLabel[item.status]}</Badge>
           <h3>{item.event.title}</h3>
           <p>{eventWhen(item.event.startsAt)}{item.event.venue ? ` · ${item.event.venue}` : ""}</p>
           <p>{formatPrice(item.priceIdr)}</p>
         </div>
+        {item.status === "PENDING" && <p className={styles.statusNote}>Penyelenggara sedang memeriksa bukti pembayaranmu. QR belum tersedia sampai dikonfirmasi.</p>}
+        {item.status === "REJECTED" && <p className={styles.statusNote} data-tone="danger">Pembayaran ditolak{item.note ? `: ${item.note}` : "."} Daftar lagi dari halaman <a href="/me">Acara</a> dengan bukti baru.</p>}
         <p className={styles.reference}>Referensi tiket <strong>{item.ticketReference}</strong></p>
         {item.status === "REGISTERED" && <div className={styles.ticketActions}><TicketQr registrationId={item.id} title={item.event.title} reference={item.ticketReference} sent={item.qrIssued} /></div>}
       </li>)}</ul>}

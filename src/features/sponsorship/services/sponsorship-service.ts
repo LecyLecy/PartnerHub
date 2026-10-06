@@ -11,6 +11,16 @@ const sponsorship = z.object({
   benefits: z.array(z.object({ id: z.string().min(1), label: z.string().max(200), status: z.enum(["PLANNED", "VERIFIED"]) })).max(50),
 });
 
+const incomingProposal = proposal.extend({ sponsorName: z.string().max(120) });
+export type IncomingProposal = z.infer<typeof incomingProposal>;
+
+export async function listEventProposals(eventId: string, signal: AbortSignal): Promise<IncomingProposal[]> {
+  // TODO(backend): GET /api/events/:id/sponsor-proposals -> {items:[Proposal & {sponsorName}]}, newest first. Event owner only; foreign or missing events return 404. No sponsor email, owner id, or contact details.
+  const result = z.object({ items: z.array(incomingProposal).max(500) }).safeParse(await apiRequest<unknown>(`/api/events/${encodeURIComponent(eventId)}/sponsor-proposals`, { signal }));
+  if (!result.success || result.data.items.some((item) => item.eventId !== eventId)) throw new ApiError("Daftar proposal masuk tidak dapat dibaca.", 0, "INVALID_RESPONSE");
+  return result.data.items;
+}
+
 export async function listProposals(_key: string, signal: AbortSignal): Promise<Proposal[]> {
   // TODO(backend): GET /api/sponsor/proposals -> 200 {items:[{id,eventId,eventTitle,category,offer,amountLabel,status,createdAt}]}. Proposals of the signed-in sponsor only. 403 for other roles or an account not yet approved.
   const result = z.object({ items: z.array(proposal).max(500) }).safeParse(await apiRequest<unknown>("/api/sponsor/proposals", { signal }));

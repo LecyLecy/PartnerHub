@@ -16,10 +16,10 @@ import styles from "../ui.module.css";
 
 const roleLinks = {
   user: [{ href: "/me", label: "Acara" }, { href: "/committee", label: "Panitia" }],
-  organizer: [{ href: "/organizer", label: "Event kamu" }, { href: "/events/new", label: "Susun event" }],
+  organizer: [{ href: "/organizer", label: "Event kamu" }, { href: "/organizer/sponsorship", label: "Status sponsor" }],
   sponsor: [{ href: "/sponsor", label: "Sponsorship" }, { href: "/sponsor/proposals/new", label: "Kirim proposal" }],
 } as const;
-const linkIcons = { "/me": "ticket", "/me/events": "calendar", "/committee": "users", "/organizer": "calendar", "/events/new": "plus", "/sponsor": "briefcase", "/sponsor/proposals/new": "plus", "/account/verification": "shield" } as const;
+const linkIcons = { "/me": "ticket", "/me/events": "calendar", "/committee": "users", "/organizer": "calendar", "/organizer/sponsorship": "briefcase", "/events/new": "plus", "/sponsor": "briefcase", "/sponsor/proposals/new": "plus", "/account/verification": "shield" } as const;
 
 export function SiteFrame({ children }: { children: ReactNode }) {
   const auth = useSession();
@@ -40,7 +40,7 @@ export function SiteFrame({ children }: { children: ReactNode }) {
     catch (error) { setError(errorMessage(error)); }
     finally { setBusy(false); }
   }
-  const current = (href: string) => (pathname === href || (href !== "/events/new" && href !== "/me" && pathname.startsWith(`${href}/`)) || (href === "/organizer" && pathname.startsWith("/events") && pathname !== "/events/new")) ? "page" : undefined;
+  const current = (href: string) => (pathname === href || (href !== "/events/new" && href !== "/me" && href !== "/organizer" && pathname.startsWith(`${href}/`)) || (href === "/organizer" && pathname.startsWith("/events/"))) ? "page" : undefined;
   useEffect(() => {
     if (!canSearch) return;
     const onKey = (event: KeyboardEvent) => {
@@ -53,13 +53,14 @@ export function SiteFrame({ children }: { children: ReactNode }) {
     if (!canSearch) return [];
     const pages = links.map((link) => ({ id: link.href, label: link.label, group: "Halaman", icon: linkIcons[link.href as keyof typeof linkIcons], href: link.href }));
     return [...pages,
+      ...(session?.account.role === "organizer" ? [{ id: "new-event", label: "Susun event baru", group: "Aksi", icon: "plus" as const, href: "/events/new" }] : []),
       ...(session?.account.role === "user" ? [{ id: "my-events", label: "Acara saya", group: "Akun", icon: "calendar" as const, href: "/me/events", keywords: "tiket qr lamaran panitia terdaftar" }] : []),
       { id: "settings", label: "Profil & pengaturan", group: "Akun", icon: "settings", href: "/settings", keywords: "settings akun profil" },
       { id: "logout", label: "Keluar", group: "Akun", icon: "logout", run: () => void leave(), keywords: "logout keluar" }];
     // leave is recreated each render but only reads the latest auth; links derive from the session role.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canSearch, session?.account.role, underReview]);
-  const organizerShell = session?.account.role === "organizer" && session.emailVerified && !underReview && (pathname === "/organizer" || pathname.startsWith("/events/") || pathname === "/settings");
+  const organizerShell = session?.account.role === "organizer" && session.emailVerified && !underReview && (pathname === "/organizer" || pathname.startsWith("/organizer/") || pathname.startsWith("/events/") || pathname === "/settings");
   const palette = canSearch ? <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} items={items} /> : null;
   if (organizerShell && session) return <>
     <OrganizerShell session={session} pathname={pathname} isCurrent={current} busy={busy} error={error} onLeave={() => void leave()} onSearch={() => setPaletteOpen(true)} shortcut={shortcut}>{children}</OrganizerShell>
@@ -68,7 +69,8 @@ export function SiteFrame({ children }: { children: ReactNode }) {
   const isParticipant = session?.account.role === "user";
   const myEventsItem = [{ href: "/me/events", label: "Acara saya", icon: "calendar" as const }];
   const label = session ? session.account.displayName?.trim() || roleLabel[session.account.role] : "";
-  const signedInLinks = links.map((link) => ({ ...link, current: current(link.href) === "page" }));
+  // Sponsors reach their pages through the logo, dashboard buttons and the command palette, so the header stays clear.
+  const signedInLinks = session?.account.role === "sponsor" && !underReview ? [] : links.map((link) => ({ ...link, current: current(link.href) === "page" }));
   const header = session
     ? <SiteHeader
         brandHref={homeFor(session)}
@@ -103,4 +105,3 @@ export function SiteFrame({ children }: { children: ReactNode }) {
     {palette}
   </div>;
 }
-

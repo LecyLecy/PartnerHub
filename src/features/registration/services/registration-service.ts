@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { ApiError, apiRequest } from "@/lib/api-client";
-import type { MyRegistration, QrDelivery, RegistrantBoard, RegistrationAnswers, RegistrationForm, RegistrationFormInput, TicketQr } from "@/contracts/participation";
+import type { MyRegistration, QrDelivery, Registrant, RegistrantBoard, RegistrationAnswers, RegistrationDecision, RegistrationForm, RegistrationFormInput, TicketQr } from "@/contracts/participation";
 
 const schema = z.object({
-  id: z.string().min(1), ticketReference: z.string().regex(/^[A-Z0-9-]{6,40}$/), status: z.enum(["REGISTERED", "CANCELLED"]),
+  id: z.string().min(1), ticketReference: z.string().regex(/^[A-Z0-9-]{6,40}$/), status: z.enum(["PENDING", "REGISTERED", "REJECTED", "CANCELLED"]), note: z.string().max(200).nullable().default(null),
   createdAt: z.iso.datetime({ offset: true }), qrIssued: z.boolean().default(false), priceIdr: z.number().int().min(0).default(0),
   event: z.object({ id: z.string().min(1), title: z.string().max(100), startsAt: z.iso.datetime({ offset: true }).nullable(), venue: z.string().max(150) }),
 });
@@ -93,7 +93,8 @@ export async function uploadRegistrationImage(eventId: string, file: Blob, name:
 const registrantSchema = z.object({
   eventTitle: z.string().max(100), priceIdr: z.number().int().min(0),
   items: z.array(z.object({
-    id: z.string().min(1), name: z.string().max(120), ticketReference: z.string().max(40), status: z.enum(["REGISTERED", "CANCELLED"]), createdAt: z.iso.datetime({ offset: true }), qrIssued: z.boolean(),
+    id: z.string().min(1), name: z.string().max(120), ticketReference: z.string().max(40), status: z.enum(["PENDING", "REGISTERED", "REJECTED", "CANCELLED"]), note: z.string().max(200).nullable().default(null), createdAt: z.iso.datetime({ offset: true }), qrIssued: z.boolean(),
+    checkedInAt: z.iso.datetime({ offset: true }).nullable().default(null),
     answers: z.array(z.object({ fieldId: z.string(), label: z.string().max(100), type: z.enum(["text", "longtext", "choice", "image"]), value: z.string().max(3_000_000) })).max(10),
   })).max(5000),
 });
@@ -102,5 +103,13 @@ export async function getRegistrants(eventId: string, signal?: AbortSignal): Pro
   // TODO(backend): GET /api/events/:id/registrants -> RegistrantBoard. Owner only. Shares display name, ticket reference, status, and the answers to that event's own form. Never the email or phone.
   const result = registrantSchema.safeParse(await apiRequest<unknown>(`/api/events/${encodeURIComponent(eventId)}/registrants`, { signal }));
   if (!result.success) throw new ApiError("Daftar peserta tidak dapat dibaca.", 0, "INVALID_RESPONSE");
+  return result.data;
+}
+
+export async function decideRegistrant(eventId: string, registrationId: string, input: RegistrationDecision): Promise<Registrant> {
+  // TODO(backend): POST /api/events/:id/registrants/:registrationId/decision {decision:"CONFIRM"|"REJECT", note?} -> 200 Registrant. Owner only. Allowed only from PENDING (409 NOT_PENDING otherwise). CONFIRM rechecks capacity (409 EVENT_FULL). REJECT stores an optional reason (max 200) and notifies the participant, who may register again. Payment proof images are personal data: owner and uploader only, no public URL, no logging.
+  const body = await apiRequest<unknown>(`/api/events/${encodeURIComponent(eventId)}/registrants/${encodeURIComponent(registrationId)}/decision`, { method: "POST", body: input });
+  const result = registrantSchema.shape.items.element.safeParse(body);
+  if (!result.success) throw new ApiError("Keputusan belum dapat dibaca.", 0, "INVALID_RESPONSE");
   return result.data;
 }

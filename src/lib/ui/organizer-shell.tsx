@@ -10,8 +10,7 @@ import styles from "../ui.module.css";
 import shell from "./role-shell.module.css";
 
 const groups: readonly { title: string; items: readonly { href: string; label: string; icon: IconName }[] }[] = [
-  { title: "Menu utama", items: [{ href: "/organizer", label: "Event kamu", icon: "calendar" }, { href: "/events/new", label: "Susun event", icon: "plus" }] },
-  { title: "Akun", items: [{ href: "/settings", label: "Settings", icon: "settings" }] },
+  { title: "Menu utama", items: [{ href: "/organizer", label: "Event kamu", icon: "calendar" }, { href: "/organizer/sponsorship", label: "Status sponsor", icon: "briefcase" }] },
 ];
 
 /** Sidebar and top bar for organizer work routes. All data shown comes from the session the caller already holds. */
@@ -29,7 +28,7 @@ export function OrganizerShell({ session, pathname, isCurrent, busy, error, onLe
     return () => document.removeEventListener("keydown", escape);
   }, [drawer]);
   const name = session.account.displayName || "Penyelenggara";
-  const section = pathname === "/settings" ? "Pengaturan akun" : pathname.startsWith("/events/") ? "Persiapan acara" : "Overview acara";
+  const section = pathname === "/settings" ? "Pengaturan akun" : pathname.startsWith("/organizer/sponsorship") ? "Status sponsor" : pathname.startsWith("/events/") ? "Persiapan acara" : "Overview acara";
   return <div className={shell.workspace}>
     <a className={styles.skip} href="#main-content">Langsung ke konten</a>
     <div className={shell.scrim} data-open={drawer} aria-hidden="true" onClick={() => setDrawer(false)} />
@@ -41,7 +40,7 @@ export function OrganizerShell({ session, pathname, isCurrent, busy, error, onLe
       <nav aria-label="Navigasi utama">
         {groups.map((group, groupIndex) => <div key={group.title} className={shell.group}>
           <h2>{group.title}</h2>
-          {group.items.map((item, index) => <Link key={item.href} ref={groupIndex === 0 && index === 0 ? firstLink : undefined} href={item.href} aria-current={item.href === "/settings" ? (pathname === "/settings" ? "page" : undefined) : isCurrent(item.href)}><Icon name={item.icon} /><span className={shell.label}>{item.label}</span></Link>)}
+          {group.items.map((item, index) => <Link key={item.href} ref={groupIndex === 0 && index === 0 ? firstLink : undefined} href={item.href} aria-current={isCurrent(item.href)} onClick={() => setDrawer(false)}><Icon name={item.icon} /><span className={shell.label}>{item.label}</span></Link>)}
         </div>)}
       </nav>
       <div className={shell.sidebarFoot}>

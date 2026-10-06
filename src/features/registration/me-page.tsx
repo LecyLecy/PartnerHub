@@ -14,7 +14,7 @@ function Me() {
   const tickets = useResource("tickets", listMyRegistrations);
   const events = useResource("public-events", listPublicEvents);
   const toast = useToast();
-  const registeredIds = new Set((tickets.data ?? []).filter((item) => item.status === "REGISTERED").map((item) => item.event.id));
+  const registeredIds = new Set((tickets.data ?? []).filter((item) => item.status === "REGISTERED" || item.status === "PENDING").map((item) => item.event.id));
   // Events the participant already joined live under "Acara saya", so they leave this catalog.
   const open = (events.data ?? []).filter((item) => !registeredIds.has(item.id));
   const ready = events.status === "success" && tickets.status === "success";
@@ -28,7 +28,7 @@ function Me() {
         : !ready ? <SkeletonCards label="Memuat acara…" count={3} />
         : !open.length ? <EmptyState title={events.data?.length ? "Kamu sudah mengikuti semua acara yang dibuka." : "Belum ada acara terbuka."} href="/me/events" action="Lihat acara saya">{events.data?.length ? "Tiket dan lamaran panitiamu ada di Acara saya." : "Acara yang dipublikasikan penyelenggara akan muncul di sini."}</EmptyState>
         : <EventGrid>{open.map((item, index) => <EventCard key={item.id} event={item} tone={index}
-          actions={(close) => <RegisterForm event={item} onDone={() => { close(); toast("Pendaftaran berhasil. Tiketmu ada di Acara saya."); tickets.reload(); events.reload(); }} />} />)}</EventGrid>}
+          actions={(close) => <RegisterForm event={item} onDone={(registration) => { close(); toast(registration.status === "PENDING" ? "Bukti terkirim. Menunggu konfirmasi penyelenggara." : "Pendaftaran berhasil. Tiketmu ada di Acara saya."); tickets.reload(); events.reload(); }} />} />)}</EventGrid>}
     </section>
   </>;
 }
