@@ -1,0 +1,20 @@
+/* The code is always black on white, whatever the theme, so phone cameras can read it. */
+.qr { display: block; width: min(18rem, 100%); aspect-ratio: 1; height: auto; margin-inline: auto; border: var(--border-width) solid var(--line); border-radius: var(--radius-control); background: #fff; }
+.dialog { width: min(24rem, calc(100vw - 2rem)); margin: auto; padding: var(--space-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); background: var(--surface); color: var(--navy); box-shadow: var(--shadow-3); }
+.dialog[open] { animation: qr-in var(--dur-base) var(--ease-out) both; }
+.dialog::backdrop { background: #16274873; }
+.dialog h2 { margin: 0 0 var(--space-1); font-size: var(--text-h3); padding-right: 3rem; }
+.dialog p { margin: var(--space-2) 0 var(--space-4); color: var(--muted); font-size: var(--text-caption); overflow-wrap: anywhere; }
+.close { position: absolute; top: var(--space-3); right: var(--space-3); display: grid; place-items: center; width: var(--touch-min); height: var(--touch-min); border: var(--border-width) solid var(--line); border-radius: var(--radius-control); background: var(--surface); color: var(--navy); }
+.close:hover { background: var(--subtle); }
+.reference { margin: var(--space-4) 0 0 !important; text-align: center; font-variant-numeric: tabular-nums; }
+.state { display: flex; align-items: center; gap: var(--space-3); min-height: 12rem; justify-content: center; color: var(--muted); }
+@keyframes qr-in { from { opacity: 0; transform: translateY(.75rem) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dialog[open] { animation: none; } }
+
+.panel { display: grid; gap: var(--space-4); justify-items: start; max-width: var(--form-width); padding: var(--space-8); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); background: var(--surface); box-shadow: var(--shadow-1); }
+.panel h2 { margin: 0; font-size: var(--text-h3); }
+.panel p { margin: 0; color: var(--muted); }
+.panel > span { width: 100%; }
+.fine { font-size: var(--text-caption); }
+.waiting { margin: 0; color: var(--muted); font-size: var(--text-caption); }

@@ -1,3 +1,5 @@
+import { getHealthStatus } from "@/backend/health/service";
+
 export function GET() {
-  return Response.json({ service: "partnerhub", status: "ok", stage: "foundation" });
+  return Response.json(getHealthStatus());
 }

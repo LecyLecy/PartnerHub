@@ -5,10 +5,11 @@ Read this first. Use `ARCHITECTURE.md` for complete detail.
 ## Product guardrails
 
 - First-version product: event setup, reusable participant profiles, event-specific forms, committee recruitment, optional QR entry, and sponsorship benefit evidence.
-- Accounts may hold different roles in different events. Do not add a permanent global account classification.
+- Each account has one account role (user, organizer, sponsor) chosen at registration, plus an approval status (`active`, `pending_verification`, `rejected`). Organizer and sponsor accounts need admin approval. Event-level roles such as committee membership stay event-scoped. Frontend guards only steer navigation; every API must enforce role, status and ownership.
+- Demo mode is a build-time flag (`NEXT_PUBLIC_PARTNERHUB_DEMO=1`). Demo code and fictional data live only in `src/mocks/demo` and are imported through flag-guarded dynamic imports. `next.config.ts` pins the default to `0`. Verified by searching `.next/static`: with the variable unset or `0` no demo strings are emitted; with `1` three demo chunks are emitted.
 - Collect personal data only when necessary, with clear consent and retention rules.
 - QR contains only a ticket reference plus opaque secret.
-- Payments, file uploads, chat, sponsor matching, matching notifications, marketplace, and committee task management are deferred.
+- Payments, document uploads, chat, sponsor matching, matching notifications, marketplace, and committee task management are deferred. User-uploaded event/organizer/sponsor-display logos are approved frontend scope; server image storage is In progress.
 - The current Prisma schema covers the earlier anonymous-registration foundation. Account and committee persistence changes are **In progress**.
 
 ## Stack
@@ -16,23 +17,35 @@ Read this first. Use `ARCHITECTURE.md` for complete detail.
 - Next.js 16 App Router, React 19, TypeScript.
 - Tailwind CSS 4 for interface styling.
 - Route Handlers for server endpoints.
-- PostgreSQL plus Prisma ORM for persistence and migrations.
+- Supabase-hosted PostgreSQL plus Prisma ORM for persistence and migrations. Actual database connection is **In progress**. No Supabase Auth, SDK, or Edge Functions are configured.
 - Zod at server boundaries.
-- Authentication approach is **In progress**.
+- Approved frontend authentication: email/password, email verification, emailed single-use recovery, optional display name. Backend provider, session/token lifetimes, retention and deletion are **In progress** and block real-data release.
 
 ## Boundaries
 
 ```text
 src/app       routes and page composition
-src/features  account, event, registration, committee, attendance, sponsorship behavior
-src/lib       shared server utilities, authentication, and validation
+src/features  frontend UI, client state, and API calls per feature
+src/backend   server-only services and Prisma access per feature
+src/contracts agreed shared API transport types
+src/lib       shared frontend-safe utilities
 prisma        database schema and migrations
 tests         focused unit, integration, and flow tests
 ```
 
-Pages never query the database directly. Route handlers validate input, call feature logic, and return a response. Feature logic owns authorization, state transitions, and Prisma access.
+Pages never query the database directly. Route handlers validate input, call backend feature logic, and return a response. Backend feature logic owns authorization, state transitions, and Prisma access. Frontend features never import backend modules. Backend runtime entry modules import `server-only`.
+
+Before editing, ask the user which feature and layer to develop and confirm allowed files. Never edit or import another feature's internals. Shared schema, contracts, dependencies, and infrastructure require separate approval. Use separate branches and isolated checkouts for parallel development. Run `npm run lint` and `npm run test:boundaries`; also review changed paths against the agreed scope.
+
+Supabase runtime connection uses `DATABASE_URL`; Prisma migration connection uses `DIRECT_URL`. Keep credentials server-only. Supabase Auth is not configured. Frontend credential fields are approved; backend privacy/lifecycle decisions remain open.
+
+### Earlier browser-only implementation (superseded by connected frontend revision)
+
+The event frontend saves one draft with user-selected logo blobs in IndexedDB (`partnerhub-event-drafts`, `drafts`, `current`) only on explicit save. Restore validates details/branding and decodes logos; legacy v1 localStorage text drafts remain readable. Confirmed delete removes only these draft records. Raster limit: PNG/JPEG/WebP, 2 MB and 4096px per axis, up to six sponsor-display entries. No server uploads, backend calls, publishing or real module activation. User identity is per organizer/event, never hard-coded. The route composes workspace/event through a ReactNode slot without cross-feature internal imports. See complete architecture for retention, same-day WIB limits and `todobackend.md` for release blockers.
 
 ## Data direction
+
+Connected frontend routes use typed feature services and shared HTTP/session utilities. No production mock fallback, browser auth token storage, or component-level fetching. Guards provide UX only; APIs must authorize every action. Incomplete event drafts require backend/schema changes outside this frontend task. See the connected frontend revision in the complete architecture and `todobackend.md`.
 
 `prisma/schema.prisma` remains authoritative for implemented persistence. Current records cover events, anonymous registrations, attendance, sponsorship, and timeline history. The approved target model adds:
 

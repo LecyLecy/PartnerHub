@@ -1,0 +1,39 @@
+.wrap { max-width: var(--content-width); margin: auto; }
+.intro h1 { font-size: var(--text-h1); margin: 0; }
+.intro p { color: var(--muted); max-width: var(--reading-width); margin: var(--space-3) 0 var(--space-8); }
+.cards { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-4); }
+.card { min-width: 0; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-section); background: var(--surface); color: var(--navy); }
+.card svg { width: var(--space-8); height: var(--space-8); }
+.card h2 { font-size: var(--text-h2); margin: 0; }
+.card p { margin: 0; color: var(--muted); }
+.card ul { margin: 0 0 var(--space-4); padding-left: var(--space-6); color: var(--muted); font-size: var(--text-caption); }
+.card li + li { margin-top: var(--space-2); }
+.chooseRole { width: 100%; min-height: var(--control-height); margin-top: auto; padding: var(--space-3) var(--space-4); border: var(--border-width) solid var(--control-border); border-radius: var(--radius-control); background: var(--surface); color: var(--navy); font-weight: var(--weight-label); }
+.chooseRole:hover { background: var(--subtle); border-color: var(--navy); }
+.approvalNote { margin-block: var(--space-6) var(--space-2); max-width: var(--reading-width); color: var(--muted); font-size: var(--text-caption); }
+.links { display: flex; gap: var(--space-4) var(--space-8); flex-wrap: wrap; align-items: center; }
+.links a { display: inline-flex; min-height: var(--touch-min); align-items: center; }
+.formWrap { max-width: var(--form-width); margin-inline: auto; }
+.formWrap h1 { font-size: var(--text-h1); margin: var(--space-6) 0 0; }
+.roleBar { padding-bottom: var(--space-4); border-bottom: var(--border-width) solid var(--line); margin-bottom: var(--space-6); }
+.roleLabel { margin: 0 0 var(--space-3); font-weight: var(--weight-label); }
+.roleHelp { margin: var(--space-3) 0 0; font-size: var(--text-caption); color: var(--muted); }
+.roleChoices { display: grid; gap: var(--space-2); }
+.roleButton { min-height: var(--control-height); padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--control-border); border-radius: var(--radius-control); background: var(--surface); color: var(--navy); font-size: var(--text-caption); }
+.roleButton:hover:not(:disabled) { background: var(--subtle); }
+.roleButton[aria-pressed=true] { background: var(--navy); color: var(--surface); border-color: var(--navy); font-weight: var(--weight-label); }
+.roleFeedback { margin: 0 0 var(--space-4); color: var(--success); font-size: var(--text-caption); }
+@media (min-width: 40rem) { .roleChoices { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.stepBody { display: flex; flex-direction: column; gap: var(--space-6); margin-block: var(--space-6); }
+.fieldGroup { display: grid; gap: var(--space-6); margin: 0; padding: var(--space-6) 0 0; border: 0; border-top: var(--border-width) solid var(--line); min-width: 0; }
+.fieldGroup legend { font-family: var(--font-heading), sans-serif; font-size: var(--text-h3); font-weight: var(--weight-label); padding: 0 var(--space-3) 0 0; }
+.fieldPair { display: grid; gap: var(--space-6); }
+.summary { margin: 0; display: grid; gap: 0; }
+.summary div { display: grid; gap: var(--space-1); padding: var(--space-3) 0; border-top: var(--border-width) solid var(--line); min-width: 0; }
+.summary dt { color: var(--muted); font-size: var(--text-caption); }
+.summary dd { margin: 0; overflow-wrap: anywhere; }
+.actions { display: flex; justify-content: space-between; gap: var(--space-3); flex-wrap: wrap; align-items: center; border-top: var(--border-width) solid var(--line); padding-top: var(--space-6); }
+.back { min-height: var(--control-height); padding: var(--space-3) var(--space-6); border: var(--border-width) solid var(--control-border); border-radius: var(--radius-control); background: var(--surface); color: var(--navy); font-weight: var(--weight-label); }
+.draftNote { color: var(--muted); font-size: var(--text-caption); margin: 0; }
+.actions + .draftNote { margin-top: var(--space-4); }
+@media (min-width: 48rem) { .cards { grid-template-columns: repeat(3, minmax(0, 1fr)); } .fieldPair { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

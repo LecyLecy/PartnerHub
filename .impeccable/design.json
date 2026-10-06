@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-05T00:00:00Z",
+  "title": "PartnerHub campus program studio",
+  "extensions": {
+    "direction": { "energy": 3, "rhythm": 2, "motion": 1, "purpose": "User-approved creative campus identity, larger text, and interactive local event drafting; supersedes the rejected admin dashboard." },
+    "breakpoints": [
+      { "name": "narrow-max", "value": "360px" },
+      { "name": "phone-max", "value": "650px" },
+      { "name": "draft-stack-max", "value": "760px" },
+      { "name": "workspace-stack-max", "value": "950px" },
+      { "name": "compact-desktop-max", "value": "1200px" }
+    ],
+    "shadows": [
+      { "name": "dialog", "value": "0 24px 80px #16274845", "purpose": "Elevate the temporary native help dialog; backdrop #101e37a8. Resting records stay flat." }
+    ],
+    "motion": [
+      { "name": "record-feedback", "value": "border-color 160ms ease-out, transform 180ms ease-out", "purpose": "Hover affordance on selectable records, translated -2px. Only enabled without reduced motion." },
+      { "name": "action-feedback", "value": "background-color 160ms ease-out", "purpose": "Immediate action state feedback; only enabled without reduced motion." }
+    ],
+    "focus": {
+      "value": "outline: 3px solid #1e54aa; outline-offset: 4px",
+      "searchValue": "outline: 3px solid #1e54aa; outline-offset: 3px",
+      "purpose": "Visible keyboard focus. Stacked event selection focuses and reveals the updated contextual heading."
+    }
+  },
+  "components": [
+    {
+      "name": "Create event action",
+      "kind": "button",
+      "refersTo": "creation-action",
+      "description": "Visual sample of the action that opens the live local event builder in the application. Static documentation samples do not implement navigation.",
+      "html": "<button type=\"button\" class=\"ds-create\">Susun event baru</button>",
+      "css": ".ds-create{font-family:Manrope,sans-serif;font-size:1rem;font-weight:600;min-height:58px;padding:17px 24px;border:1px solid #162748;border-radius:12px;background:#f5d765;color:#162748}.ds-create:hover{background:#ffe286}.ds-create:focus-visible{outline:3px solid #1e54aa;outline-offset:4px}"
+    },
+    {
+      "name": "Draft field",
+      "kind": "input",
+      "refersTo": "draft-field",
+      "description": "Larger native field, distinct border, readable placeholder. Application title participates in validation and live preview.",
+      "html": "<label class=\"ds-label\">Nama event<input class=\"ds-field\" placeholder=\"Judul event kamu\" /></label>",
+      "css": ".ds-label{display:flex;flex-direction:column;gap:8px;font-family:Manrope,sans-serif;font-size:1rem;color:#162748}.ds-field{font:inherit;min-height:56px;padding:16px;border:1px solid #7f8a9c;border-radius:10px;color:#162748;background:#fff}.ds-field::placeholder{color:#526078;opacity:1}.ds-field:focus-visible{outline:3px solid #1e54aa;outline-offset:4px}"
+    },
+    {
+      "name": "Top navigation item",
+      "kind": "nav",
+      "refersTo": "top-nav-item",
+      "description": "Labelled workspace destinations, with an active underline; no legacy navy rail.",
+      "html": "<button class=\"ds-nav\" type=\"button\" aria-current=\"page\">Event kamu</button>",
+      "css": ".ds-nav{font-family:Manrope,sans-serif;font-size:1rem;font-weight:600;min-height:48px;padding:14px 0;border:0;background:transparent;color:#526078}.ds-nav[aria-current]{color:#162748;box-shadow:inset 0 -2px 0 #162748}.ds-nav:focus-visible{outline:3px solid #1e54aa;outline-offset:4px}"
+    }
+  ]
+}

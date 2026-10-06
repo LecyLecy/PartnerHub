@@ -40,7 +40,7 @@ The first market is BEM, Himpunan, UKM, campus committees, youth communities, an
 
 - Protect one complete event lifecycle before adding broad feature coverage.
 - Collect only profile data the account holder agrees to reuse.
-- Keep roles event-specific. One account can be a participant in one event and a committee member or organizer in another.
+- Each account has one account role chosen at registration: user, organizer, or sponsor company (owner decision, 2026-10-05). This supersedes the earlier "no permanent account classification" rule. Event-level roles (committee membership, gate staff) remain event-scoped and are not account roles.
 - Never encode personal data, database identifiers, or credentials in a QR payload.
 - Make attendance configurable. The first prototype supports no scan or entry scan; exit scan remains deferred.
 - Keep sponsorship as an accountable workflow, not a speculative marketplace.
@@ -68,7 +68,7 @@ The first market is BEM, Himpunan, UKM, campus committees, youth communities, an
 - Exit scans, certificates, attendance export, and hardware integrations.
 - Committee task boards, schedules, and shifts.
 - Sponsor analytics, curated matching, and automatic matching notifications.
-- File uploads. The first version stores proposal, portfolio, and evidence URLs.
+- Document uploads. Proposal, portfolio, and evidence remain URLs. User-uploaded event, organizer, and sponsor-display logos are now an approved frontend requirement; production image storage is **In progress**.
 - Real-time chat, broad notification system, and managed sponsorship sales.
 - Public marketplace, ticket resale, complex refunds, and full accounting.
 
@@ -115,6 +115,63 @@ The first market is BEM, Himpunan, UKM, campus committees, youth communities, an
 5. Campaign closes only after incomplete benefits have been reviewed.
 
 ## Functional requirements
+
+### Approved connected frontend flow, 2026-10-05
+
+**In progress**. The owner approved frontend account/workspace/event integration and shared route/layout/style changes. Backend, API handlers, Prisma, dependencies and environment files are excluded from this task. This section supersedes the earlier browser-only navigation and unresolved frontend authentication direction.
+
+- Authentication UI uses email/password and email verification. New passwords contain 12–128 characters. Email is required; display name is optional. No phone, student identity or permanent account classification is requested.
+- Flow: landing, register, verification, onboarding, dashboard; login returns to an allowlisted internal destination. Recovery uses an emailed single-use token and reset returns to login. Logout requires confirmed server revocation before claiming success.
+- Session state comes from an HttpOnly-cookie API, never browser token/password storage. Frontend guards are navigation controls, not security. Backend must enforce account and event membership on every request.
+- Dashboard lists only API-returned events. Create/detail/edit use real routes. Saving a titled draft may omit schedule/location/capacity; provided values must be valid. Publication and operational modules remain **In progress**.
+- Forms retain input on failure; expose validation, loading and success feedback; warn about unsaved editor changes. Local draft restoration is explicit and browser-wide legacy storage is not account isolation.
+- Backend authentication provider, email delivery, session lifetime, rate limits, deletion/retention periods and reusable-profile consent wording remain release blockers. No real account data should be collected before these decisions and services are implemented.
+
+Acceptance evidence must distinguish test-only mocked API responses from real backend availability. No production mock fallback is allowed.
+
+### Committee recruitment and organizer-initiated sponsor requests, 2026-10-06
+
+**In progress** (frontend only). The owner approved these flows for the committee and sponsorship frontends, the shared contracts, navigation, and the demo backend. Backend, Prisma schema, and migrations are excluded and remain release blockers.
+
+- Organizer opens a committee recruitment for a published event: description, 1 to 12 unique divisions, and one optional event-specific question. The organizer can close or reopen it.
+- A user (account role `user`) sees open recruitments at `/committee`, chooses one or more divisions, writes a motivation (at least 20 characters), and answers the optional question. One active application per recruitment.
+- Organizer reviews applicants at `/events/:id/committee` and moves each application only through allowed states: `SUBMITTED` to `SHORTLISTED` or `REJECTED`; `SHORTLISTED` to `INTERVIEW`, `ACCEPTED`, or `REJECTED`; `INTERVIEW` to `ACCEPTED` or `REJECTED`. Accepting requires a note with the next steps (for example joining the committee WhatsApp group, a meeting time, or a link). The frontend only offers the moves the service lists as allowed.
+- The applicant sees the current status and the organizer note under "Lamaran saya" and receives an in-app notification for each decision. Accepted applicants see the note as "Langkah berikutnya". Email delivery is not part of this flow.
+- Organizers can also start sponsorship: at `/events/:id/sponsors` an organizer sends a request to a verified sponsor company for a published event (category, message, optional value, optional https proposal URL). The sponsor sees it under "Permintaan dari penyelenggara", receives a notification, and accepts or declines once. The organizer is notified of the answer. The sponsor directory exposes only company name and industry.
+- Sponsor-initiated proposals (`/sponsor/proposals/new`) remain. The two directions are separate records; accepting a request does not yet create a `SponsorBenefit`. That link needs a backend decision.
+- Not included: file uploads (proposal and evidence stay URLs), chat, automatic matching, payments, and committee membership records beyond the accepted status. Account role rules are unchanged: event-level committee membership is not an account role.
+- Open backend decisions: how an accepted request becomes a sponsorship record, retention of applicant answers, and whether `WITHDRAWN` is offered to applicants.
+
+### Workspace and event frontend
+
+#### Production frontend direction, 2026-10-05
+
+The owner clarified that PartnerHub is intended for real use across multiple organizations, not a single organization's branded demo. Current authorization is frontend event/workspace only; backend implementation is recorded in `todobackend.md`. The existing synthetic examples must not populate the default workspace or impersonate the organizer's records. Connection, publication, authorization, and server storage remain **In progress**, not silently successful local actions.
+
+User-uploaded visual identity is part of event preparation: optional event logo, organizer name/logo, and up to six named sponsor-display entries with optional logos. A name is required when an organizer logo is used and for each sponsor entry. Sponsorship commitments/prospects remain a separate feature, not implied by a logo placement.
+
+Frontend acceptance: native file selection plus drag/drop; PNG/JPEG/WebP up to 2 MB and 4096 pixels per axis; reject empty, unsupported, corrupt, oversized, and multiple files without replacing the current valid image. Preview uses contain sizing, user-provided names, replacement/removal, and poster/page modes. SVG and GIF are excluded. These are browser guardrails, not a substitute for backend inspection and image normalization.
+
+One browser-only draft with its logo blobs can be explicitly saved/restored/deleted using IndexedDB. Existing v1 text-only localStorage drafts remain readable. No logo request leaves the browser and no server upload is claimed. Browser storage is not organization membership, shared-device isolation, durable backup, or production persistence. Users may delete local content after use; backend ownership, lifecycle, and retention must be resolved before release.
+
+The historical criteria below describe the earlier implementation and are superseded where this section differs: the editor now has four stages including visual identity; default workspace is empty; browser draft saving includes logos. Product-wide auth/privacy decisions remain unchanged.
+
+#### Earlier workspace implementation (superseded where noted)
+
+**In progress**. After rejecting the initial admin-style dashboard, the user approved a bolder campus-program workspace, larger typography, and a usable frontend event-draft flow. Navy is retained with self-hosted display/body typography and a warm-yellow primary action. Workspace records remain explicitly labelled synthetic data. The prototype does not satisfy FR-01 authorization/publishing or FR-11 persisted counts.
+
+UI acceptance criteria:
+
+- A persistent notice identifies sample events, sponsor labels, and figures as demo data with no database connection.
+- Organizer can search/filter/select synthetic events and inspect the selected event's contextual information or sponsorship preview.
+- A preview selector exposes demo, empty, loading, and simulated error states without pretending to contact a server.
+- Organizer can enter title/category/optional description, choose same-day WIB schedule, location, capacity, and registration/committee/entry/sponsorship modules in a three-stage draft flow.
+- Event preview updates while typing. Field errors preserve input and explain missing title, invalid date, reversed time, or invalid capacity. Entry-scan configuration requires registration.
+- Save explicitly stores one versioned draft in this browser only. Re-saving replaces the prior local draft. Restore validates stored shape/version; deletion requires confirmation and preserves current form input. Storage failures do not discard the form. The draft survives workspace-view switches, but reload requires explicit restoration.
+- Only non-personal event planning fields may be stored. A shared-device user should delete the local draft after use. Retention is browser storage until overwritten, explicitly deleted, or cleared by the browser; this is not an account retention policy.
+- Desktop, tablet, and mobile layouts preserve keyboard access, visible focus, readable contrast, and native dialog Escape behavior.
+- Body and form text is 16px or larger at default text size; supporting labels are 14px or larger and primary controls at least 48px high. The rejected tiny-label/sidebar/statistics/table composition is not retained.
+- No personal profile fields, real sponsor identities, ticket secrets, backend mutations, publication, or deferred product services are collected or implemented.
 
 | ID | Requirement | Acceptance signal |
 | --- | --- | --- |
@@ -194,7 +251,7 @@ The project must not claim achieved revenue. A previous aspiration of approximat
 
 ## Open decisions
 
-- Authentication method, account recovery, and organizer authorization.
+- Backend authentication provider, credential/session/token policies and organizer membership authorization. Frontend email/password, verification and emailed recovery are approved above.
 - Minimum reusable profile fields and exact consent wording.
 - Data retention, export, and deletion periods.
 - Supported custom question types and which answers may be reusable.
