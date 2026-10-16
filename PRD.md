@@ -16,7 +16,7 @@ Hide the entire sponsor section when no supporter exists. Names come from organi
 
 The classroom demo remains browser-tab-local. These guest-readable endpoints are simulated in demo builds; real backend endpoints and shared cross-browser persistence remain **In progress**.
 
-Verification: 114 unit tests, lint, typecheck, boundary checks, and the demo production build pass. `tests/event/public-discovery-browser-check.mjs` verifies guest navigation and deep links, reload, sponsor section presence/absence, unavailable draft/unknown events, ongoing/ended filtering, search/empty state, 390/320px layouts, and authentication only on proposal submission. No page runtime errors were observed in that local production-build run.
+Verification: 114 unit tests, lint, typecheck, boundary checks, and the demo production build pass. `tests/event/public-discovery-browser-check.mjs` verifies guest navigation and deep links, reload, sponsor section presence/absence, unavailable draft/unknown events, ongoing/ended filtering, search/empty state, 390/320px layouts, and authentication only on proposal submission. Both the local production build and Vercel preview deployment `dpl_2mTppdvAkvSHhiFyAcyJmTeRTttS` passed with no page runtime errors. The existing full event/registration/QR/sponsor/evidence browser flow also passed again. The preview serves application commit `9203832`; the production branch is unchanged.
 
 PartnerHub is a web-based event operations workspace for campus organizations, youth communities, and small event organizers that run recurring events. It connects event setup, reusable participant registration, committee recruitment, QR attendance, and sponsorship management in one system.
 
