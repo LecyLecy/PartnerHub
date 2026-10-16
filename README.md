@@ -22,6 +22,8 @@ The `production` branch integrates the member branches into a classroom demo. It
 
 Run `npm run build:demo` then `npm start` for the hosted-demo build, or set `NEXT_PUBLIC_PARTNERHUB_DEMO=1` before `npm run dev`. Use the banner to switch between organizer, participant/applicant, and sponsor while retaining the same in-tab data. Open `/guide` for the demonstration sequence.
 
+Hosted demo: https://partnerhub.vercel.app/guide. The existing Vercel access protection remains enabled; external reviewers need a temporary share link from the deployment's Share menu. Do not commit access-link parameters or credentials.
+
 ## Planned first-version flow
 
 ```mermaid

@@ -9,6 +9,19 @@ const output = process.env.UI_REVIEW_DIR || path.resolve(".impeccable/delivery")
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+if (process.env.VERCEL_PROTECTION_INPUT === "1") {
+  console.log("Awaiting deployment share URL on stdin.");
+  const access = await new Promise((resolve, reject) => {
+    let input = "";
+    process.stdin.setEncoding("utf8");
+    process.stdin.on("data", chunk => {
+      input += chunk;
+      if (input.includes("\n")) { process.stdin.pause(); try { resolve(JSON.parse(input.split("\n")[0])); } catch (error) { reject(error); } }
+    });
+  });
+  assert.equal(new URL(access.url).origin, new URL(base).origin, "Share URL must match the tested deployment");
+  await page.goto(access.url, { waitUntil: "networkidle" });
+}
 const errors = [];
 page.on("pageerror", error => errors.push(error.message));
 const go = route => page.goto(`${base}${route}`, { waitUntil: "networkidle" });
@@ -18,6 +31,13 @@ async function role(value, destination) {
   await page.waitForLoadState("networkidle");
 }
 const date = days => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+async function assertRegistrationPersisted(eventId, stage) {
+  const registrations = await page.evaluate(id => {
+    const data = JSON.parse(sessionStorage.getItem("partnerhub:demo:v3") || "{}");
+    return (data.registrations || []).filter(item => item.eventId === id).map(item => item.status);
+  }, eventId);
+  assert.deepEqual(registrations, ["REGISTERED"], `Registration persists ${stage}`);
+}
 try {
   await go("/guide");
   await role("organizer", "/organizer");
@@ -71,6 +91,7 @@ try {
   await page.reload({ waitUntil: "networkidle" });
   await page.getByLabel("Jenis scan", { exact: true }).waitFor();
   assert.equal(await page.getByLabel("Mode presensi", { exact: true }).inputValue(), "ENTRY_EXIT");
+  await assertRegistrationPersisted(eventId, "after attendance reload");
   await role("sponsor", "/sponsor");
   await go(`/sponsor/proposals/new?eventId=${eventId}`);
   await page.locator('[name="category"]').selectOption({ index: 1 });
@@ -83,6 +104,7 @@ try {
   await page.getByRole("button", { name: "Terima proposal", exact: true }).click();
   await page.waitForTimeout(600);
   await go(`/events/${eventId}/report`);
+  await assertRegistrationPersisted(eventId, "after sponsorship decision");
   await page.locator('input[name="label"]').fill("Logo sponsor di poster acara demo");
   await page.getByRole("button", { name: "Tambahkan benefit", exact: true }).click();
   await page.getByRole("heading", { name: /Logo sponsor di poster acara demo/ }).waitFor();
@@ -90,6 +112,12 @@ try {
   await page.getByRole("checkbox", { name: /Saya sudah meninjau bukti/ }).check();
   await page.getByRole("button", { name: "Simpan bukti", exact: true }).click();
   await page.getByText("Terverifikasi", { exact: true }).waitFor();
+  const participantStat = page.getByRole("list", { name: "Ringkasan", exact: true }).getByRole("listitem").filter({ hasText: "peserta terdaftar" });
+  await participantStat.scrollIntoViewIfNeeded();
+  await page.waitForFunction(() => {
+    const list = document.querySelector('ul[aria-label="Ringkasan"]');
+    return list?.querySelector('strong [aria-hidden="true"]')?.textContent?.trim() === "1";
+  });
   await page.screenshot({ path: path.join(output, "sponsor-evidence.png"), fullPage: true });
   await role("sponsor", "/sponsor");
   await page.getByText("Logo sponsor di poster acara demo:", { exact: false }).waitFor();
