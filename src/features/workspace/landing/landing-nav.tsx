@@ -8,7 +8,7 @@ export function LandingNav() {
   return <SiteHeader
     wide
     brandHref="/"
-    links={[...navLinks, { href: "/about", label: "Tentang" }]}
+    links={[{ href: "/explore", label: "Jelajahi event" }, ...navLinks, { href: "/about", label: "Tentang" }]}
     actions={<>
       <Link className={`${headerStyles.login} ${headerStyles.loginWide}`} href="/login">Masuk</Link>
       <Link className={`${headerStyles.signup} ${headerStyles.compact}`} href="/register">Daftar</Link>

@@ -100,7 +100,12 @@ export function EventCard({ event, tone, badge, actions }: {
         {event.capacity ? <Meter value={event.registeredCount} max={event.capacity} label={`Kapasitas terisi ${event.registeredCount} dari ${event.capacity}`} /> : null}
       </div>
     </>}
-    detail={(close) => <>
+    detail={(close) => <EventDetails event={event} actions={actions(close)} />} />;
+}
+
+/** Shared public content for catalog dialogs and shareable event pages. Never renders private sponsor records. */
+export function EventDetails({ event, actions }: { event: PublicEvent; actions?: ReactNode }) {
+  return <>
       <DetailSection title="Tentang acara">
         <Badge tone="neutral">{event.category}</Badge>
         <p>{event.summary || "Deskripsi belum dicantumkan."}</p>
@@ -114,9 +119,9 @@ export function EventCard({ event, tone, badge, actions }: {
       <DetailSection title="Penyelenggara">
         <p className={styles.orgLine}><OrganizerAvatar name={event.organizationName} logoUrl={event.organizationLogoUrl} size="lg" /><strong>{event.organizationName || "Belum dicantumkan"}</strong></p>
       </DetailSection>
-      {event.sponsorNames.length > 0 && <DetailSection title="Sponsor yang ditampilkan">
+      {event.sponsorNames.length > 0 && <DetailSection title="Sponsor pendukung">
         <ul className={styles.chips}>{event.sponsorNames.map((name) => <li key={name}>{name}</li>)}</ul>
       </DetailSection>}
-      <div className={styles.actions}>{actions(close)}</div>
-    </>} />;
+      {actions && <div className={styles.actions}>{actions}</div>}
+    </>;
 }

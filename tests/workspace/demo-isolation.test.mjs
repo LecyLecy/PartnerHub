@@ -56,7 +56,8 @@ test("the demo pending account has minimal data and limited API access", async (
   const info = await call("/api/accounts/me/verification");
   assert.equal(info.status, "pending_verification");
   assert.ok(info.documents.length >= 1 && info.summary.length >= 1);
-  for (const route of ["/api/events", "/api/organizer/summary", "/api/public/events", "/api/me/registrations"]) await denied(call(route), 403);
+  for (const route of ["/api/events", "/api/organizer/summary", "/api/me/registrations"]) await denied(call(route), 403);
+  assert.ok((await call("/api/public/events")).items.length > 0, "public browsing does not require approval");
   await denied(call("/api/events", { method: "POST", body: { title: "Tidak boleh" } }), 403);
 });
 

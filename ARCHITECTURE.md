@@ -10,6 +10,14 @@ Data lives in versioned sessionStorage and a memory cache. Switching seeded role
 
 ## Architecture goals
 
+### Guest-readable event projection, 2026-10-17
+
+`src/features/event/public-catalog-page.tsx` and `public-event-page.tsx` own `/explore` and `/explore/:id`. They use `SiteFrame` without `SessionGate`; organizer management stays on protected `/events/*`. Shared `src/lib/public-events.ts` validates both list and detail responses and uses `auth:false`, so a failed public read never invalidates an existing session. Public details reuse `EventDetails` from the existing event-card system.
+
+The demo router permits unauthenticated `GET /api/public/events` and `GET /api/public/events/:id`, projecting only `PublicEvent` fields from PUBLISHED records. Other operations retain existing role/approval/ownership checks. Public supporter names combine organizer-declared display names with accepted commitments, trim/deduplicate names, and exclude pending/declined proposals. No agreement amounts, evidence links, internal notes, participant records, credentials, or contacts are returned. Sponsor data is rendered as text, not HTML.
+
+Catalog state derives from UTC instants: start <= now < end means ongoing; now < start means upcoming; end <= now means completed. Invalid/missing schedules are excluded. The catalog refreshes its clock every minute and sorts ongoing events first, then start time. Detail routes still handle completed PUBLISHED records; closing/archiving removes public access. A 404 renders a safe unavailable state; service failures expose retry. The real API must implement this projection and filtering/authorization contract before non-demo release; no Prisma changes are included.
+
 PartnerHub supports a complete event flow from setup through post-event sponsor evidence. The target first version adds reusable participant profiles and committee recruitment to the existing event, QR attendance, and sponsorship foundation.
 
 Architecture priorities are data minimization, event-scoped authorization, opaque QR tickets, repeat-safe attendance, explicit application states, and recoverable sponsorship records. It does not optimize for payment processing, a national marketplace, live collaboration, or enterprise multi-tenancy.

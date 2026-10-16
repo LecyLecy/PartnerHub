@@ -31,7 +31,7 @@ export default function LandingPage() {
         <p className={`${styles.lede} ${styles.enter}`} style={{ "--enter-delay": "160ms" } as CSSProperties}>PartnerHub membantu tim kampus dan komunitas menyiapkan acara, membuka pendaftaran, merekrut panitia, dan mengelola dukungan sponsor tanpa pindah-pindah spreadsheet.</p>
         <div className={`${styles.ctas} ${styles.enter}`} style={{ "--enter-delay": "240ms" } as CSSProperties}>
           <Link className={styles.cta} href="/register?role=organizer">Daftar sebagai penyelenggara</Link>
-          <Link className={styles.ctaGhost} href="/guide">Lihat cara kerja</Link>
+          <Link className={styles.ctaGhost} href="/explore">Jelajahi event</Link>
         </div>
         <p className={`${styles.heroNote} ${styles.enter}`} style={{ "--enter-delay": "300ms" } as CSSProperties}>Penyelenggara dan sponsor memerlukan verifikasi email dan pemeriksaan admin.</p>
       </section>

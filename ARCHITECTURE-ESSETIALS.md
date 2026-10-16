@@ -2,6 +2,8 @@
 
 ## Current classroom build
 
+- Guest discovery: `/explore` and `/explore/:id` require no application login. Only PUBLISHED records and public event/supporter fields may be returned; management remains protected. Empty sponsor sections are omitted; pending/declined proposals are never supporters. Real public endpoints remain In progress outside demo builds.
+
 - Delivery branch: `production`, integrating available `adin` and `jad` heads.
 - Owner-approved demo hosting uses `npm run build:demo`; Vercel selects it explicitly. Normal builds remain non-demo by default.
 - Existing typed clients call the browser-only demo router and versioned in-tab sessionStorage. No real database, email, or payment processing.

@@ -88,7 +88,7 @@ export function SiteFrame({ children }: { children: ReactNode }) {
       />
     : <SiteHeader
         brandHref="/"
-        links={auth.status === "checking" ? [] : [{ href: "/#fitur", label: "Tentang PartnerHub" }]}
+        links={[{ href: "/explore", label: "Jelajahi event", current: pathname.startsWith("/explore") }, { href: "/#fitur", label: "Tentang PartnerHub" }]}
         actions={auth.status === "checking" ? <span role="status">Memeriksa sesi…</span> : <>
           <Link className={`${headerStyles.login} ${headerStyles.loginWide}`} href="/login">Masuk</Link>
           <Link className={`${headerStyles.signup} ${headerStyles.compact}`} href="/register">Daftar</Link>

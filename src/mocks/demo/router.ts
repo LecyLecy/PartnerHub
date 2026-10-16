@@ -49,7 +49,13 @@ function active(db: DemoDb, role: DemoAccount["role"]): DemoAccount {
 function registeredCount(db: DemoDb, eventId: string) {
   return (db.baseRegistered[eventId] ?? 0) + db.registrations.filter((item) => item.eventId === eventId && item.status === "REGISTERED").length;
 }
-const publicEvent = (db: DemoDb, item: OwnedEvent): PublicEvent => ({ id: item.id, title: item.title, category: item.category, summary: item.summary, startsAt: item.startsAt, endsAt: item.endsAt, venue: item.venue, capacity: item.capacity, organizationName: item.branding.organizationName, registeredCount: registeredCount(db, item.id), priceIdr: db.forms[item.id]?.priceIdr ?? 0, eventLogoUrl: item.branding.eventLogo?.url ?? null, organizationLogoUrl: item.branding.organizationLogo?.url ?? null, sponsorNames: item.branding.sponsors.map((sponsor) => sponsor.name) });
+const publicEvent = (db: DemoDb, item: OwnedEvent): PublicEvent => {
+  const names = [...item.branding.sponsors.map((sponsor) => sponsor.name),
+    ...db.sponsorships.filter((agreement) => agreement.eventId === item.id).map((agreement) => db.accounts.find((account) => account.id === agreement.ownerId)?.summary.find((row) => row.label === "Perusahaan")?.value || "")];
+  const unique = new Map<string, string>();
+  for (const raw of names) { const name = raw.trim(); if (name) unique.set(name.toLocaleLowerCase("id-ID"), name); }
+  return { id: item.id, title: item.title, category: item.category, summary: item.summary, startsAt: item.startsAt, endsAt: item.endsAt, venue: item.venue, capacity: item.capacity, organizationName: item.branding.organizationName, registeredCount: registeredCount(db, item.id), priceIdr: db.forms[item.id]?.priceIdr ?? 0, eventLogoUrl: item.branding.eventLogo?.url ?? null, organizationLogoUrl: item.branding.organizationLogo?.url ?? null, sponsorNames: [...unique.values()] };
+};
 const strip = ({ ownerId, ...record }: OwnedEvent): EventRecord => { void ownerId; return record; };
 
 function ticketReference(): string {
@@ -158,9 +164,13 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
   }
 
   if (route === "/api/public/events" && method === "GET") {
-    const account = current(db);
-    if (!account.emailVerified || account.status !== "active") return fail(403, "FORBIDDEN");
     return { items: db.events.filter((item) => item.status === "PUBLISHED").map((item) => publicEvent(db, item)) };
+  }
+  const publicDetail = route.match(/^\/api\/public\/events\/([a-zA-Z0-9_-]+)$/);
+  if (publicDetail && method === "GET") {
+    const event = db.events.find((item) => item.id === publicDetail[1] && item.status === "PUBLISHED");
+    if (!event) return fail(404, "NOT_FOUND");
+    return publicEvent(db, event);
   }
   const joinMatch = route.match(/^\/api\/public\/events\/([^/]+)\/registrations$/);
   if (joinMatch && method === "POST") {

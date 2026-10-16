@@ -24,6 +24,8 @@ Run `npm run build:demo` then `npm start` for the hosted-demo build, or set `NEX
 
 Hosted demo: https://partnerhub.vercel.app/guide. The existing Vercel access protection remains enabled; external reviewers need a temporary share link from the deployment's Share menu. Do not commit access-link parameters or credentials.
 
+Public discovery at `/explore` lets guests browse ongoing/upcoming events and open shareable `/explore/:id` details without an application account. Public supporter lists are omitted when empty; proposals awaiting a decision are not presented as sponsors. Demo records remain local to the current browser tab.
+
 ## Planned first-version flow
 
 ```mermaid

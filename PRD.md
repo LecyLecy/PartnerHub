@@ -8,6 +8,16 @@ The demo must connect event creation and valid publication, consented participan
 
 ## Product summary
 
+### Public event discovery, 2026-10-17
+
+Approved scope: event frontend, public navigation, existing public contracts/services, demo data/router, tests, and documentation. `/explore` lists published ongoing and upcoming events without login, with search and a time filter. `/explore/:id` is a shareable event detail page showing schedule, venue, description, organizer, ticket information, and public supporter names. Sponsor review does not require registration; submitting a proposal still requires an approved sponsor account.
+
+Hide the entire sponsor section when no supporter exists. Names come from organizer-declared public supporters or accepted sponsor commitments, never pending or declined proposals. Do not expose participant identities, contact details, ticket secrets, commercial terms, evidence URLs, or follow-up notes. Draft, closed, archived, and unknown events are unavailable to public detail lookups. Elapsed published events leave the discovery catalog; their direct public page may show the completed schedule until the organizer closes them. A missing/invalid schedule never claims an ongoing event. Existing Vercel deployment protection is separate from application login.
+
+The classroom demo remains browser-tab-local. These guest-readable endpoints are simulated in demo builds; real backend endpoints and shared cross-browser persistence remain **In progress**.
+
+Verification: 114 unit tests, lint, typecheck, boundary checks, and the demo production build pass. `tests/event/public-discovery-browser-check.mjs` verifies guest navigation and deep links, reload, sponsor section presence/absence, unavailable draft/unknown events, ongoing/ended filtering, search/empty state, 390/320px layouts, and authentication only on proposal submission. No page runtime errors were observed in that local production-build run.
+
 PartnerHub is a web-based event operations workspace for campus organizations, youth communities, and small event organizers that run recurring events. It connects event setup, reusable participant registration, committee recruitment, QR attendance, and sponsorship management in one system.
 
 The first version must prove one complete event flow at the Venture Creation booth. PartnerHub is not a national ticket marketplace, payment processor, generic CRM, or full HR system.

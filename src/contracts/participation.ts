@@ -9,7 +9,7 @@ export type PublicEvent = Pick<EventRecord, "id" | "title" | "category" | "summa
   eventLogoUrl: string | null;
   /** Organizer logo shown as the organizer's avatar. Null until uploaded. */
   organizationLogoUrl: string | null;
-  /** Names of sponsors the organizer chose to display. */
+  /** Organizer-declared public supporters and accepted sponsor commitments. Never pending proposals or private agreement details. */
   sponsorNames: string[];
 };
 
