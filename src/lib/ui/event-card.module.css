@@ -1,0 +1,58 @@
+/* Event card and its detail dialog. Shared by the participant and sponsor catalogs. */
+.grid { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr)); gap: var(--space-6); align-items: stretch; }
+
+.card { min-width: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-1); transition: box-shadow var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard); }
+.card:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
+
+/* Cover: the event logo fills it; without a logo a flat brand color stands in. The scrim keeps white text readable on any image. */
+.cover { position: relative; isolation: isolate; display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-8); height: 15rem; flex-shrink: 0; padding: var(--space-6); background: var(--navy); color: var(--surface); overflow: hidden; }
+.cover[data-tone="1"]:not([data-image=true]) { background: var(--yellow); color: var(--navy); }
+.cover[data-tone="2"]:not([data-image=true]) { background: var(--subtle); color: var(--navy); }
+.coverImage { position: absolute; inset: 0; z-index: -2; width: 100%; height: 100%; object-fit: cover; }
+.cover[data-image=true] { color: var(--surface); background: var(--navy); }
+.cover[data-image=true]::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to bottom, #16274899 0%, #162748cc 55%, #162748f2 100%); }
+.cover h2, .cover h3 { margin: 0; color: inherit; font-size: clamp(1.5rem, 2.2vw, 1.875rem); line-height: 1.1; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3; overflow: hidden; }
+.organizer { display: flex; align-items: center; gap: var(--space-3); margin: 0; font-size: var(--text-caption); font-weight: var(--weight-label); min-width: 0; }
+.organizer span:last-child { overflow-wrap: anywhere; }
+
+.avatar { display: grid; place-items: center; width: 2.25rem; height: 2.25rem; flex-shrink: 0; overflow: hidden; border-radius: 50%; background: var(--surface); color: var(--navy); border: var(--border-width) solid #ffffff99; font-size: .75rem; font-weight: var(--weight-label); }
+.avatar[data-size=lg] { width: 3rem; height: 3rem; border-color: var(--line); background: var(--subtle); font-size: var(--text-caption); }
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.body { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: var(--space-2); padding: var(--space-6); }
+.summary { display: grid; gap: var(--space-1); width: 100%; flex: 1; align-content: start; }
+.summary p { margin: 0; overflow-wrap: anywhere; }
+.when { font-weight: var(--weight-label); }
+.price { font-weight: var(--weight-label); color: var(--navy); }
+.price[data-free=true] { color: var(--success); }
+.muted { color: var(--muted); font-size: var(--text-caption); }
+.capacity { display: grid; gap: var(--space-2); margin-top: var(--space-1); }
+.detail { margin-top: auto; width: 100%; min-height: var(--control-height); padding: var(--space-3) var(--space-6); border: var(--border-width) solid var(--control-border); border-radius: var(--radius-control); background: var(--surface); color: var(--navy); font-weight: var(--weight-label); box-shadow: var(--shadow-1); transition: background-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard); }
+.body > .detail { margin-top: var(--space-4); }
+.detail:hover { background: var(--subtle); box-shadow: var(--shadow-2); }
+
+/* Dialog */
+.dialog { width: min(40rem, calc(100vw - 2rem)); max-height: min(90svh, 52rem); margin: auto; padding: 0; overflow: auto; border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); background: var(--surface); color: var(--navy); box-shadow: var(--shadow-3); overscroll-behavior: contain; }
+.dialog[open] { animation: dialog-in var(--dur-base) var(--ease-out) both; }
+.dialog::backdrop { background: #16274873; }
+.dialog[open]::backdrop { animation: backdrop-in var(--dur-base) var(--ease-standard) both; }
+.dialog .cover { height: auto; min-height: 11rem; border-radius: 0; }
+.dialog .cover h2 { -webkit-line-clamp: unset; line-clamp: unset; display: block; overflow: visible; }
+.close { position: absolute; top: var(--space-3); right: var(--space-3); z-index: 1; display: grid; place-items: center; width: var(--touch-min); height: var(--touch-min); border: var(--border-width) solid var(--line); border-radius: var(--radius-control); background: var(--surface); color: var(--navy); transition: background-color var(--dur-fast) var(--ease-standard); }
+.close:hover { background: var(--subtle); }
+.dialog .cover .organizer { padding-right: 3.5rem; }
+.dialogBody { display: grid; gap: var(--space-6); padding: var(--space-6); }
+.dialogBody h3 { margin: 0 0 var(--space-2); font-size: var(--text-h3); }
+.dialogBody p { margin: var(--space-2) 0 0; color: var(--muted); overflow-wrap: anywhere; }
+.facts { margin: 0; }
+.facts > div { display: grid; gap: var(--space-1); padding-block: var(--space-3); border-top: var(--border-width) solid var(--line); }
+.facts dt { color: var(--muted); font-size: var(--text-caption); }
+.facts dd { margin: 0; display: grid; gap: var(--space-2); overflow-wrap: anywhere; }
+.orgLine { display: flex; align-items: center; gap: var(--space-3); margin: 0; color: var(--navy); }
+.chips { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.chips li { padding: var(--space-1) var(--space-3); background: var(--subtle); border: var(--border-width) solid var(--line); border-radius: var(--radius-pill); font-size: var(--text-caption); font-weight: var(--weight-label); }
+.actions { display: flex; flex-wrap: wrap; gap: var(--space-3); padding-top: var(--space-2); border-top: var(--border-width) solid var(--line); }
+@keyframes dialog-in { from { opacity: 0; transform: translateY(1rem) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+@media (max-width: 40rem) { .dialog { width: 100vw; max-width: 100vw; max-height: 92svh; margin: auto 0 0; border-radius: var(--radius-panel) var(--radius-panel) 0 0; } .dialogBody { padding: var(--space-4); } }
+@media (prefers-reduced-motion: reduce) { .card, .detail, .close { transition: none; } .card:hover { transform: none; } .dialog[open], .dialog[open]::backdrop { animation: none; } }

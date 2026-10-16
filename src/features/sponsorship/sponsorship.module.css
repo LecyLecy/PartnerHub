@@ -1,0 +1,79 @@
+.heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--space-6); margin-bottom: var(--space-8); }
+.heading > div { margin: 0; }
+.section { margin-top: var(--space-12); }
+.section > h2 { margin: 0 0 var(--space-2); }
+.sectionHint { color: var(--muted); margin: 0 0 var(--space-6); }
+.commitments, .proposals { list-style: none; padding: 0; margin: 0; }
+.commitments { display: grid; gap: var(--space-4); }
+.commitments > li { padding: var(--space-6); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-card); min-width: 0; }
+.commitments h3, .proposals h3 { margin: 0; font-size: var(--text-h3); }
+.commitments p, .proposals p { color: var(--muted); margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
+.benefits { list-style: none; padding: 0; margin: var(--space-6) 0 0; }
+.benefits li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--space-2) var(--space-4); padding: var(--space-3) 0; border-top: var(--border-width) solid var(--line); }
+.proposals > li { padding-block: var(--space-6); border-top: var(--border-width) solid var(--line); }
+.proposalHeader { display: flex; gap: var(--space-3); align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.proposals summary { display: flex; align-items: center; min-height: var(--touch-min); width: fit-content; text-decoration: underline; text-underline-offset: var(--space-1); font-size: var(--text-caption); }
+.proposals summary::before { content: "+"; margin-right: var(--space-2); }
+.proposals details[open] summary::before { content: "−"; }
+.proposals details p { max-width: var(--reading-width); padding: var(--space-4); background: var(--subtle); border-radius: var(--radius-control); margin: 0; }
+.offerForm { max-width: var(--form-width); }
+.received { list-style: none; padding: 0; margin: 0; }
+.side > section[aria-labelledby="received-title"] { padding: var(--space-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-card); background: var(--surface); }
+.side > section[aria-labelledby="received-title"] > h2 { margin: 0 0 var(--space-2); font-size: var(--text-h3); }
+.received > li { padding-block: var(--space-6); border-top: var(--border-width) solid var(--line); min-width: 0; }
+.received h3 { margin: 0; font-size: var(--text-h3); }
+.received p { color: var(--muted); margin: var(--space-2) 0 0; overflow-wrap: anywhere; max-width: var(--reading-width); }
+.receivedActions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin-top: var(--space-4); }
+.proposalForm { max-width: var(--form-width); margin-inline: auto; }
+.proposalForm form { border-top: var(--border-width) solid var(--line); padding-top: var(--space-6); }
+.eventContext { padding: var(--space-4); background: var(--subtle); border-radius: var(--radius-control); }
+.eventContext p { color: var(--muted); margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
+.eventContext p:last-child { color: var(--navy); }
+@media (min-width: 64rem) { .commitments { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+@media (prefers-reduced-motion: reduce) { .commitments > li { transition: none; } .commitments > li:hover { transform: none; } }
+
+
+/* Dense dashboard: the catalog takes the wide column, requests, benefits and proposals stack beside it. */
+.dash { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-8); align-items: start; }
+.side { display: grid; gap: var(--space-6); min-width: 0; }
+.side .section { margin-top: 0; padding: var(--space-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-card); background: var(--surface); }
+.side .section > h2, .side > section > h2 { font-size: var(--text-h3); }
+@media (min-width: 72rem) { .dash { grid-template-columns: minmax(0, 2fr) minmax(20rem, 1fr); } .dash > .catalog { min-width: 0; } }
+.side .commitments { grid-template-columns: minmax(0, 1fr); }
+.side .commitments > li { padding: var(--space-4); }
+
+/* Side column lists are compact and scroll inside their card so one long list cannot push the others away. */
+.side .received, .side .commitments, .side .proposals { max-height: 18rem; overflow-y: auto; overscroll-behavior: contain; padding-right: var(--space-2); scrollbar-gutter: stable; }
+.side .received:focus-visible, .side .commitments:focus-visible, .side .proposals:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); }
+.side .section { padding: var(--space-4); }
+.side .sectionHint { margin-bottom: var(--space-3); font-size: var(--text-caption); }
+.side .received > li, .side .proposals > li { padding-block: var(--space-3); }
+.side .received h3, .side .proposals h3, .side .commitments h3 { font-size: 1rem; }
+.side .received p, .side .proposals p, .side .commitments p { margin-top: var(--space-1); font-size: var(--text-caption); }
+.side .received p:nth-of-type(2) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden; }
+.side .receivedActions { margin-top: var(--space-3); }
+.side .benefits { margin-top: var(--space-3); }
+.side .benefits li { padding-block: var(--space-2); }
+
+/* Received requests: one line per request, details and answers in a dialog. */
+.side .received > li.offerRow, .side .proposals > li.offerRow { padding: 0; }
+.offerRowButton { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-2); margin: 0; border: 0; border-radius: var(--radius-control); background: transparent; color: var(--navy); text-align: left; cursor: pointer; }
+.offerRowButton:hover { background: var(--subtle); }
+.offerRowButton:focus-visible { outline: var(--focus-width) solid var(--focus); outline-offset: calc(var(--focus-offset) * -1); }
+.offerChevron { flex-shrink: 0; color: var(--muted); transition: transform var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard); }
+.offerRowButton:hover .offerChevron { color: var(--navy); transform: translateX(2px); }
+@media (prefers-reduced-motion: reduce) { .offerChevron { transition: none; } }
+.offerRowText { display: grid; justify-items: start; gap: var(--space-2); min-width: 0; }
+.offerRowTitle { font-family: var(--font-heading), sans-serif; font-size: 1rem; line-height: 1.3; overflow-wrap: anywhere; }
+.offerDialog { width: min(38rem, calc(100vw - 2rem)); max-height: calc(100svh - 2rem); overflow-y: auto; margin: auto; padding: 0; border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); background: var(--surface); color: var(--navy); box-shadow: var(--shadow-3); }
+.offerDialog::backdrop { background: #16274873; }
+.offerDialogBody { display: grid; gap: var(--space-6); padding: var(--space-6); }
+.offerDialogBody h2 { margin: 0; font-size: var(--text-h3); overflow-wrap: anywhere; }
+.offerDialogBody p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+.offerDialogBody .receivedActions { margin-top: var(--space-2); }
+.dialogHeader { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--space-4); padding-bottom: var(--space-6); border-bottom: var(--border-width) solid var(--line); }
+.dialogHeader > div { min-width: 0; }
+.dialogMeta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); margin-top: var(--space-3); }
+.dialogClose { display: grid; place-items: center; flex-shrink: 0; width: var(--touch-min); height: var(--touch-min); padding: 0; color: var(--navy); background: var(--subtle); border: 0; border-radius: var(--radius-control); cursor: pointer; }
+.dialogClose:hover { background: var(--line); }

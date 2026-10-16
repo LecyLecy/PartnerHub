@@ -4,46 +4,59 @@
 
 # PartnerHub
 
-### Event operations and sponsorship accountability, in progress
+### Event operations with sponsorship accountability
 
-One workspace for preparing an event, issuing anonymous QR tickets, recording entry attendance, and tracking sponsor benefits.
+One workspace for event setup, reusable registration, committee recruitment, QR attendance, and sponsor benefit tracking.
 
-[Product requirements](./PRD.md) · [Architecture](./ARCHITECTURE.md) · [Architecture essentials](./ARCHITECTURE-ESSETIALS.md)
+[Product requirements](./PRD.md) · [Architecture](./ARCHITECTURE.md) · [Architecture essentials](./ARCHITECTURE-ESSETIALS.md) · [Venture concept](./Venture_Creation-2.md)
 
 </div>
 
 ## Overview
 
-PartnerHub is a focused event operations product for campus organizations, youth communities, and small event teams. The product foundation is implemented as a typed Next.js scaffold. Event workflows, database-backed mutations, QR generation, and deployment remain **In progress**.
+PartnerHub is a Venture Creation concept for campus organizations, youth communities, and small event organizers that run recurring events. It aims to replace a fragmented mix of forms, spreadsheets, chat groups, ticket tools, and sponsorship files with one connected workspace.
 
-Current product boundaries are deliberate:
+The sponsorship workflow is the main differentiator. PartnerHub is not positioned as a national ticket marketplace, payment processor, generic CRM, or full HR system.
 
-- Anonymous tickets, no personal-name prompt or personal account flow.
-- Entry attendance only, with duplicate scan protection designed into schema.
-- Sponsorship evidence as a core workflow.
-- No payments, file uploads, chat, notifications, marketplace, or generic form builder in MVP.
+The repository currently contains a typed Next.js foundation and the earlier anonymous-registration Prisma model. Reusable accounts, committee recruitment, event workflows, database-backed mutations, QR generation, and deployment remain **In progress**.
 
-## Product flow
+## Planned first-version flow
 
 ```mermaid
 flowchart LR
-    A[Prepare event workspace] --> B[Publish event]
-    B --> C[Anonymous registration]
+    A[Create event] --> B[Publish event]
+    B --> C[Participant registration]
     C --> D[Opaque QR ticket]
-    D --> E[Entry attendance]
-    B --> F[Sponsorship campaign]
-    F --> G[Benefit evidence]
+    D --> E[Optional entry scan]
+    B --> F[Committee application]
+    F --> G[Application decision]
+    B --> H[Sponsorship campaign]
+    H --> I[Benefit evidence]
 ```
 
-Implementation for this flow is **In progress**. Full scope and acceptance criteria live in [PRD.md](./PRD.md).
+The first version is intended to demonstrate one complete event flow at a Venture Creation booth. Full scope and acceptance criteria live in [PRD.md](./PRD.md).
+
+## Product boundaries
+
+- Reusable profile data requires account-holder consent.
+- Each account registers as one of three roles: user, organizer, or sponsor company. Organizer and sponsor accounts wait for admin verification and have limited access until approved. Event-level roles such as committee membership stay event-scoped.
+- QR payloads contain an opaque ticket reference and secret, never personal data.
+- Attendance can be disabled or use entry-only scanning in the first version.
+- Sponsorship uses proposal and evidence URLs. File uploads are deferred.
+- Payments, exit scans, committee task boards, chat, sponsor matching, automatic matching notifications, and marketplace behavior are deferred.
 
 ## Current foundation
 
 - Next.js 16 App Router scaffold with TypeScript and Tailwind CSS.
-- Public foundation page and `GET /api/health` route.
-- PostgreSQL and Prisma data model for events, anonymous registrations, attendance, campaigns, prospects, benefits, and timeline entries.
-- Feature boundaries for event, registration, attendance, and sponsorship work.
-- Product, architecture, and concise architecture-reference documents.
+- Frontend account/workspace/event integration is **In progress** on the feature branch. Route UI and typed API clients are not evidence of deployed authentication or persistence.
+- Four-stage event editing retains live poster/page preview, validation, module configuration and user-selected organizer/event/sponsor-display logos. Backend storage and publication remain **In progress**.
+- Static `GET /api/health` route, not a database connectivity check.
+- PostgreSQL and Prisma model for events, anonymous registrations, attendance, sponsorship campaigns, prospects, benefits, and timeline entries.
+- Separate frontend and server-only backend ownership folders for account, event, registration, committee, attendance, and sponsorship work.
+- Import-boundary lint rules and focused architecture tests.
+- Product, architecture, and Venture Creation working documents.
+
+The current schema does not yet implement reusable accounts or committee recruitment. Those changes are **In progress** and must not be treated as completed features.
 
 ## Technology
 
@@ -52,8 +65,9 @@ Implementation for this flow is **In progress**. Full scope and acceptance crite
 | Interface and server routes | Next.js 16, React 19, TypeScript |
 | Styling | Tailwind CSS 4 |
 | Validation | Zod |
-| Database and migrations | PostgreSQL, Prisma |
+| Database and migrations | Supabase PostgreSQL, Prisma (connection In progress) |
 | Quality checks | TypeScript, ESLint, Next.js build |
+| Authentication | **In progress** |
 
 ## Repository structure
 
@@ -67,15 +81,16 @@ PartnerHub/
 │   └── schema.prisma
 ├── src/
 │   ├── app/
-│   │   ├── api/health/route.ts
-│   │   ├── globals.css
-│   │   ├── layout.tsx
-│   │   └── page.tsx
 │   ├── features/
 │   │   ├── attendance/
+│   │   ├── account/
+│   │   ├── committee/
 │   │   ├── event/
 │   │   ├── registration/
-│   │   └── sponsorship/
+│   │   ├── sponsorship/
+│   │   └── workspace/
+│   ├── backend/         # Same product features, plus health and shared
+│   ├── contracts/       # Agreed shared API types
 │   └── lib/
 └── tests/
 ```
@@ -89,16 +104,48 @@ npm run dev
 
 Open `http://localhost:3000`.
 
-Database-backed work is **In progress**. Before running Prisma migrations, copy `.env.example` to `.env` and provide a PostgreSQL `DATABASE_URL` plus both secret peppers.
+Database-backed work is **In progress**. Copy `.env.example` to `.env` and provide Supabase PostgreSQL `DATABASE_URL`, migration `DIRECT_URL`, and the current secret peppers. Connection setup, including direct/session pooler guidance, is in `ARCHITECTURE.md`. No Supabase SDK or Auth is configured. Ordinary PostgreSQL also works by setting both URLs to its connection string.
 
 ```bash
 npm run db:generate
 npm run db:migrate
 ```
 
-## Validation
+## Parallel development
 
-Current scaffold passes:
+Pick one feature and frontend, backend, or both. Root `AGENTS.md` requires agents to ask and confirm that scope before editing. Work in that feature's folders, its tests, and agreed page/API adapters on a separate branch and isolated checkout. Shared files and other features require separate approval.
+
+Frontend code lives in `src/features/<feature>`; server logic lives in `src/backend/<feature>`. Do not import another feature's internals or backend modules from frontend code. Coordinate schema, shared contracts, and dependencies as infrastructure work.
+
+```bash
+npm run test:boundaries
+npm run lint
+npm run typecheck
+npm run build
+```
+
+## Frontend integration (In progress)
+
+Routes cover `/`, `/login`, `/register`, `/forgot-password`, `/reset-password`, `/verify-email`, `/onboarding`, `/dashboard`, `/settings`, `/events/new`, `/events/:id` and `/events/:id/edit`. Navy, larger licensed self-hosted typography and the yellow creation action are retained.
+
+Feature services call typed cookie-session and event APIs. Those server routes do not exist yet: missing services produce explicit errors, never mock login or remote-save success. Happy-path browser verification intercepts APIs in tests only. Frontend guards are navigation UX, not authorization.
+
+New event drafts can be incomplete when saved through their API contract. Logo selection supports PNG/JPEG/WebP, 2 MB and 4096px limits, preview and replacement. An explicit local-copy option retains the older complete-draft IndexedDB format and logo blobs; legacy v1 text drafts remain readable. Browser-wide copies are not account isolation or backup. Delete them after shared-device use.
+
+Backend contracts/blockers: [todobackend.md](./todobackend.md). Direction: `DESIGN.md`. New flow, manual scenarios and local test evidence: [PRODUCT-FLOW-VERIFICATION.md](./tests/workspace/PRODUCT-FLOW-VERIFICATION.md). Earlier state-navigation workspace evidence is historical.
+
+```bash
+# Node 22.18+ or Node 24 for native TypeScript loading
+node --test tests/account/*.test.mjs tests/event/*.test.mjs tests/workspace/*.test.mjs
+```
+
+Browser checks use an externally installed Playwright module and Edge, without adding a project dependency. See the verification document for setup.
+
+## Validation status
+
+The expanded event-operations concept has not yet been validated through owned interviews, usability tests, paid usage, or revenue. Planned research includes organizer interviews, participant registration tests, committee application review, a small QR check-in test, and sponsorship workflow feedback.
+
+The current scaffold has previously passed:
 
 ```bash
 npm run db:generate
@@ -107,12 +154,16 @@ npm run lint
 npm run build
 ```
 
-Feature-level unit, integration, and end-to-end tests are **In progress**. Planned coverage is documented in [ARCHITECTURE.md](./ARCHITECTURE.md).
+Documentation changes in this revision do not prove the planned product features. Feature-level unit, integration, and end-to-end tests remain **In progress**.
 
-## Risks and decisions
+## Source documents
 
-Capacity races, repeat scans, QR replay, secret leakage, time windows, and unavailable evidence links are documented with their planned safeguards in [PRD.md](./PRD.md) and [ARCHITECTURE.md](./ARCHITECTURE.md).
+- [Business concept and first-version scope](./Venture_Creation-2.md)
+- [Opportunity assessment](./Venture_Creation-3.md)
+- [Key idea, product, and market](./Venture_Creation-4.md)
+
+The public LOKET creator page cited in the Venture document is competitor and market context only. It is not evidence of PartnerHub demand, traction, or revenue.
 
 ## License
 
-License decision is **In progress**. No external dataset, API, model, or third-party code is included in this repository.
+Application license decision is **In progress**. Bundled Bricolage Grotesque and Manrope fonts use SIL Open Font Licenses, included in `src/features/workspace/fonts`. No external participant dataset is included.

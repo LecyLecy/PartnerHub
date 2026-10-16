@@ -1,0 +1,43 @@
+.layout { display: grid; gap: var(--space-6); padding-block: 0 var(--space-6); max-width: var(--form-width); margin-inline: auto; }
+.intro h1 { font-size: var(--text-h1); margin: var(--space-4) 0 0; }
+.intro p { color: var(--muted); max-width: var(--reading-width); margin: var(--space-3) 0 0; }
+.intro .backLink { display: inline-flex; min-height: var(--touch-min); align-items: center; font-size: var(--text-caption); color: var(--muted); }
+.formColumn { width: 100%; min-width: 0; padding: var(--space-8); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); box-shadow: var(--shadow-1); }
+@media (max-width: 40rem) { .formColumn { padding: var(--space-6) var(--space-4); } }
+.formColumn > p { color: var(--muted); margin: 0 0 var(--space-6); }
+.formColumn form > button[type=submit] { width: 100%; }
+.verificationGuide { margin-bottom: var(--space-8); }
+.verificationGuide h2, .resend h2 { font-size: var(--text-h3); margin: 0 0 var(--space-2); }
+.verificationGuide p, .resend p { color: var(--muted); margin: 0 0 var(--space-4); }
+.resend { border-top: var(--border-width) solid var(--line); padding-top: var(--space-6); }
+.resend form { margin-top: var(--space-6); }
+.verificationActions { display: grid; gap: var(--space-4); }
+.verificationActions > p { margin: 0; color: var(--muted); }
+.verificationActions > button { justify-self: start; }
+.verificationActions > p > a { display: inline-flex; align-items: center; min-height: var(--touch-min); }
+.passwordMeta { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:-12px; }
+.textButton { min-height:48px; border:0; background:transparent; color:var(--navy); text-decoration:underline; text-underline-offset:4px; padding:8px 0; font-size:.875rem; flex-shrink:0; }
+.formLinks { display:flex; flex-wrap:wrap; justify-content:space-between; gap:12px; }
+.formLinks a { min-height:48px; display:inline-flex; align-items:center; font-size:.875rem; }
+.onboarding, .profile { max-width: var(--form-width); margin-inline: auto; }
+.onboarding > :first-child:not(div) { margin-bottom: var(--space-4); }
+.onboarding ol { list-style: decimal; padding-left: var(--space-6); display: grid; gap: var(--space-6); margin-block: var(--space-8); }
+.onboarding ol li { padding-left: var(--space-2); }
+.onboarding ol li::marker { color: var(--muted); font-weight: var(--weight-label); }
+.onboarding h2 { font-size: var(--text-h3); margin: 0 0 var(--space-2); }
+.onboarding li p { color: var(--muted); margin: 0; }
+.accountEmail { padding-block: var(--space-6); border-top: var(--border-width) solid var(--line); margin-bottom: var(--space-8); overflow-wrap: anywhere; }
+.accountEmail h2, .sectionTitle { font-size: var(--text-h3); margin: 0; }
+.detailList { margin: var(--space-4) 0 0; }
+.detailList > div { display: grid; gap: var(--space-2); padding-block: var(--space-4); border-bottom: var(--border-width) solid var(--line); }
+.detailList dt { color: var(--muted); font-size: var(--text-caption); }
+.detailList dd { margin: 0; overflow-wrap: anywhere; }
+.profile form > button { justify-self: start; align-self: flex-start; }
+.accountHint { color: var(--muted); margin-block: var(--space-4); }
+.statusActions { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin-block: var(--space-6) var(--space-8); }
+.accountSection { margin-top: var(--space-8); }
+.documentList { list-style: none; padding: 0; margin: var(--space-4) 0 0; }
+.documentList li { display: grid; gap: var(--space-1); padding: var(--space-4); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-control); overflow-wrap: anywhere; }
+.documentList li + li { margin-top: var(--space-3); }
+.documentList span { color: var(--muted); }
+@media (min-width: 48rem) { .layout { padding-block: var(--space-4) var(--space-8); } }

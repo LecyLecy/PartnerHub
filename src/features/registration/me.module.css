@@ -1,0 +1,26 @@
+.panel { margin-top: var(--space-8); padding: var(--space-8); background: var(--paper); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); }
+.panelHead { margin-bottom: var(--space-6); }
+.panelHead h2 { margin: 0; scroll-margin-top: var(--space-6); }
+.panelHead p { margin: var(--space-1) 0 0; color: var(--muted); }
+
+.ticketList { list-style: none; padding: 0; margin: 0; display: grid; gap: var(--space-6); align-items: start; }
+.ticketList > li { min-width: 0; background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-1); transition: box-shadow var(--dur-base) var(--ease-standard), transform var(--dur-base) var(--ease-standard); }
+.ticketList > li:hover { box-shadow: var(--shadow-2); transform: translateY(-2px); }
+
+.ticketList > li { overflow: hidden; }
+.ticketList > li[data-status=CANCELLED], .ticketList > li[data-status=REJECTED] { opacity: .85; }
+.ticketList .statusNote { margin: 0; padding: var(--space-3) var(--space-6); border-top: var(--border-width) solid var(--line); background: var(--warning-surface); color: var(--navy); font-size: var(--text-caption); }
+.ticketList .statusNote[data-tone=danger] { background: var(--error-surface); }
+.ticketMain { padding: var(--space-6); display: grid; justify-items: start; gap: var(--space-2); }
+.ticketList h3 { margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
+.ticketList p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
+.ticketList .reference { margin: 0; padding: var(--space-4) var(--space-6); border-top: var(--border-width) dashed var(--control-border); background: var(--paper); font-size: var(--text-caption); }
+.reference strong { display: block; color: var(--navy); font-size: var(--text-h3); font-weight: var(--weight-label); font-variant-numeric: tabular-nums; }
+.ticketActions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: 0 var(--space-6) var(--space-4); background: var(--paper); }
+.ticketActions p { margin: 0; color: var(--muted); font-size: var(--text-caption); }
+.hint { font-size: var(--text-caption); color: var(--muted); margin: var(--space-6) 0 0; }
+
+
+@media (min-width: 48rem) { .ticketList { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 48rem) { .panel { padding: var(--space-6) var(--space-4); } }
+@media (prefers-reduced-motion: reduce) { .ticketList > li { transition: none; } .ticketList > li:hover { transform: none; } }

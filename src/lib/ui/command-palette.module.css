@@ -1,0 +1,18 @@
+.dialog { width: min(36rem, calc(100vw - 2rem)); max-height: 70svh; margin: 12svh auto auto; padding: 0; border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); background: var(--surface); color: var(--navy); box-shadow: var(--shadow-3); overflow: hidden; }
+.dialog[open] { animation: palette-in var(--dur-base) var(--ease-out) both; }
+.dialog::backdrop { background: #16274873; }
+.panel { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; max-height: 70svh; }
+.search { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-4); border-bottom: var(--border-width) solid var(--line); color: var(--muted); }
+.input { flex: 1; min-width: 0; min-height: var(--field-height); border: 0; background: transparent; color: var(--navy); font: inherit; }
+.input::placeholder { color: var(--muted); opacity: 1; }
+.input:focus-visible { outline: none; box-shadow: none; }
+.search:focus-within { box-shadow: inset 0 calc(var(--border-width) * -2) 0 var(--navy); }
+.list { overflow-y: auto; padding: var(--space-2); display: grid; gap: var(--space-1); align-content: start; }
+.option { display: flex; align-items: center; gap: var(--space-3); min-height: var(--touch-min); padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--radius-control); background: transparent; color: var(--navy); font: inherit; text-align: left; text-decoration: none; width: 100%; }
+.option[aria-selected=true] { background: var(--subtle); }
+.label { flex: 1; min-width: 0; overflow-wrap: anywhere; font-weight: var(--weight-label); }
+.group { flex-shrink: 0; color: var(--muted); font-size: var(--text-caption); }
+.empty { margin: 0; padding: var(--space-6) var(--space-4); color: var(--muted); text-align: center; overflow-wrap: anywhere; }
+.help { margin: 0; padding: var(--space-3) var(--space-4); border-top: var(--border-width) solid var(--line); background: var(--paper); color: var(--muted); font-size: var(--text-caption); }
+@keyframes palette-in { from { opacity: 0; transform: translateY(-.5rem) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .dialog[open] { animation: none; } }
