@@ -18,7 +18,9 @@ PartnerHub is a Venture Creation concept for campus organizations, youth communi
 
 The sponsorship workflow is the main differentiator. PartnerHub is not positioned as a national ticket marketplace, payment processor, generic CRM, or full HR system.
 
-The repository currently contains a typed Next.js foundation and the earlier anonymous-registration Prisma model. Reusable accounts, committee recruitment, event workflows, database-backed mutations, QR generation, and deployment remain **In progress**.
+The `production` branch integrates the member branches into a classroom demo. It connects accounts, event creation/publication, participant registration, committee selection, QR tickets and optional entry/exit, sponsor decisions, and benefit reporting using fictional data in the browser. Real authentication, database-backed services, email, and payments remain **In progress**. See [delivery evidence](./DEMO-DELIVERY.md).
+
+Run `npm run build:demo` then `npm start` for the hosted-demo build, or set `NEXT_PUBLIC_PARTNERHUB_DEMO=1` before `npm run dev`. Use the banner to switch between organizer, participant/applicant, and sponsor while retaining the same in-tab data. Open `/guide` for the demonstration sequence.
 
 ## Planned first-version flow
 
@@ -41,15 +43,15 @@ The first version is intended to demonstrate one complete event flow at a Ventur
 - Reusable profile data requires account-holder consent.
 - Each account registers as one of three roles: user, organizer, or sponsor company. Organizer and sponsor accounts wait for admin verification and have limited access until approved. Event-level roles such as committee membership stay event-scoped.
 - QR payloads contain an opaque ticket reference and secret, never personal data.
-- Attendance can be disabled or use entry-only scanning in the first version.
+- Demo attendance can be disabled, entry-only, or entry and exit. Repeated scans preserve the first timestamps.
 - Sponsorship uses proposal and evidence URLs. File uploads are deferred.
-- Payments, exit scans, committee task boards, chat, sponsor matching, automatic matching notifications, and marketplace behavior are deferred.
+- Real payments, committee task boards, chat, sponsor matching, automatic matching notifications, and marketplace behavior are deferred.
 
 ## Current foundation
 
 - Next.js 16 App Router scaffold with TypeScript and Tailwind CSS.
-- Frontend account/workspace/event integration is **In progress** on the feature branch. Route UI and typed API clients are not evidence of deployed authentication or persistence.
-- Four-stage event editing retains live poster/page preview, validation, module configuration and user-selected organizer/event/sponsor-display logos. Backend storage and publication remain **In progress**.
+- Integrated account/workspace/event UI is available in the explicitly labeled classroom demo. Typed clients use the browser-only simulated service in that build; real authentication and backend persistence are not delivered.
+- Four-stage event editing includes live poster/page preview, validation, module configuration, user-selected logos, and a publish-readiness checklist. The demo supports valid publication and event closure; real server storage remains **In progress**.
 - Static `GET /api/health` route, not a database connectivity check.
 - PostgreSQL and Prisma model for events, anonymous registrations, attendance, sponsorship campaigns, prospects, benefits, and timeline entries.
 - Separate frontend and server-only backend ownership folders for account, event, registration, committee, attendance, and sponsorship work.

@@ -1,5 +1,13 @@
 # PartnerHub Architecture
 
+## Hosted classroom-demo architecture, 2026-10-16
+
+The current owner authorizes a hosted demo using the existing typed frontend services and a browser-local simulated database. `npm run build:demo` explicitly enables `NEXT_PUBLIC_PARTNERHUB_DEMO=1`; `vercel.json` selects this command for the classroom deployment. Normal `npm run build` still defaults to the non-demo configuration. This is not a working production authentication or PostgreSQL backend.
+
+`src/mocks/demo/router.ts` applies role, status, ownership, lifecycle and registration-window rules to the in-tab dataset. `src/mocks/demo/reporting.ts` connects proposal decisions and accepted requests to sponsor commitments and reviewed evidence. Event lifecycle readiness lives in `src/features/event/lifecycle.ts`; the UI and simulated service use the same rules. Event report transport is declared in `src/contracts/event-report.ts`. Attendance supports NONE, ENTRY and ENTRY_EXIT with repeat-safe first timestamps; exit requires entry.
+
+Data lives in versioned sessionStorage and a memory cache. Switching seeded roles changes the acting session without discarding event data. Reset removes the dataset. Browsers and tabs do not share a real database, secrets are not secure in client code, and this demo must use fictional personal information. For actual deployment to customers, the backend requirements in the remainder of this document still apply.
+
 ## Architecture goals
 
 PartnerHub supports a complete event flow from setup through post-event sponsor evidence. The target first version adds reusable participant profiles and committee recruitment to the existing event, QR attendance, and sponsorship foundation.

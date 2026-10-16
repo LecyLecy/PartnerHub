@@ -24,7 +24,7 @@ export default function OrganizerRegistrationPage({ id }: { id: string }) { retu
 
 function Page({ id }: { id: string }) {
   const board = useResource(id, loadRegistrants);
-  const form = useResource(`form-${id}`, (_key, signal) => loadForm(id, signal));
+  const form = useResource(id, loadForm);
   const base = useTabsId();
   const [tab, setTab] = useState("peserta");
   if (board.status === "loading" || form.status === "loading") return <SkeletonCards label="Memuat pendaftaran…" count={2} />;

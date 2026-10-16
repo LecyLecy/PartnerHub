@@ -1,5 +1,11 @@
 # PartnerHub workspace guide
 
+## Approved production-demo integration task
+
+On 2026-10-16 the owner explicitly authorized merging all member branches into `production`, resolving conflicts, completing the application UI with fictional local data, applying both feedback grids, and hosting the demo. For this specific delivery, scope includes all six frontend features, workspace, shared contracts/utilities/styles, app adapters, demo services/data, tests, build/deployment configuration, scripts, and documentation. The task does not require real backend authentication, payment, email, or a production database. Do not repeat the narrow-feature scope question for this already-authorized delivery. Later unrelated tasks still use the scope rules below.
+
+Read `DEMO-DELIVERY.md` for the feedback source and evidence, and `/guide` for the user-facing demo sequence. `npm run build:demo` creates the explicitly labeled classroom build; normal builds retain their previous non-demo default. Preserve real-backend limitations in documentation and never claim fictional counts as traction.
+
 ## Mandatory scope gate
 
 Before planning or editing, ask the user: "Which feature do you want to develop, and is the scope frontend, backend, or both?" Wait for an explicit answer. If the request already specifies both, restate them and ask for confirmation. Read-only orientation may happen before confirmation.

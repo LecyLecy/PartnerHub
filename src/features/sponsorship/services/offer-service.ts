@@ -6,7 +6,11 @@ const offer = z.object({
   id: z.string().min(1), eventId: z.string().min(1), eventTitle: z.string().max(100), organizationName: z.string().max(100), sponsorId: z.string().min(1), sponsorName: z.string().max(120),
   category: z.string().max(60), message: z.string().max(1000), amountLabel: z.string().max(60).nullable(), proposalUrl: z.string().max(300).nullable(),
   status: z.enum(["SENT", "ACCEPTED", "DECLINED"]), createdAt: z.iso.datetime({ offset: true }),
+  nextFollowUpAt: z.string().nullable().optional(), followUpNote: z.string().max(500).nullable().optional(),
 });
+export async function saveFollowUp(eventId: string, offerId: string, date: string, note: string): Promise<void> {
+  await apiRequest(`/api/events/${encodeURIComponent(eventId)}/sponsor-offers/${encodeURIComponent(offerId)}/follow-up`, { method: "POST", body: { date, note } });
+}
 
 function parse<T>(schema: z.ZodType<T>, data: unknown, message: string): T {
   const result = schema.safeParse(data);

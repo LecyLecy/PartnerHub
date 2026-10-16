@@ -4,5 +4,11 @@ node_modules/
 .env
 .env.local
 coverage/
+.impeccable/delivery/
+.impeccable/delivery-committee/
+.impeccable/delivery-registration/
+.impeccable/delivery-roles/
+.impeccable/delivery-scanner/
+.vercel/
 
 .DS_Store

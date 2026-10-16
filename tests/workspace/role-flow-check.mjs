@@ -47,6 +47,7 @@ async function openAccountMenu() {
   const side = page.locator("#organizer-sidebar");
   if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#organizer-sidebar").getBoundingClientRect().width > 200); }
   const trigger = page.getByRole("button", { name: /^Menu akun/ });
+  if (page.viewportSize().width >= 768) await trigger.first().waitFor({ state: "visible" });
   if (!(await trigger.first().isVisible())) await page.getByRole("button", { name: "Buka menu" }).click();
   if (await trigger.first().isVisible()) await trigger.first().click();
 }
@@ -241,6 +242,7 @@ try {
   await page.getByRole("button", { name: /^Detail Seminar Kepemimpinan Mahasiswa/ }).click();
   // The default form asks for one optional question, so a participant can submit it straight away.
   await page.getByRole("dialog").getByText("Gratis").first().waitFor();
+  await page.getByRole("dialog").getByRole("checkbox", { name: /Saya setuju menggunakan profil/ }).check();
   await page.getByRole("dialog").getByRole("button", { name: "Daftar acara" }).click();
   await page.getByText(/Pendaftaran berhasil/).waitFor();
   // A joined event leaves the catalog and shows up under Acara saya with its ticket.
@@ -285,11 +287,11 @@ try {
 
   await signIn("demo.sponsor@partnerhub.test");
   await page.waitForURL("**/sponsor");
-  await page.locator("details").first().waitFor();
-  for (const detail of await page.locator("details").all()) await detail.locator("summary").click();
+  await page.getByRole("button", { name: "Detail proposal Seminar Kepemimpinan Mahasiswa", exact: true }).click();
   await page.getByText("Dukungan dana untuk konsumsi peserta").waitFor();
+  await page.keyboard.press("Escape");
   await page.getByText("Logo pada poster acara: terverifikasi").waitFor();
-  await page.getByRole("link", { name: "Kirim proposal", exact: true }).first().click();
+  await page.getByRole("link", { name: "Kirim proposal baru", exact: true }).click();
   await page.getByRole("button", { name: "Kirim proposal", exact: true }).click();
   await page.getByText("Pilih acara yang ingin kamu dukung.").waitFor();
   assert.equal(await focusedName(), "eventId");
@@ -298,9 +300,9 @@ try {
   await field("offer").fill("Dukungan dana untuk konsumsi peserta kegiatan ini.");
   await page.getByRole("button", { name: "Kirim proposal", exact: true }).click();
   await page.waitForURL("**/sponsor?sent=1");
-  await page.locator("details").first().waitFor();
-  for (const detail of await page.locator("details").all()) await detail.locator("summary").click();
+  await page.getByRole("button", { name: /^Detail proposal / }).first().click();
   await page.getByText("Dukungan dana untuk konsumsi peserta kegiatan ini.").waitFor();
+  await page.keyboard.press("Escape");
   await go("/organizer"); await page.waitForURL("**/sponsor");
   await signOut();
 
@@ -309,6 +311,9 @@ try {
   await page.getByText("Komunitas Demo Baru").waitFor();
   await page.getByRole("link", { name: /Lihat status verifikasi/ }).count().then((n) => assert.equal(n, 0));
   await page.screenshot({ path: path.join(output, "demo-pending.png"), fullPage: true });
+  await page.getByRole("button", { name: "Simulasikan persetujuan admin", exact: true }).click();
+  await page.waitForURL("**/organizer");
+  await page.getByRole("heading", { name: "Event berikutnya mulai di sini.", exact: true }).waitFor();
   await signOut();
 
   // 11. Reset demo data removes this session's changes (new accounts, proposals) and signs out.

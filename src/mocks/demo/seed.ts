@@ -25,7 +25,7 @@ export type DemoAccount = {
 };
 export type OwnedEvent = EventRecord & { ownerId: string };
 /** `qrSecret` is set when the organizer sends the QR. Demo only: a real backend stores just a hash of it. */
-export type OwnedRegistration = { id: string; ownerId: string; eventId: string; ticketReference: string; status: RegistrationStatus; note?: string | null; createdAt: string; qrSecret: string | null; checkedInAt?: string | null; answers: RegistrationAnswer[]; registrantName: string | null };
+export type OwnedRegistration = { id: string; ownerId: string; eventId: string; ticketReference: string; status: RegistrationStatus; note?: string | null; createdAt: string; consentAt?: string | null; qrSecret: string | null; checkedInAt?: string | null; checkedOutAt?: string | null; answers: RegistrationAnswer[]; registrantName: string | null };
 /** Registration form an organizer saved for one event. Events without an entry use the default form and are free. */
 export type StoredForm = { priceIdr: number; paymentNote: string | null; fields: RegistrationField[] };
 export type OwnedNotification = NotificationItem & { ownerId: string };
@@ -40,6 +40,8 @@ export type OwnedOffer = SponsorOffer & { ownerId: string };
 
 export type DemoDb = {
   version: 3;
+  attendanceModes?: Record<string, "NONE" | "ENTRY" | "ENTRY_EXIT">;
+  passwordHashes?: Record<string, string>;
   forms: Record<string, StoredForm>;
   accounts: DemoAccount[];
   sessionAccountId: string | null;
@@ -79,7 +81,7 @@ function event(id: string, ownerId: string, title: string, category: EventRecord
     id, ownerId, title, category, summary, status, revision: "1", updatedAt: at(-2),
     startsAt: dated ? at(days) : null, endsAt: dated ? at(days, 4) : null, timezone: "Asia/Jakarta",
     venue: dated ? venue : "", capacity,
-    registrationOpensAt: dated ? at(days - 30) : null, registrationClosesAt: dated ? at(days - 1) : null,
+    registrationOpensAt: dated ? at(-30) : null, registrationClosesAt: dated ? at(days - 1) : null,
     modules: { registration: true, committee: false, attendance: false, sponsorship: true },
     branding: { organizationName, eventLogo: demoAsset(id, "cover", status), organizationLogo: demoAsset(organizationName, "org", status), sponsors: sponsors.map((name, index) => ({ id: `${id}-s${index}`, name, logo: null })) },
   };

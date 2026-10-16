@@ -14,7 +14,8 @@ export default function Page() {
     <h2>Status saat ini</h2>
     <ul>
       <li>Pendaftaran peserta, rekrutmen panitia, dan permintaan sponsor dua arah sudah tersedia di antarmuka.</li>
-      <li>Layanan backend, publikasi acara, dan pemindaian QR di pintu masuk masih dalam pengembangan. Pembuatan dan pengiriman QR per acara sudah tersedia di antarmuka.</li>
+      <li>Demo menghubungkan publikasi acara, pendaftaran, panitia, QR masuk/keluar opsional, proposal, dan bukti sponsor dengan data fiktif di browser.</li>
+      <li>Backend produksi, email, dan pembayaran nyata tidak diaktifkan pada demo kelas ini.</li>
       <li>Penyelenggara dan sponsor memerlukan verifikasi email dan pemeriksaan admin.</li>
     </ul>
     <p><Link href="/register">Pilih peranmu</Link></p>

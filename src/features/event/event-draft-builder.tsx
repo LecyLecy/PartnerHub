@@ -291,7 +291,7 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
                       ? "Jadwal menggunakan WIB, untuk event yang selesai pada hari yang sama."
                       : step === 2
                         ? "Logo milik acara, organisasi penyelenggara, dan sponsor. Semuanya kamu yang menentukan."
-                        : "Konfigurasi ini masuk ke draft. Layanan registrasi, panitia, scan, dan sponsor masih In progress."}
+                        : "Pilih modul sesuai kebutuhan. Setelah tersimpan, lengkapi detail dan publikasikan untuk melanjutkan alur demo."}
                 </p>
               </div>
               {step < 2 && <EventFields draft={draft} errors={errors} step={step} update={update} optionalSchedule={Boolean(onSave)}/>}
@@ -339,7 +339,7 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
                     </label>
                   ))}
                   <p className={styles.hint}>
-                    Modul ini hanya konfigurasi draft. Belum mengaktifkan layanan operasional.
+                    Pengaturan disimpan bersama draft. Presensi lanjutan tersedia pada halaman Presensi setelah acara dibuat.
                   </p>
                 </div>
               )}

@@ -10,7 +10,7 @@ import { Badge, Breadcrumb, EmptyState, Notice, PageHeader, ProtectedPage, Skele
 import { Icon } from "@/lib/ui/icons";
 import { CameraScanner } from "./camera-scanner";
 import { readQrFile } from "./qr-reader";
-import { getAttendance, scanTicket } from "./services/attendance-service";
+import { configureAttendance, getAttendance, scanTicket } from "./services/attendance-service";
 import styles from "./scan.module.css";
 
 export default function ScanPage({ id }: { id: string }) { return <ProtectedPage><Scanner id={id} /></ProtectedPage>; }
@@ -21,6 +21,13 @@ function Scanner({ id }: { id: string }) {
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const [result, setResult] = useState<TicketScan | null>(null);
+  const [direction, setDirection] = useState<"ENTRY" | "EXIT">("ENTRY");
+  async function setMode(mode: "NONE" | "ENTRY" | "ENTRY_EXIT") {
+    setBusy(true); setFailure(""); setResult(null); setCamera(false);
+    try { await configureAttendance(id, mode); setDirection("ENTRY"); board.reload(); }
+    catch (error) { setFailure(errorMessage(error)); }
+    finally { setBusy(false); }
+  }
   const locked = useRef(false);
   const mounted = useRef(true);
   const heading = useRef<HTMLHeadingElement>(null);
@@ -32,10 +39,10 @@ function Scanner({ id }: { id: string }) {
   const check = useCallback(async (payload: string) => {
     if (locked.current) return;
     locked.current = true; setCamera(false); setBusy(true); setFailure(""); setResult(null);
-    try { const data = await scanTicket(id, payload); if (mounted.current) { setResult(data); reload.current(); } }
+    try { const data = await scanTicket(id, payload, direction); if (mounted.current) { setResult(data); reload.current(); } }
     catch (error) { if (mounted.current) setFailure(error instanceof ApiError && error.code === "TICKET_INACTIVE" ? "Tiket tidak aktif. Pendaftaran belum dikonfirmasi atau sudah dibatalkan." : error instanceof ApiError && ["INVALID_TICKET", "NOT_FOUND"].includes(error.code) ? "Tiket tidak valid untuk acara ini. Tidak ada kehadiran yang dicatat." : errorMessage(error)); }
     finally { locked.current = false; if (mounted.current) setBusy(false); }
-  }, [id]);
+  }, [id, direction]);
   async function choose(file: File) {
     if (locked.current) return;
     locked.current = true; setCamera(false); setBusy(true); setFailure(""); setResult(null);
@@ -49,6 +56,7 @@ function Scanner({ id }: { id: string }) {
   return <>
     <Breadcrumb href={`/events/${id}/registration`} parent={title || "Pendaftaran peserta"} current="Scan tiket" />
     <PageHeader title="Scan tiket peserta.">Periksa tiket individual peserta.{board.data?.attendanceEnabled ? " QR valid otomatis masuk ke daftar Hadir." : " Modul kehadiran tidak aktif, scan hanya memeriksa tiket."}</PageHeader>
+    <div className={styles.config}><label>Mode presensi<select aria-label="Mode presensi" disabled={busy || camera} value={board.data?.attendanceMode ?? (board.data?.attendanceEnabled ? "ENTRY" : "NONE")} onChange={(event) => void setMode(event.target.value as "NONE" | "ENTRY" | "ENTRY_EXIT")}><option value="NONE">Tanpa presensi QR</option><option value="ENTRY">Scan masuk saja</option><option value="ENTRY_EXIT">Scan masuk dan keluar</option></select></label>{board.data?.attendanceMode === "ENTRY_EXIT" && <label>Jenis scan<select aria-label="Jenis scan" value={direction} disabled={busy || camera} onChange={(event) => { setDirection(event.target.value as "ENTRY" | "EXIT"); setResult(null); }}><option value="ENTRY">Masuk</option><option value="EXIT">Keluar</option></select></label>}</div>
     <div className={styles.layout}>
       <section className={styles.controls} aria-labelledby="scan-controls">
         <h2 id="scan-controls">Periksa QR tiket</h2><p>Gunakan kamera atau pilih gambar QR dari tiket peserta. Gambar dibaca di perangkat, tidak diunggah.</p>
@@ -60,9 +68,10 @@ function Scanner({ id }: { id: string }) {
       <section className={styles.ticket} aria-labelledby="scan-result">
         <h2 id="scan-result" ref={heading} tabIndex={-1}>Hasil pengecekan</h2>
         {!result ? <EmptyState title="Belum ada tiket dipindai.">Data peserta tampil setelah QR valid terbaca.</EmptyState> : <>
-          <div role="status"><Badge tone={result.attendance === "DISABLED" ? "info" : "success"}>{result.attendance === "RECORDED" ? "Hadir tercatat" : result.attendance === "ALREADY_RECORDED" ? "Sudah hadir sebelumnya" : "Tiket valid"}</Badge></div>
+          <div role="status"><Badge tone={result.attendance === "DISABLED" ? "info" : "success"}>{result.attendance === "RECORDED" ? "Hadir tercatat" : result.attendance === "ALREADY_RECORDED" ? "Sudah hadir sebelumnya" : result.attendance === "EXIT_RECORDED" ? "Keluar tercatat" : result.attendance === "ALREADY_EXIT_RECORDED" ? "Sudah keluar sebelumnya" : "Tiket valid"}</Badge></div>
           <h3 className={styles.name}>{result.participant.name}</h3><p>{result.eventTitle}</p>
           <dl className={styles.facts}><div><dt>Referensi tiket</dt><dd>{result.participant.ticketReference}</dd></div><div><dt>Status tiket</dt><dd>Terdaftar</dd></div><div><dt>Waktu hadir</dt><dd>{result.participant.checkedInAt ? exportTime(result.participant.checkedInAt) : "Tidak dicatat, modul kehadiran nonaktif"}</dd></div></dl>
+          {result.participant.checkedOutAt && <p>Waktu keluar: {exportTime(result.participant.checkedOutAt)}</p>}
           {result.participant.answers.length > 0 && <section className={styles.answers}><h3>Jawaban pendaftaran</h3>{result.participant.answers.map((answer) => <div key={answer.fieldId}><strong>{answer.label}</strong>{answer.type === "image" ? <img src={answer.value} alt={answer.label} /> : <p>{answer.value}</p>}</div>)}</section>}
           <button type="button" className={uiStyles.primary} onClick={() => { setResult(null); setFailure(""); setCamera(true); }}>Scan peserta berikutnya</button>
         </>}

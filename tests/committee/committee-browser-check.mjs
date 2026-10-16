@@ -138,6 +138,7 @@ try {
   await page.getByRole("heading", { name: "Permintaan dari penyelenggara", level: 2 }).waitFor();
   await (await openBell()).getByText(/mengajak Perusahaan Demo mendukung Workshop Desain Poster Acara/).waitFor();
   await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Detail permintaan Workshop Desain Poster Acara", exact: true }).click();
   await page.getByRole("button", { name: "Terima", exact: true }).first().click();
   await page.getByText("Diterima sponsor").first().waitFor();
   await page.screenshot({ path: path.join(output, "sponsor-1280.png"), fullPage: true });

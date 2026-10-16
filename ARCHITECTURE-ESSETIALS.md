@@ -1,5 +1,14 @@
 # PartnerHub Architecture Essentials
 
+## Current classroom build
+
+- Delivery branch: `production`, integrating available `adin` and `jad` heads.
+- Owner-approved demo hosting uses `npm run build:demo`; Vercel selects it explicitly. Normal builds remain non-demo by default.
+- Existing typed clients call the browser-only demo router and versioned in-tab sessionStorage. No real database, email, or payment processing.
+- Event lifecycle, registration windows, optional entry/exit, proposal decisions, sponsor evidence and printable reports connect through the same dataset.
+- `/guide` and the demo banner explain scope, role switching, reset, and next steps. Use fictional data only.
+- `DEMO-DELIVERY.md` tracks feedback and verification. Historical production requirements below remain release targets.
+
 Read this first. Use `ARCHITECTURE.md` for complete detail.
 
 ## Product guardrails

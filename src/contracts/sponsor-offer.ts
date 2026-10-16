@@ -15,6 +15,8 @@ export type SponsorOffer = {
   proposalUrl: string | null;
   status: OfferStatus;
   createdAt: string;
+  nextFollowUpAt?: string | null;
+  followUpNote?: string | null;
 };
 export type SponsorOfferInput = { sponsorId: string; category: string; message: string; amountLabel: string | null; proposalUrl: string | null };
 

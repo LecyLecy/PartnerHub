@@ -59,7 +59,7 @@ function Dashboard() {
       {sponsorships.status === "loading" ? <SkeletonCards label="Memuat komitmen…" count={2} />
         : sponsorships.status === "error" ? <Notice error>{errorMessage(sponsorships.error)} <button className={uiStyles.secondary} onClick={sponsorships.reload}>Muat ulang</button></Notice>
         : !sponsorships.data?.length ? <EmptyState title="Belum ada komitmen.">Komitmen muncul setelah penyelenggara menerima proposalmu.</EmptyState>
-        : <ul className={styles.commitments} tabIndex={0} aria-label="Daftar komitmen">{sponsorships.data.map((item) => <li key={item.id}><h3>{item.eventTitle}</h3><p>{item.packageName}</p><ul className={styles.benefits}>{item.benefits.map((benefit) => <li key={benefit.id}>{benefit.label}: <Badge tone={benefit.status === "VERIFIED" ? "success" : "warning"}>{benefit.status === "VERIFIED" ? "terverifikasi" : "direncanakan"}</Badge></li>)}</ul></li>)}</ul>}
+        : <ul className={styles.commitments} tabIndex={0} aria-label="Daftar komitmen">{sponsorships.data.map((item) => <li key={item.id}><h3>{item.eventTitle}</h3><p>{item.packageName}</p><ul className={styles.benefits}>{item.benefits.map((benefit) => <li key={benefit.id}>{benefit.label}: <Badge tone={benefit.status === "VERIFIED" ? "success" : "warning"}>{benefit.status === "VERIFIED" ? "terverifikasi" : "direncanakan"}</Badge>{benefit.evidenceUrl?.startsWith("https://") && <p><a href={benefit.evidenceUrl} target="_blank" rel="noopener noreferrer">Lihat bukti pemenuhan</a></p>}</li>)}</ul></li>)}</ul>}
     </section>
     <section className={styles.section} aria-labelledby="proposals-title">
       <h2 id="proposals-title">Proposal perusahaanmu</h2><p className={styles.sectionHint}>Status dan detail penawaran untuk setiap acara.</p>

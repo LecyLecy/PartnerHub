@@ -5,6 +5,8 @@ import type { MyRegistration, OrganizerSummary, Proposal, PublicEvent, QrDeliver
 import { saveDb, loadDb, resetDb, sessionPasswords } from "./store";
 import type { ApplicantView, CommitteeApplication, CommitteeOpening, DecisionTarget, SelectionStage } from "@/contracts/committee";
 import { DEMO_PASSWORD, type DemoAccount, type DemoDb, type OwnedApplication, type OwnedEvent, type OwnedOffer, type OwnedOpening } from "./seed";
+import { publicationErrors } from "@/features/event/lifecycle";
+import { dispatchReporting, ensureAgreement } from "./reporting";
 
 /**
  * In-browser stand-in for the backend, used only when NEXT_PUBLIC_PARTNERHUB_DEMO=1 at build time.
@@ -18,6 +20,10 @@ const fail = (status: number, code = "REQUEST_FAILED", fields: Record<string, st
 const sleep = () => new Promise((resolve) => setTimeout(resolve, 120));
 const nowIso = () => new Date().toISOString();
 const next = (db: DemoDb, prefix: string) => `${prefix}-${++db.counter}`;
+async function demoPasswordHash(id: string, password: string): Promise<string> {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${id}:${password}`));
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 function sessionOf(account: DemoAccount, db: DemoDb): Session {
   const displayName = (db as DemoDb & { names?: Record<string, string | null> }).names?.[account.id];
@@ -82,6 +88,7 @@ async function register(db: DemoDb, role: "user" | "organizer" | "sponsor", body
   db.accounts.push(account);
   db.sessionAccountId = account.id;
   sessionPasswords.set(account.id, str("password"));
+  (db.passwordHashes ??= {})[account.id] = await demoPasswordHash(account.id, str("password"));
   return { session: sessionOf(account, db), verificationRequired: true };
 }
 
@@ -108,11 +115,24 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     const email = String(json.email ?? "").trim().toLowerCase();
     const account = db.accounts.find((item) => item.email === email);
     const expected = account?.seeded ? DEMO_PASSWORD : account ? sessionPasswords.get(account.id) : undefined;
-    if (!account || !expected || expected !== json.password) throw new ApiError(messageFor(401, false), 401, "INVALID_CREDENTIALS");
+    const hashMatches = account && !account.seeded && typeof json.password === "string" && db.passwordHashes?.[account.id] === await demoPasswordHash(account.id, json.password);
+    if (!account || (!hashMatches && (!expected || expected !== json.password))) throw new ApiError(messageFor(401, false), 401, "INVALID_CREDENTIALS");
     db.sessionAccountId = account.id;
     return sessionOf(account, db);
   }
   if (route === "/api/auth/logout" && method === "POST") { db.sessionAccountId = null; return undefined; }
+  if (route === "/api/demo/switch" && method === "POST") {
+    const account = db.accounts.find((item) => item.seeded && item.status === "active" && item.role === json.role);
+    if (!account) return fail(422, "INVALID_ROLE");
+    db.sessionAccountId = account.id;
+    return sessionOf(account, db);
+  }
+  if (route === "/api/demo/approve" && method === "POST") {
+    const account = current(db);
+    account.emailVerified = true;
+    account.status = "active";
+    return sessionOf(account, db);
+  }
   const registerMatch = route.match(/^\/api\/auth\/register\/(user|organizer|sponsor)$/);
   if (registerMatch && method === "POST" && form) return register(db, registerMatch[1] as "user" | "organizer" | "sponsor", form);
   if (route === "/api/auth/password/forgot" || route === "/api/auth/password/reset" || route === "/api/auth/verification/resend") return { message: "Mode demo: tidak ada email yang dikirim." };
@@ -147,12 +167,14 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     const account = active(db, "user");
     const target = db.events.find((item) => item.id === joinMatch[1] && item.status === "PUBLISHED");
     if (!target) return fail(404, "NOT_FOUND");
+    if (!target.modules.registration) return fail(409, "REGISTRATION_DISABLED");
+    if (!target.registrationOpensAt || !target.registrationClosesAt || Date.now() < Date.parse(target.registrationOpensAt) || Date.now() >= Date.parse(target.registrationClosesAt)) throw new ApiError("Pendaftaran belum dibuka atau sudah ditutup.", 409, "REGISTRATION_CLOSED");
     if (db.registrations.some((item) => item.ownerId === account.id && item.eventId === target.id && (item.status === "REGISTERED" || item.status === "PENDING"))) return fail(409, "ALREADY_REGISTERED");
     if (target.capacity !== null && registeredCount(db, target.id) >= target.capacity) return fail(409, "EVENT_FULL");
     const form = formOf(db, target.id);
     const answers = checkAnswers(form.fields, json.answers);
     const paid = form.priceIdr > 0;
-    const created = { id: next(db, "reg"), ownerId: account.id, eventId: target.id, ticketReference: ticketReference(), status: paid ? "PENDING" as const : "REGISTERED" as const, note: null, createdAt: nowIso(), qrSecret: null, answers, registrantName: null };
+    const created = { id: next(db, "reg"), ownerId: account.id, eventId: target.id, ticketReference: ticketReference(), status: paid ? "PENDING" as const : "REGISTERED" as const, note: null, createdAt: nowIso(), consentAt: json.consent === true ? nowIso() : null, qrSecret: null, answers, registrantName: null };
     db.registrations.push(created);
     if (paid) {
       notify(db, account.id, "Menunggu konfirmasi pembayaran", `Bukti pembayaran untuk ${target.title} sudah terkirim. Penyelenggara akan meninjaunya.`);
@@ -209,6 +231,37 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     if (key) db.idempotency[key] = created.id;
     return strip(created);
   }
+  const lifecycleMatch = route.match(/^\/api\/events\/([^/]+)\/lifecycle$/);
+  const followUpMatch = route.match(/^\/api\/events\/([^/]+)\/sponsor-offers\/([^/]+)\/follow-up$/);
+  if (followUpMatch && method === "POST") {
+    const account = active(db, "organizer");
+    const event = db.events.find((item) => item.id === followUpMatch[1] && item.ownerId === account.id);
+    const offer = db.offers.find((item) => item.id === followUpMatch[2] && item.eventId === event?.id);
+    const date = typeof json.date === "string" ? json.date : "";
+    const note = typeof json.note === "string" ? json.note.trim() : "";
+    if (!event || !offer) return fail(404, "NOT_FOUND");
+    const parsed = new Date(`${date}T00:00:00Z`);
+    if ((date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !Number.isFinite(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date)) || note.length > 500) throw new ApiError("Isi tanggal tindak lanjut yang valid dan catatan maksimal 500 karakter.", 422, "INVALID_FOLLOW_UP");
+    offer.nextFollowUpAt = date || null;
+    offer.followUpNote = note || null;
+    return { ok: true };
+  }
+  if (lifecycleMatch && method === "POST") {
+    const account = active(db, "organizer");
+    const target = db.events.find((item) => item.id === lifecycleMatch[1] && item.ownerId === account.id);
+    if (!target) return fail(404, "NOT_FOUND");
+    if (target.revision !== json.revision) return fail(409, "STALE_REVISION");
+    if (json.action === "publish" && target.status === "DRAFT") {
+      const errors = publicationErrors(target);
+      if (errors.length) throw new ApiError(errors.join(" "), 422, "INVALID_EVENT");
+      target.status = "PUBLISHED";
+    } else if (json.action === "close" && target.status === "PUBLISHED") target.status = "CLOSED";
+    else if (json.action === "archive" && target.status === "CLOSED") target.status = "ARCHIVED";
+    else return fail(409, "INVALID_TRANSITION");
+    target.revision = String(Number(target.revision) + 1);
+    target.updatedAt = nowIso();
+    return strip(target);
+  }
   const eventMatch = route.match(/^\/api\/events\/([^/]+)(\/assets)?$/);
   if (eventMatch) {
     const account = active(db, "organizer");
@@ -230,6 +283,7 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     }
   }
 
+  if (/\/report$|\/benefits(?:\/|$)|\/sponsor-proposals\/[^/]+\/decision$/.test(route)) return dispatchReporting(db, method, route, json);
   const handled = await dispatchParticipation(db, method, route, json);
   if (handled !== NOT_HANDLED) return handled;
 
@@ -255,6 +309,7 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     if (offer.length < 20) return fail(422, "VALIDATION_ERROR", { offer: "Jelaskan penawaranmu, minimal 20 karakter." });
     const created: Proposal & { ownerId: string } = { id: next(db, "proposal"), ownerId: account.id, eventId: target.id, eventTitle: target.title, category: String(json.category ?? ""), offer, amountLabel: typeof json.amountLabel === "string" && json.amountLabel.trim() ? json.amountLabel.trim() : null, status: "SENT", createdAt: nowIso() };
     db.proposals.push(created);
+    notify(db, target.ownerId, "Proposal sponsor baru", `Ada penawaran dukungan untuk ${target.title}. Tinjau di Status sponsor.`);
     const { ownerId, ...view } = created; void ownerId;
     return view;
   }
@@ -324,7 +379,7 @@ function checkAnswers(fields: RegistrationField[], raw: unknown): RegistrationAn
 
 function registrantOf(db: DemoDb, item: DemoDb["registrations"][number]): Registrant {
   const account = db.accounts.find((entry) => entry.id === item.ownerId);
-  return { id: item.id, name: account?.fullName ?? item.registrantName ?? "Peserta", ticketReference: item.ticketReference, status: item.status, note: item.note ?? null, createdAt: item.createdAt, qrIssued: Boolean(item.qrSecret), checkedInAt: item.checkedInAt ?? null, answers: item.answers };
+  return { id: item.id, name: account?.fullName ?? item.registrantName ?? "Peserta", ticketReference: item.ticketReference, status: item.status, note: item.note ?? null, createdAt: item.createdAt, qrIssued: Boolean(item.qrSecret), checkedInAt: item.checkedInAt ?? null, checkedOutAt: item.checkedOutAt ?? null, answers: item.answers };
 }
 
 /** Organizer side of registration: price, custom form, and the list of registrants. */
@@ -334,12 +389,28 @@ function dispatchRegistration(db: DemoDb, method: string, route: string, json: R
     const owner = active(db, "organizer");
     const event = db.events.find((item) => item.id === scanMatch[1] && item.ownerId === owner.id);
     if (!event) return fail(404, "NOT_FOUND");
-    if (scanMatch[2] === "attendance" && method === "GET") return { eventId: event.id, eventTitle: event.title, attendanceEnabled: event.modules.attendance, items: db.registrations.filter((item) => item.eventId === event.id && item.checkedInAt).map((item) => registrantOf(db, item)) };
+    if (scanMatch[2] === "attendance" && method === "POST") {
+      if (json.mode !== "NONE" && json.mode !== "ENTRY" && json.mode !== "ENTRY_EXIT") return fail(422, "INVALID_MODE");
+      if (json.mode !== "NONE" && !event.modules.registration) throw new ApiError("Aktifkan modul pendaftaran terlebih dahulu.", 422, "REGISTRATION_REQUIRED");
+      event.modules.attendance = json.mode !== "NONE";
+      (db.attendanceModes ??= {})[event.id] = json.mode;
+      return { ok: true };
+    }
+    const mode = !event.modules.attendance ? "NONE" : db.attendanceModes?.[event.id] === "ENTRY_EXIT" ? "ENTRY_EXIT" : "ENTRY";
+    if (scanMatch[2] === "attendance" && method === "GET") return { eventId: event.id, eventTitle: event.title, attendanceEnabled: event.modules.attendance, attendanceMode: mode, items: db.registrations.filter((item) => item.eventId === event.id && item.checkedInAt).map((item) => registrantOf(db, item)) };
     if (scanMatch[2] !== "ticket-scans" || method !== "POST") return fail(404, "NOT_FOUND");
+    if (event.status !== "PUBLISHED") throw new ApiError("Acara tidak terbuka untuk pemindaian tiket baru.", 409, "EVENT_CLOSED");
     if (typeof json.payload !== "string" || !/^PH1\.[a-zA-Z0-9]{24}$/.test(json.payload)) return fail(422, "INVALID_TICKET");
     const found = db.registrations.find((item) => item.eventId === event.id && item.qrSecret === (json.payload as string).slice(4));
     if (!found) return fail(404, "INVALID_TICKET");
     if (found.status !== "REGISTERED") return fail(409, "TICKET_INACTIVE");
+    if (json.direction === "EXIT") {
+      if (mode !== "ENTRY_EXIT") throw new ApiError("Scan keluar belum diaktifkan untuk acara ini.", 409, "EXIT_DISABLED");
+      if (!found.checkedInAt) throw new ApiError("Tiket harus dicatat masuk sebelum scan keluar.", 409, "ENTRY_REQUIRED");
+      const repeated = Boolean(found.checkedOutAt);
+      if (!repeated) found.checkedOutAt = nowIso();
+      return { eventId: event.id, eventTitle: event.title, participant: registrantOf(db, found), attendance: repeated ? "ALREADY_EXIT_RECORDED" : "EXIT_RECORDED" };
+    }
     const attendance = !event.modules.attendance ? "DISABLED" : found.checkedInAt ? "ALREADY_RECORDED" : "RECORDED";
     if (attendance === "RECORDED") found.checkedInAt = nowIso();
     return { eventId: event.id, eventTitle: event.title, participant: registrantOf(db, found), attendance };
@@ -570,6 +641,7 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
     if (found.status !== "SENT") return fail(409, "ALREADY_ANSWERED");
     if (json.status !== "ACCEPTED" && json.status !== "DECLINED") return fail(422, "VALIDATION_ERROR");
     found.status = json.status;
+    if (found.status === "ACCEPTED") ensureAgreement(db, found.eventId, found.sponsorId, found.category);
     notify(db, found.ownerId, "Tanggapan sponsor", `${found.sponsorName} ${json.status === "ACCEPTED" ? "menerima" : "menolak"} permintaan dukungan untuk ${found.eventTitle}.`);
     return strip2(found);
   }

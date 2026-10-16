@@ -1,5 +1,11 @@
 # PartnerHub Product Requirements Document
 
+## Classroom demo delivery, 2026-10-16
+
+The owner authorized merging all available member branches into `production` and completing a hosted demonstration with fictional local data. This supersedes earlier frontend-only scope restrictions and the prohibition on a demo build as the hosted classroom experience. A real production backend, real payments, email delivery, commercial packages, and real customer claims are not required. The long-term product requirements below remain architectural targets, not claims of deployed real services.
+
+The demo must connect event creation and valid publication, consented participant registration, organizer review, committee selection, QR delivery, optional no-QR/entry/entry-and-exit attendance, sponsor proposal decisions, benefit evidence, and reporting. Switching seeded roles preserves one dataset within the same browser tab. Newly registered organizers can explicitly simulate admin approval. All synthetic activity is visibly disclosed. See `DEMO-DELIVERY.md` for feedback provenance, changes, evidence, and remaining audit items.
+
 ## Product summary
 
 PartnerHub is a web-based event operations workspace for campus organizations, youth communities, and small event organizers that run recurring events. It connects event setup, reusable participant registration, committee recruitment, QR attendance, and sponsorship management in one system.

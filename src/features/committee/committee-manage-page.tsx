@@ -34,7 +34,7 @@ function Loaded({ id, data, reload }: { id: string; data: CommitteeWorkspace; re
     <ul className={styles.entryGrid} aria-label="Daftar pelamar">{views.map((view) => <li key={view.href}>
       <Link className={styles.entry} href={view.href}><strong>{view.value}</strong><span className={styles.entryLabel}>{view.label}<Icon name="arrow" size={18} /></span><span className={styles.muted}>{view.hint}</span></Link>
     </li>)}</ul>
-    {!data.eventPublished && <Notice>Lowongan hanya bisa dibuka untuk acara yang terpublikasi. Publikasi acara masih dalam pengembangan.</Notice>}
+    {!data.eventPublished && <Notice>Lowongan hanya bisa dibuka setelah acara dipublikasikan. Lengkapi kesiapan publikasi di detail acara.</Notice>}
     {data.eventPublished && <OpeningForm key={data.opening?.id ?? "new"} id={id} data={data} onSaved={(text) => { toast(text); reload(); }} />}
   </>;
 }

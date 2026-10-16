@@ -34,7 +34,7 @@ function Delivery({ id }: { id: string }) {
     <p><Link className={uiStyles.secondary} href={`/events/${id}/scan`}><Icon name="qr" size={18} />Scan QR peserta</Link></p>
     <Breadcrumb href={`/events/${id}`} parent={data.eventTitle} current="QR tiket" />
     <PageHeader title="QR tiket peserta.">Buat QR masuk untuk setiap peserta yang terdaftar, lalu kirim. Peserta membukanya lewat tombol Tampilkan QR di halaman tiket mereka.</PageHeader>
-    {!data.eventPublished && <Notice>QR hanya bisa dikirim untuk acara yang terpublikasi. Publikasi acara masih dalam pengembangan.</Notice>}
+    {!data.eventPublished && <Notice>QR hanya bisa dikirim untuk acara yang terpublikasi. Buka detail acara untuk memeriksa kesiapan publikasi.</Notice>}
     <StatGrid label="Status QR" items={[{ label: "peserta terdaftar", value: data.registered }, { label: "QR terkirim", value: data.issued }, { label: "menunggu QR", value: waiting }]} />
     <section className={styles.panel} aria-labelledby="qr-send-title">
       <h2 id="qr-send-title">Kirim QR</h2>
@@ -44,7 +44,7 @@ function Delivery({ id }: { id: string }) {
         : `${waiting} peserta belum menerima QR. Tombol di bawah membuat kode baru hanya untuk mereka dan mengabari mereka lewat notifikasi.`}</p>
       {failure && <Notice error>{failure}</Notice>}
       <button type="button" className={uiStyles.primary} onClick={() => void send()} disabled={busy || !data.eventPublished || waiting === 0}><Icon name="qr" size={18} />{busy ? "Mengirim…" : waiting === data.registered && waiting > 0 ? "Buat dan kirim QR" : "Kirim QR yang tertunda"}</button>
-      <p className={styles.fine}>Kode berisi rahasia acak tanpa data pribadi. Pemindaian di pintu masuk masih dalam pengembangan.</p>
+      <p className={styles.fine}>Kode berisi rahasia acak tanpa data pribadi. Gunakan Scan QR peserta untuk memeriksa tiket dan mencatat presensi bila diaktifkan.</p>
     </section>
   </>;
 }

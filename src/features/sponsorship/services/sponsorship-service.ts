@@ -8,11 +8,14 @@ const proposal = z.object({
 });
 const sponsorship = z.object({
   id: z.string().min(1), eventId: z.string().min(1), eventTitle: z.string().max(100), packageName: z.string().max(100),
-  benefits: z.array(z.object({ id: z.string().min(1), label: z.string().max(200), status: z.enum(["PLANNED", "VERIFIED"]) })).max(50),
+  benefits: z.array(z.object({ id: z.string().min(1), label: z.string().max(200), status: z.enum(["PLANNED", "VERIFIED"]), evidenceUrl: z.string().nullable().optional() })).max(50),
 });
 
 const incomingProposal = proposal.extend({ sponsorName: z.string().max(120) });
 export type IncomingProposal = z.infer<typeof incomingProposal>;
+export async function decideProposal(eventId: string, proposalId: string, status: "IN_REVIEW" | "ACCEPTED" | "DECLINED"): Promise<void> {
+  await apiRequest(`/api/events/${encodeURIComponent(eventId)}/sponsor-proposals/${encodeURIComponent(proposalId)}/decision`, { method: "POST", body: { status } });
+}
 
 export async function listEventProposals(eventId: string, signal: AbortSignal): Promise<IncomingProposal[]> {
   // TODO(backend): GET /api/events/:id/sponsor-proposals -> {items:[Proposal & {sponsorName}]}, newest first. Event owner only; foreign or missing events return 404. No sponsor email, owner id, or contact details.

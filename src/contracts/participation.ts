@@ -55,7 +55,7 @@ export type Sponsorship = {
   eventId: string;
   eventTitle: string;
   packageName: string;
-  benefits: { id: string; label: string; status: "PLANNED" | "VERIFIED" }[];
+  benefits: { id: string; label: string; status: "PLANNED" | "VERIFIED"; evidenceUrl?: string | null }[];
 };
 
 /** Opaque entry code for one registration. `payload` is `PH1.secret` and holds no personal data. */
@@ -74,7 +74,7 @@ export type RegistrationAnswers = Record<string, string>;
 /** The question text is copied at registration time, so later form edits never rewrite what someone answered. */
 export type RegistrationAnswer = { fieldId: string; label: string; type: FormFieldType; value: string };
 /** Organizer view of one registrant. Only the display name is shared, never the email. */
-export type Registrant = { id: string; name: string; ticketReference: string; status: RegistrationStatus; note: string | null; createdAt: string; qrIssued: boolean; checkedInAt: string | null; answers: RegistrationAnswer[] };
+export type Registrant = { id: string; name: string; ticketReference: string; status: RegistrationStatus; note: string | null; createdAt: string; qrIssued: boolean; checkedInAt: string | null; checkedOutAt?: string | null; answers: RegistrationAnswer[] };
 export type RegistrantBoard = { eventTitle: string; priceIdr: number; items: Registrant[] };
-export type AttendanceBoard = { eventId: string; eventTitle: string; attendanceEnabled: boolean; items: Registrant[] };
-export type TicketScan = { eventId: string; eventTitle: string; participant: Registrant; attendance: "RECORDED" | "ALREADY_RECORDED" | "DISABLED" };
+export type AttendanceBoard = { eventId: string; eventTitle: string; attendanceEnabled: boolean; attendanceMode?: "NONE" | "ENTRY" | "ENTRY_EXIT"; items: Registrant[] };
+export type TicketScan = { eventId: string; eventTitle: string; participant: Registrant; attendance: "RECORDED" | "ALREADY_RECORDED" | "DISABLED" | "EXIT_RECORDED" | "ALREADY_EXIT_RECORDED" };

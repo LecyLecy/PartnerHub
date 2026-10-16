@@ -18,7 +18,7 @@ export async function listMyRegistrations(_key: string, signal: AbortSignal): Pr
 export async function joinEvent(eventId: string, answers: RegistrationAnswers = {}): Promise<MyRegistration> {
   // TODO(backend): POST /api/public/events/:id/registrations, {answers:{[fieldId]:string}} -> 201 MyRegistration. Server validates every answer against the organizer form of that event (required, type, choice membership, image URL from the registration-images upload), then checks published state, registration window, capacity and one active registration per account in one transaction. Errors: 404, 409 code ALREADY_REGISTERED or EVENT_FULL, 422 {fields:{[fieldId]:message}}, 403, 429.
   try {
-    const result = schema.safeParse(await apiRequest<unknown>(`/api/public/events/${encodeURIComponent(eventId)}/registrations`, { method: "POST", body: { answers } }));
+    const result = schema.safeParse(await apiRequest<unknown>(`/api/public/events/${encodeURIComponent(eventId)}/registrations`, { method: "POST", body: { answers, consent: true } }));
     if (!result.success) throw new ApiError("Pendaftaran belum dapat dikonfirmasi.", 0, "INVALID_RESPONSE");
     return result.data;
   } catch (error) {

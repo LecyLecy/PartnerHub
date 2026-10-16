@@ -8,7 +8,7 @@ function Mock({ kind }: { kind: (typeof compareTabs)[number]["mock"] }) {
   if (kind === "ticket") return <div className={styles.miniCard}><Badge tone="success">Terdaftar</Badge><strong>Seminar Kepemimpinan Mahasiswa</strong><span>Aula Demo Utama</span><p className={styles.ref}>Referensi tiket<b>PH-K7M2-Q9DA</b></p></div>;
   if (kind === "applicant") return <div className={styles.miniCard}><Badge tone="success">Diterima</Badge><strong>Divisi Acara dan Humas</strong><span>Langkah berikutnya</span><p>{applicantNote}</p></div>;
   if (kind === "offer") return <div className={styles.miniCard}><Badge tone="info">Menunggu tanggapan</Badge><strong>Permintaan dukungan</strong><span>Perusahaan Contoh · Media partner</span><div className={styles.miniActions}><span>Terima</span><span>Tolak</span></div></div>;
-  return <div className={styles.miniCard}><Badge tone="success">QR terkirim</Badge><strong>Tiket QR</strong><span>Tanpa data pribadi di dalam kode</span><p className={styles.ref}>Pemindaian masuk masih dalam pengembangan.</p></div>;
+  return <div className={styles.miniCard}><Badge tone="success">QR terkirim</Badge><strong>Tiket QR</strong><span>Tanpa data pribadi di dalam kode</span><p className={styles.ref}>Presensi masuk dan keluar bersifat opsional.</p></div>;
 }
 
 /** Segmented control that swaps the copy and the mock without changing the section height. */

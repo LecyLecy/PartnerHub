@@ -29,6 +29,6 @@ export function MyTickets() {
         <p className={styles.reference}>Referensi tiket <strong>{item.ticketReference}</strong></p>
         {item.status === "REGISTERED" && <div className={styles.ticketActions}><TicketQr registrationId={item.id} title={item.event.title} reference={item.ticketReference} sent={item.qrIssued} /></div>}
       </li>)}</ul>}
-    <p className={styles.hint}>QR masuk dikirim penyelenggara per acara. Pemindaian di pintu masuk masih dalam pengembangan.</p>
+    <p className={styles.hint}>QR dikirim penyelenggara per acara. Tunjukkan kode saat masuk atau keluar sesuai aturan presensi acara.</p>
   </section>;
 }

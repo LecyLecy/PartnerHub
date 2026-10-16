@@ -1,5 +1,9 @@
 "use client";
-import { errorMessage } from "@/lib/api-client";
+import { apiRequest, errorMessage } from "@/lib/api-client";
+import { useState } from "react";
+import type { Session } from "@/contracts/account";
+import { useSession } from "@/lib/session";
+import { homeFor } from "@/lib/navigation";
 import Link from "next/link";
 import { useResource } from "@/lib/use-resource";
 import { Badge, Loading, Notice, PageTitle, ProtectedPage, uiStyles } from "@/lib/ui";
@@ -11,11 +15,20 @@ const copy = {
   rejected: ["Verifikasi belum disetujui.", "Admin belum dapat menyetujui akunmu. Periksa catatan dan data yang dikirim. Perbaikan dokumen dan pengajuan ulang belum tersedia dari halaman ini."],
   active: ["Akunmu sudah aktif.", "Verifikasi selesai. Muat ulang halaman atau masuk kembali untuk membuka dashboardmu."],
 } as const;
+const loadVerification = (_key: string, signal: AbortSignal) => getVerificationInfo(signal);
 
 export default function VerificationPage() { return <ProtectedPage><Status/></ProtectedPage>; }
 
 function Status() {
-  const resource = useResource("verification", (_key, signal) => getVerificationInfo(signal));
+  const resource = useResource("verification", loadVerification);
+  const auth = useSession();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  async function approveDemo() {
+    setBusy(true); setError("");
+    try { const session = await apiRequest<Session>("/api/demo/approve", { method: "POST" }); auth.accept(session); window.location.assign(homeFor(session)); }
+    catch (error) { setError(errorMessage(error)); setBusy(false); }
+  }
   if (resource.status === "loading") return <Loading>Memuat status verifikasi…</Loading>;
   if (resource.status === "error") return <Notice error>{errorMessage(resource.error)} <button className={uiStyles.secondary} onClick={resource.reload}>Coba lagi</button></Notice>;
   const info = resource.data!;
@@ -23,6 +36,7 @@ function Status() {
   return <div className={styles.onboarding}>
     <Badge tone={info.status === "active" ? "success" : info.status === "rejected" ? "danger" : "warning"}>{info.status === "active" ? "Aktif" : info.status === "rejected" ? "Belum disetujui" : "Menunggu pemeriksaan"}</Badge>
     <PageTitle title={title}>{text}</PageTitle>
+    {process.env.NEXT_PUBLIC_PARTNERHUB_DEMO === "1" && info.status !== "active" && <Notice><p>Mode demo: persetujuan admin dapat disimulasikan agar kamu bisa melanjutkan alur. Tidak ada verifikasi dokumen nyata.</p><button className={uiStyles.primary} disabled={busy} onClick={() => void approveDemo()}>{busy ? "Memproses…" : "Simulasikan persetujuan admin"}</button>{error && <p role="alert">{error}</p>}</Notice>}
     <p className={styles.accountHint}>Dikirim pada {new Date(info.submittedAt).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "long" })}.</p>
     {info.reviewNote && <Notice error>{info.reviewNote}</Notice>}
     <div className={styles.statusActions}><button className={uiStyles.primary} onClick={resource.reload}>Periksa status lagi</button><Link className={uiStyles.tertiary} href="/settings">Lihat profil akun</Link></div>

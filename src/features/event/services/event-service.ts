@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ApiError, apiRequest } from "@/lib/api-client";
 import type { Asset, AssetSlot, EventInput, EventList, EventRecord } from "@/contracts/event";
 import type { OrganizerSummary } from "@/contracts/participation";
-const safeUrl = z.string().refine((url) => /^\/(?!\/)/.test(url) || /^https:\/\//.test(url));
+const safeUrl = z.string().refine((url) => /^\/(?!\/)/.test(url) || /^https:\/\//.test(url) || (process.env.NEXT_PUBLIC_PARTNERHUB_DEMO === "1" && /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(url)));
 const assetSchema = z.object({ id: z.string().min(1), url: safeUrl, name: z.string().max(255) });
 const date = z.iso.datetime({ offset: true }).nullable();
 const recordSchema = z.object({
@@ -45,4 +45,8 @@ export async function uploadAsset(id:string,slot:AssetSlot,file:Blob,name:string
   const body=new FormData(); body.set("slot",slot);body.set("file",file,name);
   const result=assetSchema.safeParse(await apiRequest<unknown>(`/api/events/${encodeURIComponent(id)}/assets`,{method:"POST",body,headers:{"Idempotency-Key":key}}));
   if(!result.success) throw new ApiError("Logo belum dapat dikonfirmasi oleh layanan.",0,"INVALID_RESPONSE"); return result.data;
+}
+
+export async function transitionEvent(id: string, revision: string, action: "publish" | "close" | "archive"): Promise<EventRecord> {
+  return recordValue(await apiRequest<unknown>(`/api/events/${encodeURIComponent(id)}/lifecycle`, { method: "POST", body: { revision, action } }));
 }

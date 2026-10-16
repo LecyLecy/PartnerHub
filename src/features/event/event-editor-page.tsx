@@ -114,7 +114,7 @@ function Editor({ record }: { record?: EventRecord }) {
   return <>
     <Breadcrumb href="/organizer" parent="Acara kamu" current={record ? "Edit draft" : "Acara baru"}/>
     <PageTitle title={record ? "Lanjutkan draft acara" : "Susun acara baru"}>
-      Isi judul untuk menyimpan draft. Jadwal dan identitas bisa dilengkapi kemudian. Publikasi masih dalam pengembangan.
+      Isi judul untuk menyimpan draft. Lengkapi jadwal, periode pendaftaran, dan identitas organisasi, lalu publikasikan dari detail acara.
     </PageTitle>
     {partialId && <Notice>
       Draft dasar sudah dibuat di server. Logo dan perubahan akhir belum dikonfirmasi.

@@ -27,6 +27,11 @@ progress, time { font-variant-numeric: tabular-nums; }
 html { scrollbar-color: var(--control-border) var(--paper); }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 table { font-variant-numeric: tabular-nums; }
+@media print {
+  body { background: white; }
+  header, aside, footer, nav, button, input, select, textarea, [aria-label="Mode demo"] { display: none !important; }
+  main { width: 100% !important; max-width: none !important; margin: 0 !important; padding: 0 !important; }
+}
 /* Scroll reveal. Content is visible by default; Reveal marks below-the-fold elements hidden after mount, so no-JS and first paint never lose content. */
 [data-reveal="hidden"] { opacity: 0; transform: translateY(1.25rem); }
 [data-reveal="shown"] { opacity: 1; transform: none; transition: opacity var(--dur-slow) var(--ease-out) var(--reveal-delay, 0ms), transform var(--dur-slow) var(--ease-out) var(--reveal-delay, 0ms); }

@@ -5,6 +5,7 @@ import { ApiError, errorMessage } from "@/lib/api-client";
 import { focusFirstError, FileField, RadioGroup, TextAreaField, TextField } from "@/lib/form/fields";
 import { formatPrice } from "@/lib/money";
 import { useResource } from "@/lib/use-resource";
+import { useSession } from "@/lib/session";
 import { Notice, SkeletonCards, uiStyles } from "@/lib/ui";
 import { getRegistrationForm, joinEvent, uploadRegistrationImage } from "./services/registration-service";
 import styles from "./registration-form.module.css";
@@ -21,6 +22,8 @@ export function RegisterForm({ event, onDone }: { event: PublicEvent; onDone: (r
 }
 
 function Form({ event, form, onDone }: { event: PublicEvent; form: RegistrationForm; onDone: (registration: MyRegistration) => void }) {
+  const auth = useSession();
+  const [consent, setConsent] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
   const [files, setFiles] = useState<Record<string, File | null>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -44,6 +47,7 @@ function Form({ event, form, onDone }: { event: PublicEvent; form: RegistrationF
   async function submit(submitted: FormEvent<HTMLFormElement>) {
     submitted.preventDefault();
     if (busy || full) return;
+    if (!consent) { setFailure("Setujui penggunaan profil untuk pendaftaran acara ini."); return; }
     const found = problems();
     setErrors(found);
     if (Object.keys(found).length) { focusFirstError(element.current, order.filter((key) => found[key]), found); return; }
@@ -66,6 +70,7 @@ function Form({ event, form, onDone }: { event: PublicEvent; form: RegistrationF
   }
 
   return <form ref={element} className={`${uiStyles.form} ${styles.form}`} onSubmit={submit} noValidate aria-label={`Form pendaftaran ${event.title}`}>
+    <section><h3>Profil yang digunakan</h3><p>{auth.session?.account.displayName || "Peserta"} · {auth.session?.account.email}</p><p>Profil digunakan kembali agar kamu tidak perlu mengisinya dari awal. Penyelenggara melihat nama tampilan dan jawaban khusus acara ini.</p><label><input type="checkbox" checked={consent} onChange={(event) => { setConsent(event.target.checked); setFailure(""); }} /> Saya setuju menggunakan profil saya untuk pendaftaran acara ini.</label></section>
     <div className={styles.price}>
       <span>Harga tiket</span>
       <strong data-free={form.priceIdr <= 0}>{formatPrice(form.priceIdr)}</strong>

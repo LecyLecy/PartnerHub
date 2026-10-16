@@ -7,7 +7,7 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright-core")
 const base = process.env.BASE_URL || "http://localhost:3000";
 const output = process.env.REVIEW_DIR || "/private/var/folders/xp/wb5z7bgn173bvwbycwdztmdm0000gn/T/opencode/ticket-scan-review";
 await mkdir(output, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || (process.platform === "win32" ? "msedge" : undefined), headless: true });
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
 const page = await context.newPage();
 const errors = [];

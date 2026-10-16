@@ -10,6 +10,7 @@ import { supportCategories } from "./categories";
 import { offerLabel, offerTone } from "./offer-status";
 import { createOffer, getOfferBoard, listSponsorDirectory } from "./services/offer-service";
 import styles from "./sponsorship.module.css";
+import { FollowUpForm } from "./follow-up-form";
 
 export default function SponsorOffersPage({ id }: { id: string }) { return <ProtectedPage><Offers id={id} /></ProtectedPage>; }
 
@@ -28,14 +29,14 @@ function Loaded({ id, data, sent, onSent, onEdit }: { id: string; data: SponsorO
     <Breadcrumb href={`/events/${id}`} parent={data.eventTitle} current="Sponsor" />
     <PageTitle title="Ajak sponsor.">Kirim permintaan dukungan ke perusahaan sponsor yang sudah diverifikasi. Mereka menerima notifikasi dan menanggapinya dari dashboard sponsor.</PageTitle>
     {sent && <Notice>Permintaan terkirim. Sponsor menerima notifikasi.</Notice>}
-    {data.eventPublished ? <OfferForm id={id} onSent={onSent} onEdit={onEdit} /> : <Notice>Permintaan sponsor hanya bisa dikirim untuk acara yang terpublikasi. Publikasi acara masih dalam pengembangan.</Notice>}
+    {data.eventPublished ? <OfferForm id={id} onSent={onSent} onEdit={onEdit} /> : <Notice>Permintaan sponsor bisa dikirim setelah acara dipublikasikan. Lengkapi kesiapan publikasi di detail acara.</Notice>}
     <section className={styles.section} aria-labelledby="sent-offers-title">
       <h2 id="sent-offers-title">Permintaan terkirim</h2>
       {!data.items.length ? <EmptyState title="Belum ada permintaan.">Permintaan yang kamu kirim beserta tanggapan sponsor tampil di sini.</EmptyState>
         : <ul className={styles.proposals}>{data.items.map((item) => <li key={item.id}>
           <div className={styles.proposalHeader}><h3>{item.sponsorName}</h3><Badge tone={offerTone(item.status)}>{offerLabel[item.status]}</Badge></div>
           <p>{item.category}{item.amountLabel ? ` · ${item.amountLabel}` : ""}</p>
-          <details><summary>Detail permintaan</summary><p>{item.message}</p>{item.proposalUrl && <p><a href={item.proposalUrl} target="_blank" rel="noopener noreferrer">Buka dokumen proposal</a></p>}</details>
+          <details><summary>Detail permintaan</summary><p>{item.message}</p>{item.proposalUrl && <p><a href={item.proposalUrl} target="_blank" rel="noopener noreferrer">Buka dokumen proposal</a></p>}<FollowUpForm item={item} /></details>
         </li>)}</ul>}
     </section>
   </>;

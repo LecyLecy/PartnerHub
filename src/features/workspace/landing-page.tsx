@@ -31,7 +31,7 @@ export default function LandingPage() {
         <p className={`${styles.lede} ${styles.enter}`} style={{ "--enter-delay": "160ms" } as CSSProperties}>PartnerHub membantu tim kampus dan komunitas menyiapkan acara, membuka pendaftaran, merekrut panitia, dan mengelola dukungan sponsor tanpa pindah-pindah spreadsheet.</p>
         <div className={`${styles.ctas} ${styles.enter}`} style={{ "--enter-delay": "240ms" } as CSSProperties}>
           <Link className={styles.cta} href="/register?role=organizer">Daftar sebagai penyelenggara</Link>
-          <a className={styles.ctaGhost} href="#fitur">Lihat cara kerja</a>
+          <Link className={styles.ctaGhost} href="/guide">Lihat cara kerja</Link>
         </div>
         <p className={`${styles.heroNote} ${styles.enter}`} style={{ "--enter-delay": "300ms" } as CSSProperties}>Penyelenggara dan sponsor memerlukan verifikasi email dan pemeriksaan admin.</p>
       </section>
@@ -54,7 +54,7 @@ export default function LandingPage() {
           <Reveal as="article" delay={160} className={`${styles.cell} ${styles.cellNote}`}><h3>Kabari yang diterima</h3><p>Tulis langkah berikutnya, misalnya masuk grup WhatsApp panitia.</p><TypedNote /></Reveal>
           <Reveal as="article" className={`${styles.cell} ${styles.cellFlow}`}><h3>Seleksi panitia bertahap</h3><p>Status berpindah hanya lewat urutan yang diizinkan.</p><Workflow /></Reveal>
           <Reveal as="article" delay={80} className={`${styles.cell} ${styles.cellRails}`}><h3>Saran isian</h3><p>Contoh pertanyaan untuk pelamar dan catatan untuk yang diterima.</p><IdeaRails /></Reveal>
-          <Reveal as="article" delay={160} className={`${styles.cell} ${styles.cellJourney}`}><h3>Perjalanan sebuah acara</h3><p>Bagian terakhir masih dalam pengembangan.</p><Journey /></Reveal>
+          <Reveal as="article" delay={160} className={`${styles.cell} ${styles.cellJourney}`}><h3>Perjalanan sebuah acara</h3><p>Dari draft sampai benefit sponsor yang terverifikasi.</p><Journey /></Reveal>
         </div>
       </section>
 

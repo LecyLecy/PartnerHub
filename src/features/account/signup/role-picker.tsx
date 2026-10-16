@@ -25,7 +25,7 @@ export default function RolePicker({ onPick, next }: { onPick: (role: Role) => v
           <button type="button" className={styles.chooseRole} aria-labelledby={`role-${role.value}`} aria-describedby={`role-description-${role.value}`} onClick={() => onPick(role.value)}>Pilih {role.title.toLocaleLowerCase("id-ID")}</button>
       </li>)}
     </ul>
-    <p className={styles.approvalNote}>Penyelenggara dan sponsor perlu pemeriksaan admin setelah verifikasi email. Pemindaian QR di pintu masuk masih dalam pengembangan.</p>
+    <p className={styles.approvalNote}>Penyelenggara dan sponsor perlu pemeriksaan admin setelah verifikasi email. Pada demo, persetujuan dapat disimulasikan dari halaman status akun.</p>
     <div className={styles.links}><Link href={`/login?next=${encodeURIComponent(next)}`}>Sudah punya akun? Masuk</Link><Link href="/">Kembali ke beranda</Link></div>
   </section>;
 }
