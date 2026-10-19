@@ -1,5 +1,9 @@
 # PartnerHub classroom demo delivery
 
+## Historical delivery record
+
+This file records the October 16 integration and its subsequent delivery evidence. It is not the current product specification or permission for a new deployment. As of 18 October 2026, PRD.md and ARCHITECTURE.md govern the individual-event archive/upload flow, annual owner-account subscriptions, optional committee QR scanning and simplified navigation. Earlier draft, workspace, pricing-page, labeling and deployment statements below describe their original revision. Current changes are local unless a new deployment is explicitly authorized and verified.
+
 ## Authorized scope, 2026-10-16
 
 The owner requested integration of every available member branch into `production`, autonomous conflict resolution, a complete demonstrable UI using fictional local data, implementation of feedback from the two feedback-grid tabs, and a hosted app. This authorization supersedes the earlier frontend-only restrictions for this delivery. Real backend, payment processing, email, and commercial launch are not required.

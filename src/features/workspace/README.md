@@ -1,23 +1,27 @@
-# Organizer workspace frontend
+# Organizer and shared landing frontend
 
-## Scope
+Updated: 18 October 2026. The historical workspace folder name is not an organization/workspace product.
 
-Frontend workspace plus an explicitly approved event-frontend editing flow. `src/app/page.tsx` composes them using a ReactNode slot, without cross-feature imports or a shared event model. Workspace starts without synthetic records; fixture examples remain opt-in and labelled. The event feature can explicitly save one browser-only draft with user-selected logo blobs in IndexedDB; legacy text-only localStorage drafts remain readable. There are no backend requests or publishing operations. No other product feature changes are authorized.
+## Current responsibilities
 
-## Direction contract
+- Landing page and organizer event list/archive, shared role-shell composition and account subscription UI.
+- /organizer lists published/completed authorized events. /organizer/archive lists private completed setup awaiting upload, with Siap diunggah or Perlu dilengkapi.
+- Event creation alone creates no order. Upload resolves qualifying annual owner-account coverage or verified single-event coverage. See subscription/README.md and root PRD.md.
+- No workspace creation/switching/membership, cross-event overview or annual-only event duplication.
+- No quick-save, browser local-copy controls, persisted signup draft or draft-resume dashboard.
 
-THESIS: A campus program studio turns an idea into an event draft. It replaces the rejected admin-sidebar/statistics/table shell, rather than repainting it.
+## Navigation and presentation
 
-OWN-WORLD: User-approved navy and a restrained warm-yellow action accent; expressive Bricolage headings and readable Manrope body copy, self-hosted under OFL. Body copy is at least 16px, controls 48px+, status/context 14px+. Typographic event covers carry a campus-program voice, not stock photos or fake activity. ENERGY 3 / RHYTHM 2 / MOTION 1, with reduced-motion support. Interactivity comes from live editing and contextual selection, not decorative choreography.
+Role sidebars stay constant, including when an event is selected. Selected-event navigation belongs above content; the event frontend owns its operations. Event data and UI compose through thin route adapters and shared contracts, not cross-feature internal imports.
 
-STORY: Begin an event draft for any organizer, enter details/schedule, upload event and organization logos, manage named sponsor placements, choose modules, and switch the live poster/page preview. Explicit save/restore preserves details and images locally. Labelled examples are optional, not the organizer's records.
+Pengaturan is in the account popup, never a profile sidebar destination. Transaction history is reached only through settings, not Subscription or the sidebar. Legal links belong only in the shared footer. No global search/command palette remains; local event filters remain.
 
-FIRST VIEWPORT: Horizontal navigation, readable introductory text, a creation action and a truthful empty state. In the editor, a compact introduction makes room for generous fields and the live preview. Opt-in samples still provide the browsable lineup/context, never global metric cards or fake live activity.
+Landing stays concise: hero/organizer preview, three-step workflow, role entry points and three short visible FAQ answers. Bounded sections alternate clear surfaces with spacing/borders. No feature tabs, animated bento comparison, scenario rails or duplicate closing CTA. Reuse shared PublicHeader; FAQ owns static semantic sections, not the removed shared Accordion.
 
-FORM: Campus program studio, fourth of the new grounded list, seed ea1d42ab. User explicitly rejected the old world and pinned a bold creative campus direction, larger text, and interactive draft creation. Grounded alternatives: event program, campus noticeboard, committee briefing, program studio, sponsorship ledger, registration desk, running-order sheet. Foreign decorative systems do not replace familiar form semantics; retained discipline is stronger typography and live state continuity.
+Keep the established navy/blue palette, self-hosted fonts, readable controls, mobile drawer focus/Escape behavior and reduced motion. Preserve Ganti peran demo; do not add prototype/simulation/status disclaimers to product UI. Fictional fixtures are not traction.
 
-FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance.
+## Data and verification
 
-## States and verification
+Typed loaders/services supply data. The explicit demo uses src/mocks/demo; normal builds do not silently fall back. Production authentication, persistence, billing and payments remain **In progress**. Never reset browser data to reconcile docs or refresh fixtures.
 
-Workspace example/empty/loading/error states remain reachable through explicitly labelled example controls. Search and status filters affect local fixtures only. Native help dialog preserves Escape behavior. Event editor owns validation, local saving/restoration, four-stage navigation, identity uploads, and live poster/page preview. Product modules are configuration choices, not implemented registration/scanning/committee/sponsor services. The application ships no canned logo raster assets: preview images come from the user's file selection.
+Relevant browser suites cover landing, stable navigation, header Back, footer-only legal links, archive/subscription and subscription/settings. Historical screenshots may show superseded workspace/draft controls; current PRD and contracts govern implementation.

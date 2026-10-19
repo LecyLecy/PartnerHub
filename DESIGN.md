@@ -1,6 +1,6 @@
 ---
 name: PartnerHub campus program studio
-description: A typography-led campus workspace and browser-only event draft builder.
+description: PartnerHub visual system and historical design-delivery notes.
 colors:
   navy: "#162748"
   muted: "#526078"
@@ -36,6 +36,16 @@ rounded:
 ---
 
 # PartnerHub campus program studio
+
+## Current design baseline, 18 October 2026
+
+Use PRODUCT.md, PRD.md and ARCHITECTURE-ESSETIALS.md for current requirements. Retain the visual tokens above, readable typography and distinct bounded surfaces, but do not restore the removed workspace product or browser draft-copy workflow.
+
+Current UI uses stable per-role sidebars, selected-event navigation above content, concise landing sections, Pengaturan through the account popup, settings-only transaction history and footer-only legal links. Existing Back actions are header arrows; global search/command palette is removed. Subscription has exactly Starter, Growth and Custom cards with dialog checkout. Optional participant QR display and accepted-committee entry/exit scanning exist locally. Preserve Ganti peran demo without adding simulation/status disclaimers elsewhere in the product UI.
+
+The remaining sections below are historical design and finish-review evidence. Statements about draft persistence, absent scanning, old navigation or deployment describe their original revision, not the current implementation or authority to reintroduce it. New user-facing design decisions belong in PRODUCT.md and PRD.md rather than another conflicting dated override.
+
+## Historical design record
 
 The user rejected the former organizer briefing dashboard as generic, lifeless, and too small. The approved replacement is bold and creative, distinctly campus-oriented, navy-led, with larger text and a usable event-draft workflow. The old rail, statistics strip, table, and checklist are no longer design authority.
 

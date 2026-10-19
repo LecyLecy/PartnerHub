@@ -15,7 +15,7 @@ page.on("pageerror", (error) => errors.push(error.message));
 page.on("console", (message) => { if (message.type() === "error") errors.push(message.text()); });
 const go = (route) => page.goto(`${base}${route}`, { waitUntil: "networkidle" });
 const switchRole = async (role) => {
-  const side = page.locator("#organizer-sidebar");
+  const side = page.locator("#workspace-sidebar");
   if (await side.isVisible()) await side.hover();
   await page.getByRole("button", { name: /^Menu akun/ }).first().click();
   await page.getByRole("button", { name: "Keluar", exact: true }).first().click();
@@ -34,6 +34,9 @@ try {
   await page.locator('input[name="password"]').fill("DemoPass-2026!");
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
   await page.waitForURL("**/organizer");
+  await go("/events/demo-event-1/scan");
+  await page.getByLabel("Mode presensi", { exact: true }).selectOption("ENTRY");
+  await page.getByRole("button", { name: "Buka kamera", exact: true }).waitFor();
   await go("/events/demo-event-1/qr");
   await page.getByRole("button", { name: /Buat dan kirim|Kirim/ }).click();
   await page.getByRole("status").filter({ hasText: /QR sudah terkirim/ }).waitFor();
@@ -53,7 +56,8 @@ try {
     sessionStorage.setItem("partnerhub:demo:v3", JSON.stringify(db));
   });
   await go("/organizer");
-  await page.getByRole("link", { name: /^Scan QR peserta:/ }).first().click();
+  await page.getByRole("link", { name: /^Kelola acara:/ }).first().click();
+  await page.getByRole("link", { name: "Presensi", exact: true }).click();
   await page.waitForURL("**/events/demo-event-1/scan");
   await page.getByRole("heading", { name: "Periksa QR tiket", exact: true }).waitFor();
   await upload(png);
@@ -73,7 +77,7 @@ try {
   await go("/events/demo-event-1/registration");
   await page.getByRole("tab", { name: "Hadir", exact: true }).click();
   await page.getByRole("cell", { name: /^Hadir ·/ }).waitFor();
-  await page.getByRole("link", { name: "Scan QR peserta", exact: true }).click();
+  await page.getByRole("navigation", { name: "Navigasi acara", exact: true }).getByRole("link", { name: "Presensi", exact: true }).click();
   await page.waitForURL("**/events/demo-event-1/scan");
   // Inject a deterministic denial, then a local canvas stream, to exercise camera lifecycle without physical hardware.
   await page.evaluate(() => Object.defineProperty(navigator.mediaDevices, "getUserMedia", { configurable: true, value: async () => { throw new DOMException("Denied", "NotAllowedError"); } }));
@@ -114,7 +118,8 @@ try {
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 1000 });
     for (const name of ["Permintaan terkirim", "Proposal masuk"]) {
-      await page.getByRole("region", { name, exact: true }).getByRole("button").first().click();
+      await go(name === "Permintaan terkirim" ? "/organizer/sponsorship/requests" : "/organizer/sponsorship");
+      await page.getByRole("region", { name: name === "Permintaan terkirim" ? "Daftar permintaan terkirim" : "Daftar proposal masuk", exact: true }).getByRole("button").first().click();
       const dialog = page.getByRole("dialog");
       await dialog.waitFor();
       assert.equal(await dialog.locator("dl").count(), 1);

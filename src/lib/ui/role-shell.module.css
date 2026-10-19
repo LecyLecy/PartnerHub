@@ -1,7 +1,6 @@
-/* Organizer workspace shell. Desktop: a narrow icon rail that opens over the page on hover or keyboard focus.
-   Mobile: a drawer. The rail is revealed with clip-path, so nothing reflows while it opens. */
-.workspace { --rail: 4.75rem; --sidebar-w: 15.5rem; display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100svh; }
-.sidebar { position: sticky; top: 0; z-index: 30; align-self: start; width: var(--sidebar-w); max-width: 100vw; height: 100svh; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6) var(--space-3); background: var(--surface); overflow: hidden auto; }
+/* Keep destination labels visible on desktop. Mobile uses the existing drawer. */
+.workspace { --sidebar-w: 15.5rem; display: grid; grid-template-columns: var(--sidebar-w) minmax(0, 1fr); min-height: 100svh; }
+.sidebar { position: sticky; top: 0; z-index: 30; align-self: start; width: var(--sidebar-w); max-width: 100vw; height: 100svh; display: flex; flex-direction: column; gap: var(--space-4); padding: var(--space-6) var(--space-3); background: var(--subtle); border-right: 1px solid var(--line); overflow: hidden auto; }
 .sidebarTop { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding-inline: var(--space-3); }
 .sidebarAccount { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-2) .375rem; border-radius: var(--radius-control); }
 .sidebarAccount > div { min-width: 0; }
@@ -18,22 +17,21 @@
 .group a[aria-current=page] { background: var(--navy); color: var(--surface); }
 .group a svg, .logout svg { flex-shrink: 0; }
 .sidebarFoot { display: grid; gap: var(--space-1); margin-top: auto; }
-.legal { display: grid; font-size: var(--text-caption); padding-inline: var(--space-4); white-space: nowrap; }
-.legal a { display: inline-flex; align-items: center; min-height: var(--touch-min); color: var(--muted); }
 .scrim { display: none; }
 
-.workArea { min-width: 0; border-left: var(--border-width) solid var(--line); }
+.workArea { min-width: 0; display: flex; flex-direction: column; background: var(--paper); }
 .topbar { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: var(--space-3) var(--space-8); background: var(--surface); border-bottom: var(--border-width) solid var(--line); }
 .topbarStart, .topbarEnd { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.topbarEnd { flex-shrink: 0; }
 .section { color: var(--muted); font-size: var(--text-caption); overflow-wrap: anywhere; }
 .iconButton { position: relative; display: inline-grid; place-items: center; width: var(--touch-min); height: var(--touch-min); flex-shrink: 0; border: var(--border-width) solid var(--line); border-radius: var(--radius-control); background: var(--surface); color: var(--muted); transition: background-color var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard); }
 .iconButton:hover { background: var(--subtle); color: var(--navy); }
 .mobileOnly { display: none; }
-.searchTrigger { display: inline-flex; align-items: center; gap: var(--space-3); min-height: var(--touch-min); padding: var(--space-2) var(--space-3); border: var(--border-width) solid var(--line); border-radius: var(--radius-control); background: var(--paper); color: var(--muted); font-size: var(--text-caption); transition: background-color var(--dur-fast) var(--ease-standard); }
-.searchTrigger:hover { background: var(--subtle); color: var(--navy); }
-.searchTrigger kbd { padding: 0 var(--space-2); border: var(--border-width) solid var(--line); border-radius: var(--space-1); background: var(--surface); font: inherit; font-size: .75rem; }
-.content { max-width: var(--content-width); padding: var(--space-8); margin-inline: auto; }
-.page { animation: shell-in var(--dur-base) var(--ease-out) both; }
+.content { width: 100%; max-width: var(--content-width); padding: var(--space-8); margin-inline: auto; }
+.page { flex: 1; animation: shell-in var(--dur-base) var(--ease-out) both; }
+.workspaceFooter { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-4) var(--space-8); margin-top: var(--space-6); border-top: 1px solid var(--line); background: #e6ecf5; color: var(--muted); font-size: var(--text-caption); }
+.workspaceFooter nav { display: flex; flex-wrap: wrap; gap: var(--space-4); }
+.workspaceFooter a { display: inline-flex; align-items: center; min-height: var(--touch-min); }
 @keyframes shell-in { from { opacity: 0; transform: translateY(.5rem); } to { opacity: 1; transform: none; } }
 /* Notification menu */
 .menu { position: relative; }
@@ -48,14 +46,7 @@
 .inlineButton { min-height: var(--touch-min); border: 0; background: transparent; color: inherit; text-decoration: underline; }
 
 @media (min-width: 60.01rem) {
-  /* The rail is the sidebar's real width, so hover and hit testing match what is drawn. Growing it is an overlay: the grid column stays put. */
-  .sidebar { width: var(--rail); transition: width var(--dur-slow) var(--ease-out), box-shadow var(--dur-slow) var(--ease-out); }
-  .sidebar:hover, .sidebar:focus-within { width: var(--sidebar-w); box-shadow: var(--shadow-3); }
-  .sidebar :is(.label, .group h2, .legal, [aria-label^="Menu akun"] > :nth-child(n + 2)) { opacity: 0; transition: opacity var(--dur-fast) var(--ease-standard); }
-  .sidebar:hover :is(.label, .group h2, .legal, [aria-label^="Menu akun"] > :nth-child(n + 2)), .sidebar:focus-within :is(.label, .group h2, .legal, [aria-label^="Menu akun"] > :nth-child(n + 2)) { opacity: 1; transition: opacity var(--dur-base) var(--ease-standard) 120ms; }
-  /* Content keeps its open-state width, so the rail only crops it. Nothing wraps or reflows while the width animates. */
   .sidebar > * { width: calc(var(--sidebar-w) - 1.5rem); flex-shrink: 0; }
-  .sidebarTop { padding-inline: .6875rem; }
 }
 @media (max-width: 60rem) {
   .workspace { grid-template-columns: minmax(0, 1fr); }
@@ -67,11 +58,17 @@
   .mobileOnly { display: inline-grid; }
   .topbar { padding: var(--space-2) var(--space-4); }
   .content { padding: var(--space-6) var(--space-4) var(--space-12); }
+  .workspaceFooter { padding-inline: var(--space-4); }
 }
 @media (max-width: 40rem) {
-  .searchText, .searchTrigger kbd, .section { display: none; }
   .popover { position: fixed; top: 4.5rem; right: var(--space-4); left: var(--space-4); width: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .sidebar, .sidebar :is(.label, .group h2, .legal, [aria-label^="Menu akun"] > :nth-child(n + 2)), .scrim, .page, .popover, .group a, .iconButton, .logout, .searchTrigger { transition: none !important; animation: none; }
+  .sidebar, .sidebar :is(.label, .group h2, [aria-label^="Menu akun"] > :nth-child(n + 2)), .scrim, .page, .popover, .group a, .iconButton, .logout { transition: none !important; animation: none; }
 }
+
+.eventNavigation { display: flex; flex-wrap: wrap; gap: var(--space-2); padding: var(--space-3); margin-bottom: var(--space-6); border: var(--border-width) solid var(--line); border-radius: var(--radius-control); background: var(--surface); }
+.eventNavigation a { display: inline-flex; align-items: center; flex-shrink: 0; min-height: var(--touch-min); padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); color: var(--muted); font-size: var(--text-caption); text-decoration: none; white-space: nowrap; }
+.eventNavigation a:hover { background: var(--subtle); color: var(--navy); }
+.eventNavigation a[aria-current="page"] { background: var(--navy); color: var(--surface); font-weight: var(--weight-label); }
+@media (max-width: 60rem) { .eventNavigation { flex-wrap: nowrap; overflow-x: auto; overscroll-behavior-x: contain; } }

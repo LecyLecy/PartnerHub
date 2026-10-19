@@ -22,7 +22,7 @@ page.on("console", (message) => { if (message.type() === "error" && !/favicon|Fa
 const go = (route) => page.goto(`${base}${route}`, { waitUntil: "networkidle" });
 async function signIn(email) {
   await go("/login");
-  await page.getByRole("button", { name: "Pilih akun demo", exact: true }).click();
+  await page.getByRole("button", { name: "Pilih akun", exact: true }).click();
   await page.getByRole("button", { name: new RegExp(email.replace(".", "\\.")) }).click();
   await page.waitForFunction((expected) => document.querySelector('input[name="password"]')?.value === expected, PASSWORD, { timeout: 5000 });
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
@@ -30,8 +30,8 @@ async function signIn(email) {
 // Sign out through the profile menu. Clearing storage would also wipe the demo data this test depends on.
 async function signOut() {
   await page.waitForLoadState("networkidle");
-  const side = page.locator("#organizer-sidebar");
-  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#organizer-sidebar").getBoundingClientRect().width > 200); }
+  const side = page.locator("#workspace-sidebar");
+  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#workspace-sidebar").getBoundingClientRect().width > 200); }
   await page.getByRole("button", { name: /^Menu akun/ }).first().click();
   await page.getByRole("button", { name: "Keluar", exact: true }).first().click();
   await page.waitForURL("**/login?reason=logout");

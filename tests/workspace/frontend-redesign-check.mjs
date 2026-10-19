@@ -71,7 +71,7 @@ try {
       await noOverflow(`${name}: ${width}px`);
       assert.equal(await page.locator("h1").count(), 1, `${name}: one main heading`);
       // Below 960px the sidebar is a closed drawer (visibility hidden), so check the element itself rather than its role.
-      const organizerShell = page.locator("aside#organizer-sidebar");
+      const organizerShell = page.locator("aside#workspace-sidebar");
       if (["organizer", "event-detail", "event-new", "event-edit", "settings"].includes(name)) {
         await organizerShell.waitFor({ state: "attached" });
         assert.equal(await organizerShell.locator('a[href="/settings"]').count(), 1, `${name}: Settings link in the sidebar; profile menu stays closed`);

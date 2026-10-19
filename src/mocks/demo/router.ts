@@ -1,4 +1,5 @@
 import { ApiError, messageFor, type RequestOptions } from "@/lib/api-client";
+import { z } from "zod";
 import type { Session } from "@/contracts/account";
 import type { EventInput, EventRecord } from "@/contracts/event";
 import type { MyRegistration, OrganizerSummary, Proposal, PublicEvent, QrDelivery, Registrant, RegistrantBoard, RegistrationAnswer, RegistrationField, RegistrationForm, TicketQr } from "@/contracts/participation";
@@ -7,6 +8,9 @@ import type { ApplicantView, CommitteeApplication, CommitteeOpening, DecisionTar
 import { DEMO_PASSWORD, type DemoAccount, type DemoDb, type OwnedApplication, type OwnedEvent, type OwnedOffer, type OwnedOpening } from "./seed";
 import { publicationErrors } from "@/features/event/lifecycle";
 import { dispatchReporting, ensureAgreement } from "./reporting";
+import { dispatchMatching, sponsorDirectory } from "./matching";
+import { matchingFields } from "@/contracts/matching";
+import { assertEventWritable, billingOf, bindEvent, canManageEvent, dispatchBilling, participantLimit, publishWithPackage, validatePackageEdit } from "./billing";
 
 /**
  * In-browser stand-in for the backend, used only when NEXT_PUBLIC_PARTNERHUB_DEMO=1 at build time.
@@ -56,7 +60,9 @@ const publicEvent = (db: DemoDb, item: OwnedEvent): PublicEvent => {
   for (const raw of names) { const name = raw.trim(); if (name) unique.set(name.toLocaleLowerCase("id-ID"), name); }
   return { id: item.id, title: item.title, category: item.category, summary: item.summary, startsAt: item.startsAt, endsAt: item.endsAt, venue: item.venue, capacity: item.capacity, organizationName: item.branding.organizationName, registeredCount: registeredCount(db, item.id), priceIdr: db.forms[item.id]?.priceIdr ?? 0, eventLogoUrl: item.branding.eventLogo?.url ?? null, organizationLogoUrl: item.branding.organizationLogo?.url ?? null, sponsorNames: [...unique.values()] };
 };
-const strip = ({ ownerId, ...record }: OwnedEvent): EventRecord => { void ownerId; return record; };
+const qrEnabled = (event: OwnedEvent) => event.modules.registration && event.modules.attendance;
+const acceptedScanner = (db: DemoDb, event: OwnedEvent, accountId: string) => event.status === "PUBLISHED" && qrEnabled(event) && db.applications.some(item => item.eventId === event.id && item.ownerId === accountId && item.status === "ACCEPTED");
+const strip = (db: DemoDb, { ownerId, ...record }: OwnedEvent): EventRecord => { void ownerId; return { ...record, matchingFields: [...(db.eventMatchingFields?.[record.id] ?? [])] }; };
 
 function ticketReference(): string {
   const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -78,6 +84,8 @@ async function register(db: DemoDb, role: "user" | "organizer" | "sponsor", body
   const email = String(payload.email ?? "").trim().toLowerCase();
   if (db.accounts.some((item) => item.email === email)) return fail(409, "EMAIL_TAKEN");
   const str = (key: string) => String(payload[key] ?? "");
+  const industry = role === "sponsor" ? matchingFields.find(field => field === payload.industry) : undefined;
+  if (role === "sponsor" && !industry) return fail(422, "INVALID_INDUSTRY", { industry: "Pilih bidang industri perusahaan." });
   const document = body.get("document");
   const review = role !== "user";
   const summary = role === "organizer"
@@ -92,6 +100,7 @@ async function register(db: DemoDb, role: "user" | "organizer" | "sponsor", body
     documents: document instanceof File ? [{ label: "Dokumen verifikasi", name: document.name }] : [],
   };
   db.accounts.push(account);
+  if (industry) (db.sponsorMatchingProfiles ??= {})[account.id] = { industry, fields: [industry] };
   db.sessionAccountId = account.id;
   sessionPasswords.set(account.id, str("password"));
   (db.passwordHashes ??= {})[account.id] = await demoPasswordHash(account.id, str("password"));
@@ -104,14 +113,23 @@ export async function demoRequest<T>(path: string, options: RequestOptions = {})
   const url = new URL(path, "http://demo.invalid");
   const route = url.pathname;
   const db = loadDb();
-  const result = await dispatch(db, method, route, options);
-  saveDb();
-  return result as T;
+  billingOf(db);
+  try { return await dispatch(db, method, route, options) as T; }
+  finally { saveDb(); }
 }
 
 async function dispatch(db: DemoDb, method: string, route: string, options: RequestOptions): Promise<unknown> {
   const json = (options.body ?? {}) as Record<string, unknown>;
   const form = options.body instanceof FormData ? options.body : null;
+  const eventWrite = route.match(/^\/api\/(?:public\/)?events\/([^/]+)/);
+  if (method !== "GET" && eventWrite && !route.endsWith("/duplicate") && !route.endsWith("/managers")) {
+    const event = db.events.find(item => item.id === eventWrite[1]);
+    const account = db.accounts.find(item => item.id === db.sessionAccountId);
+    if (event && account?.status === "active" && account.emailVerified && (account.role !== "organizer" || canManageEvent(db, event, account.id))) assertEventWritable(db, event);
+  }
+  if (/^\/api\/organizer\/(?:billing|workspaces(?:\/select)?|members|(?:subscription\/)?orders(?:\/[^/]+\/verify-demo)?)$/.test(route) || /^\/api\/events\/[^/]+\/(?:package|duplicate|managers)$/.test(route)) return dispatchBilling(db, method, route, json);
+
+  if (/^\/api\/(?:events\/[^/]+\/sponsor-matches|sponsor\/(?:matching-profile|event-matches))$/.test(route)) return dispatchMatching(db, method, route);
 
   if (route === "/api/auth/session") {
     const account = db.accounts.find((item) => item.id === db.sessionAccountId);
@@ -180,7 +198,7 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     if (!target.modules.registration) return fail(409, "REGISTRATION_DISABLED");
     if (!target.registrationOpensAt || !target.registrationClosesAt || Date.now() < Date.parse(target.registrationOpensAt) || Date.now() >= Date.parse(target.registrationClosesAt)) throw new ApiError("Pendaftaran belum dibuka atau sudah ditutup.", 409, "REGISTRATION_CLOSED");
     if (db.registrations.some((item) => item.ownerId === account.id && item.eventId === target.id && (item.status === "REGISTERED" || item.status === "PENDING"))) return fail(409, "ALREADY_REGISTERED");
-    if (target.capacity !== null && registeredCount(db, target.id) >= target.capacity) return fail(409, "EVENT_FULL");
+    if (registeredCount(db, target.id) + db.registrations.filter(item => item.eventId === target.id && item.status === "PENDING").length >= participantLimit(db, target)) return fail(409, "EVENT_FULL");
     const form = formOf(db, target.id);
     const answers = checkAnswers(form.fields, json.answers);
     const paid = form.priceIdr > 0;
@@ -214,6 +232,13 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     const account = active(db, "user");
     return { items: db.registrations.filter((item) => item.ownerId === account.id).map((item) => toRegistration(db, item)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
   }
+  const ownRegistration = route.match(/^\/api\/me\/registrations\/([^/]+)$/);
+  if (ownRegistration && method === "GET") {
+    const account = active(db, "user");
+    const item = db.registrations.find(entry => entry.id === ownRegistration[1] && entry.ownerId === account.id);
+    if (!item) return fail(404, "NOT_FOUND");
+    return { ...toRegistration(db, item), answers: item.answers };
+  }
   if (route === "/api/me/notifications") {
     const account = current(db);
     if (!account.emailVerified || account.status !== "active") return fail(403, "FORBIDDEN");
@@ -222,30 +247,36 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
 
   if (route === "/api/organizer/summary") {
     const account = active(db, "organizer");
-    const summary: OrganizerSummary = { events: db.events.filter((item) => item.ownerId === account.id).map((item) => ({ eventId: item.id, title: item.title, status: item.status, registered: registeredCount(db, item.id), capacity: item.capacity, applications: db.applications.filter((entry) => entry.eventId === item.id).length, sponsors: db.offers.filter((entry) => entry.eventId === item.id && entry.status === "ACCEPTED").length + db.proposals.filter((entry) => entry.eventId === item.id && entry.status === "ACCEPTED").length })) };
+    const summary: OrganizerSummary = { events: db.events.filter((item) => canManageEvent(db, item, account.id)).map((item) => ({ eventId: item.id, title: item.title, status: item.status, registered: registeredCount(db, item.id), capacity: item.capacity, applications: db.applications.filter((entry) => entry.eventId === item.id).length, sponsors: db.offers.filter((entry) => entry.eventId === item.id && entry.status === "ACCEPTED").length + db.proposals.filter((entry) => entry.eventId === item.id && entry.status === "ACCEPTED").length })) };
     return summary;
   }
   if (route === "/api/events" && method === "GET") {
     const account = active(db, "organizer");
-    return { items: db.events.filter((item) => item.ownerId === account.id).map(strip) };
+    return { items: db.events.filter((item) => canManageEvent(db, item, account.id)).map(item => strip(db, item)) };
   }
   if (route === "/api/events" && method === "POST") {
     const account = active(db, "organizer");
-    const key = options.headers?.["Idempotency-Key"];
-    const existing = key ? db.events.find((item) => item.id === db.idempotency[key] && item.ownerId === account.id) : null;
-    if (existing) return strip(existing);
-    const input = json as unknown as EventInput;
+    const rawKey = options.headers?.["Idempotency-Key"];
+    const key = rawKey ? `${account.id}:${rawKey}` : undefined;
+    const legacyKey = rawKey ? Object.keys(db.idempotency).find(entry => entry.startsWith(`${account.id}:`) && entry.endsWith(`:${rawKey}`)) : undefined;
+    const existing = key ? db.events.find((item) => item.id === (db.idempotency[key] ?? db.idempotency[legacyKey ?? ""]) && item.ownerId === account.id) : null;
+    if (existing) return strip(db, existing);
+    const input = eventInput(json);
+    if (!input.matchingFields?.length) return fail(422, "INVALID_FIELDS", { matchingFields: "Pilih 1 sampai 5 bidang acara yang sesuai." });
     if (typeof input.title !== "string" || input.title.trim().length < 3) return fail(422, "VALIDATION_ERROR", { title: "Isi judul event, minimal 3 karakter." });
-    const created: OwnedEvent = { ...input, id: next(db, "event"), ownerId: account.id, status: "DRAFT", revision: "1", updatedAt: nowIso() };
+    const { matchingFields: selectedFields, ...details } = input;
+    const created: OwnedEvent = { ...details, id: next(db, "event"), ownerId: account.id, status: "DRAFT", revision: "1", updatedAt: nowIso() };
+    bindEvent(db, created);
     db.events.push(created);
+    (db.eventMatchingFields ??= {})[created.id] = [...selectedFields];
     if (key) db.idempotency[key] = created.id;
-    return strip(created);
+    return strip(db, created);
   }
   const lifecycleMatch = route.match(/^\/api\/events\/([^/]+)\/lifecycle$/);
   const followUpMatch = route.match(/^\/api\/events\/([^/]+)\/sponsor-offers\/([^/]+)\/follow-up$/);
   if (followUpMatch && method === "POST") {
     const account = active(db, "organizer");
-    const event = db.events.find((item) => item.id === followUpMatch[1] && item.ownerId === account.id);
+    const event = db.events.find((item) => item.id === followUpMatch[1] && canManageEvent(db, item, account.id));
     const offer = db.offers.find((item) => item.id === followUpMatch[2] && item.eventId === event?.id);
     const date = typeof json.date === "string" ? json.date : "";
     const note = typeof json.note === "string" ? json.note.trim() : "";
@@ -258,38 +289,42 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
   }
   if (lifecycleMatch && method === "POST") {
     const account = active(db, "organizer");
-    const target = db.events.find((item) => item.id === lifecycleMatch[1] && item.ownerId === account.id);
+    const target = db.events.find((item) => item.id === lifecycleMatch[1] && canManageEvent(db, item, account.id));
     if (!target) return fail(404, "NOT_FOUND");
     if (target.revision !== json.revision) return fail(409, "STALE_REVISION");
     if (json.action === "publish" && target.status === "DRAFT") {
       const errors = publicationErrors(target);
       if (errors.length) throw new ApiError(errors.join(" "), 422, "INVALID_EVENT");
+      publishWithPackage(db, target);
       target.status = "PUBLISHED";
     } else if (json.action === "close" && target.status === "PUBLISHED") target.status = "CLOSED";
     else if (json.action === "archive" && target.status === "CLOSED") target.status = "ARCHIVED";
     else return fail(409, "INVALID_TRANSITION");
     target.revision = String(Number(target.revision) + 1);
     target.updatedAt = nowIso();
-    return strip(target);
+    return strip(db, target);
   }
   const eventMatch = route.match(/^\/api\/events\/([^/]+)(\/assets)?$/);
   if (eventMatch) {
     const account = active(db, "organizer");
-    const target = db.events.find((item) => item.id === eventMatch[1] && item.ownerId === account.id);
+    const target = db.events.find((item) => item.id === eventMatch[1] && canManageEvent(db, item, account.id));
     if (!target) return fail(404, "NOT_FOUND");
     if (eventMatch[2] && method === "POST" && form) {
       const file = form.get("file");
       if (!(file instanceof File)) return fail(422, "VALIDATION_ERROR");
       return { id: next(db, "asset"), name: file.name.slice(0, 255), url: await toDataUrl(file) };
     }
-    if (method === "GET") return strip(target);
+    if (method === "GET") return strip(db, target);
     if (method === "PATCH") {
       if (target.status !== "DRAFT") return fail(409, "NOT_EDITABLE");
       if (json.revision !== target.revision) return fail(409, "STALE_REVISION");
-      const { revision, ...input } = json as unknown as EventInput & { revision: string };
-      void revision;
-      Object.assign(target, input, { revision: String(Number(target.revision) + 1), updatedAt: nowIso() });
-      return strip(target);
+      const input = eventInput(json);
+      const { matchingFields: selectedFields, ...details } = input;
+      const savedFields = db.eventMatchingFields?.[target.id] ?? [];
+      if (selectedFields && (selectedFields.length !== savedFields.length || selectedFields.some(field => !savedFields.includes(field)))) throw new ApiError("Bidang ditetapkan saat pembuatan acara dan tidak dapat diubah.", 409, "FIELDS_LOCKED");
+      validatePackageEdit(db, target, input);
+      Object.assign(target, details, { revision: String(Number(target.revision) + 1), updatedAt: nowIso() });
+      return strip(db, target);
     }
   }
 
@@ -300,7 +335,7 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
   const eventProposalsMatch = route.match(/^\/api\/events\/([^/]+)\/sponsor-proposals$/);
   if (eventProposalsMatch && method === "GET") {
     const account = active(db, "organizer");
-    const event = db.events.find((item) => item.id === eventProposalsMatch[1] && item.ownerId === account.id);
+    const event = db.events.find((item) => item.id === eventProposalsMatch[1] && canManageEvent(db, item, account.id));
     if (!event) return fail(404, "NOT_FOUND");
     return { items: db.proposals.filter((item) => item.eventId === event.id).map(({ ownerId, ...item }) => {
       const sponsor = db.accounts.find((account) => account.id === ownerId);
@@ -315,6 +350,7 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
     const account = active(db, "sponsor");
     const target = db.events.find((item) => item.id === json.eventId && item.status === "PUBLISHED");
     if (!target) return fail(404, "NOT_FOUND");
+    assertEventWritable(db, target);
     const offer = String(json.offer ?? "").trim();
     if (offer.length < 20) return fail(422, "VALIDATION_ERROR", { offer: "Jelaskan penawaranmu, minimal 20 karakter." });
     const created: Proposal & { ownerId: string } = { id: next(db, "proposal"), ownerId: account.id, eventId: target.id, eventTitle: target.title, category: String(json.category ?? ""), offer, amountLabel: typeof json.amountLabel === "string" && json.amountLabel.trim() ? json.amountLabel.trim() : null, status: "SENT", createdAt: nowIso() };
@@ -331,6 +367,21 @@ async function dispatch(db: DemoDb, method: string, route: string, options: Requ
 }
 
 const NOT_HANDLED = Symbol("not-handled");
+
+/** Explicit editable-field allowlist. Never accept owner, state, entitlement or organization IDs. */
+const inputDate = z.iso.datetime({ offset: true }).nullable();
+const inputAsset = z.object({ id: z.string().min(1), name: z.string().max(255), url: z.string().max(3000000).regex(/^(\/(?!\/)|https:\/\/|data:image\/(?:png|jpeg|webp);base64,)/) }).nullable();
+const inputSchema = z.object({
+  matchingFields: z.array(z.enum(matchingFields)).max(5).refine(fields => new Set(fields).size === fields.length).optional(),
+  title: z.string().min(3).max(100), category: z.enum(["Seminar & diskusi", "Workshop", "Kegiatan komunitas"]), summary: z.string().max(500), startsAt: inputDate, endsAt: inputDate, timezone: z.literal("Asia/Jakarta"), venue: z.string().max(150), capacity: z.number().int().min(1).max(100000).nullable(), registrationOpensAt: inputDate, registrationClosesAt: inputDate,
+  modules: z.object({ registration: z.boolean(), committee: z.boolean(), attendance: z.boolean(), sponsorship: z.boolean() }),
+  branding: z.object({ organizationName: z.string().max(100), eventLogo: inputAsset, organizationLogo: inputAsset, sponsors: z.array(z.object({ id: z.string().min(1), name: z.string().max(100), logo: inputAsset })).max(6) }),
+});
+function eventInput(json: Record<string, unknown>): EventInput {
+  const parsed = inputSchema.safeParse(json);
+  if (!parsed.success) return fail(422, "INVALID_EVENT");
+  return parsed.data;
+}
 const notify = (db: DemoDb, ownerId: string, title: string, body: string) => db.notifications.push({ id: next(db, "n"), ownerId, title, body, createdAt: nowIso(), read: false });
 const text = (value: unknown) => (typeof value === "string" ? value.trim() : "");
 const strip2 = <T extends { ownerId: string }>({ ownerId, ...view }: T) => { void ownerId; return view; };
@@ -342,7 +393,7 @@ function coverOf(db: DemoDb, eventId: string) {
 }
 const openingView = (db: DemoDb, item: OwnedOpening): CommitteeOpening => ({ ...strip2(item), organizationName: coverOf(db, item.eventId).organizationName || item.organizationName, eventLogoUrl: coverOf(db, item.eventId).eventLogoUrl, organizationLogoUrl: coverOf(db, item.eventId).organizationLogoUrl });
 const stagesOf = (db: DemoDb, openingId: string): SelectionStage[] => db.openings.find((item) => item.id === openingId)?.stages ?? [];
-const applicationView = (db: DemoDb, item: OwnedApplication): CommitteeApplication => { const { ownerId, applicantName, ...view } = item; void ownerId; void applicantName; return { ...view, ...coverOf(db, item.eventId), stages: stagesOf(db, item.openingId) }; };
+const applicationView = (db: DemoDb, item: OwnedApplication): CommitteeApplication => { const { ownerId, applicantName, ...view } = item; void ownerId; void applicantName; const event = db.events.find(event => event.id === item.eventId); return { ...view, ...coverOf(db, item.eventId), stages: stagesOf(db, item.openingId), canScanQr: Boolean(event && acceptedScanner(db, event, item.ownerId)) }; };
 
 /**
  * Moves the organizer may make now. A new application goes to the first stage (or straight to a decision when the opening
@@ -396,10 +447,15 @@ function registrantOf(db: DemoDb, item: DemoDb["registrations"][number]): Regist
 function dispatchRegistration(db: DemoDb, method: string, route: string, json: Record<string, unknown>): unknown {
   const scanMatch = route.match(/^\/api\/events\/([^/]+)\/(ticket-scans|attendance)$/);
   if (scanMatch) {
-    const owner = active(db, "organizer");
-    const event = db.events.find((item) => item.id === scanMatch[1] && item.ownerId === owner.id);
-    if (!event) return fail(404, "NOT_FOUND");
+    const account = current(db);
+    if (!account.emailVerified || account.status !== "active" || !["organizer", "user"].includes(account.role)) return fail(403, "FORBIDDEN");
+    const event = db.events.find(item => item.id === scanMatch[1]);
+    const manager = Boolean(event && account.role === "organizer" && canManageEvent(db, event, account.id));
+    const committee = Boolean(event && account.role === "user" && acceptedScanner(db, event, account.id));
+    if (!event || (!manager && !committee)) return fail(account.role === "organizer" ? 404 : 403, "FORBIDDEN");
+    const safeRegistrant = (item: DemoDb["registrations"][number]) => { const value = registrantOf(db, item); return manager ? value : { ...value, answers: [], note: null }; };
     if (scanMatch[2] === "attendance" && method === "POST") {
+      if (!manager) return fail(403, "FORBIDDEN");
       if (json.mode !== "NONE" && json.mode !== "ENTRY" && json.mode !== "ENTRY_EXIT") return fail(422, "INVALID_MODE");
       if (json.mode !== "NONE" && !event.modules.registration) throw new ApiError("Aktifkan modul pendaftaran terlebih dahulu.", 422, "REGISTRATION_REQUIRED");
       event.modules.attendance = json.mode !== "NONE";
@@ -407,8 +463,10 @@ function dispatchRegistration(db: DemoDb, method: string, route: string, json: R
       return { ok: true };
     }
     const mode = !event.modules.attendance ? "NONE" : db.attendanceModes?.[event.id] === "ENTRY_EXIT" ? "ENTRY_EXIT" : "ENTRY";
-    if (scanMatch[2] === "attendance" && method === "GET") return { eventId: event.id, eventTitle: event.title, attendanceEnabled: event.modules.attendance, attendanceMode: mode, items: db.registrations.filter((item) => item.eventId === event.id && item.checkedInAt).map((item) => registrantOf(db, item)) };
+    if (scanMatch[2] === "attendance" && method === "GET") return { eventId: event.id, eventTitle: event.title, attendanceEnabled: qrEnabled(event), attendanceMode: mode, canConfigure: manager, canScan: qrEnabled(event) && event.status === "PUBLISHED", items: manager ? db.registrations.filter((item) => item.eventId === event.id && item.checkedInAt).map((item) => safeRegistrant(item)) : [] };
     if (scanMatch[2] !== "ticket-scans" || method !== "POST") return fail(404, "NOT_FOUND");
+    if (!qrEnabled(event)) throw new ApiError("Presensi QR tidak diaktifkan untuk acara ini.", 403, "QR_DISABLED");
+    if (json.direction !== undefined && json.direction !== "ENTRY" && json.direction !== "EXIT") return fail(422, "INVALID_DIRECTION");
     if (event.status !== "PUBLISHED") throw new ApiError("Acara tidak terbuka untuk pemindaian tiket baru.", 409, "EVENT_CLOSED");
     if (typeof json.payload !== "string" || !/^PH1\.[a-zA-Z0-9]{24}$/.test(json.payload)) return fail(422, "INVALID_TICKET");
     const found = db.registrations.find((item) => item.eventId === event.id && item.qrSecret === (json.payload as string).slice(4));
@@ -419,16 +477,16 @@ function dispatchRegistration(db: DemoDb, method: string, route: string, json: R
       if (!found.checkedInAt) throw new ApiError("Tiket harus dicatat masuk sebelum scan keluar.", 409, "ENTRY_REQUIRED");
       const repeated = Boolean(found.checkedOutAt);
       if (!repeated) found.checkedOutAt = nowIso();
-      return { eventId: event.id, eventTitle: event.title, participant: registrantOf(db, found), attendance: repeated ? "ALREADY_EXIT_RECORDED" : "EXIT_RECORDED" };
+      return { eventId: event.id, eventTitle: event.title, participant: safeRegistrant(found), attendance: repeated ? "ALREADY_EXIT_RECORDED" : "EXIT_RECORDED" };
     }
-    const attendance = !event.modules.attendance ? "DISABLED" : found.checkedInAt ? "ALREADY_RECORDED" : "RECORDED";
+    const attendance = found.checkedInAt ? "ALREADY_RECORDED" : "RECORDED";
     if (attendance === "RECORDED") found.checkedInAt = nowIso();
-    return { eventId: event.id, eventTitle: event.title, participant: registrantOf(db, found), attendance };
+    return { eventId: event.id, eventTitle: event.title, participant: safeRegistrant(found), attendance };
   }
   const decisionMatch = route.match(/^\/api\/events\/([^/]+)\/registrants\/([^/]+)\/decision$/);
   if (decisionMatch && method === "POST") {
     const owner = active(db, "organizer");
-    const event = db.events.find((item) => item.id === decisionMatch[1] && item.ownerId === owner.id);
+    const event = db.events.find((item) => item.id === decisionMatch[1] && canManageEvent(db, item, owner.id));
     const found = event && db.registrations.find((item) => item.id === decisionMatch[2] && item.eventId === event.id);
     if (!event || !found) return fail(404, "NOT_FOUND");
     const decision = json.decision;
@@ -437,7 +495,7 @@ function dispatchRegistration(db: DemoDb, method: string, route: string, json: R
     if (reason.length > 200) return fail(422, "VALIDATION_ERROR", { note: "Maksimal 200 karakter." });
     if (found.status !== "PENDING") return fail(409, "NOT_PENDING");
     if (decision === "CONFIRM") {
-      if (event.capacity !== null && registeredCount(db, event.id) >= event.capacity) return fail(409, "EVENT_FULL");
+      if (registeredCount(db, event.id) >= participantLimit(db, event)) return fail(409, "EVENT_FULL");
       found.status = "REGISTERED";
       found.note = null;
       notify(db, found.ownerId, "Pembayaran dikonfirmasi", `Pendaftaran ${event.title} sudah terkonfirmasi. QR masuk akan dikirim penyelenggara.`);
@@ -451,10 +509,10 @@ function dispatchRegistration(db: DemoDb, method: string, route: string, json: R
   const match = route.match(/^\/api\/events\/([^/]+)\/(registration-form|registrants)$/);
   if (!match) return NOT_HANDLED;
   const account = active(db, "organizer");
-  const target = db.events.find((item) => item.id === match[1] && item.ownerId === account.id);
+  const target = db.events.find((item) => item.id === match[1] && canManageEvent(db, item, account.id));
   if (!target) return fail(404, "NOT_FOUND");
   if (match[2] === "registrants" && method === "GET") {
-    const board: RegistrantBoard = { eventTitle: target.title, priceIdr: formOf(db, target.id).priceIdr, items: db.registrations.filter((item) => item.eventId === target.id).map((item) => registrantOf(db, item)).sort((a, b) => a.createdAt.localeCompare(b.createdAt)) };
+    const board: RegistrantBoard = { eventTitle: target.title, qrEnabled: qrEnabled(target), priceIdr: formOf(db, target.id).priceIdr, items: db.registrations.filter((item) => item.eventId === target.id).map((item) => registrantOf(db, item)).sort((a, b) => a.createdAt.localeCompare(b.createdAt)) };
     return board;
   }
   if (match[2] !== "registration-form") return fail(404, "NOT_FOUND");
@@ -507,6 +565,8 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
     const account = active(db, "user");
     const opening = db.openings.find((item) => item.id === applyMatch[1] && item.status === "OPEN" && db.events.some((entry) => entry.id === item.eventId && entry.status === "PUBLISHED"));
     if (!opening) return fail(404, "NOT_FOUND");
+    const applicationEvent = db.events.find(item => item.id === opening.eventId);
+    if (applicationEvent) assertEventWritable(db, applicationEvent);
     if (db.applications.some((item) => item.ownerId === account.id && item.openingId === opening.id && item.status !== "WITHDRAWN")) return fail(409, "ALREADY_APPLIED");
     const ids = Array.isArray(json.divisionIds) ? json.divisionIds.filter((id): id is string => typeof id === "string") : [];
     const chosen = ids.map((id) => opening.divisions.find((item) => item.id === id)).filter((item): item is NonNullable<typeof item> => Boolean(item));
@@ -517,7 +577,7 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
     if (motivation.length < 20) fields.motivation = "Ceritakan motivasimu, minimal 20 karakter.";
     if (opening.question && !answer) fields.answer = "Jawab pertanyaan dari penyelenggara.";
     if (Object.keys(fields).length) return fail(422, "VALIDATION_ERROR", fields);
-    const created: OwnedApplication = { id: next(db, "application"), ownerId: account.id, applicantName: account.fullName, openingId: opening.id, eventId: opening.eventId, eventTitle: opening.eventTitle, divisions: chosen.map((item) => item.name), motivation, question: opening.question, answer: opening.question ? answer : null, status: "SUBMITTED", stageId: null, note: null, createdAt: nowIso() };
+    const created: OwnedApplication = { id: next(db, "application"), ownerId: account.id, applicantName: account.fullName, openingId: opening.id, eventId: opening.eventId, eventTitle: opening.eventTitle, divisions: chosen.map((item) => item.name), motivation, question: opening.question, answer: opening.question ? answer : null, status: "SUBMITTED", stageId: null, visitedStageIds: [], note: null, createdAt: nowIso() };
     db.applications.push(created);
     notify(db, opening.ownerId, "Lamaran panitia baru", `${account.fullName} melamar panitia ${opening.eventTitle}.`);
     return applicationView(db, created);
@@ -527,8 +587,9 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
   const qrEventMatch = route.match(/^\/api\/events\/([^/]+)\/qr(\/send)?$/);
   if (qrEventMatch) {
     const account = active(db, "organizer");
-    const target = db.events.find((item) => item.id === qrEventMatch[1] && item.ownerId === account.id);
+    const target = db.events.find((item) => item.id === qrEventMatch[1] && canManageEvent(db, item, account.id));
     if (!target) return fail(404, "NOT_FOUND");
+    if (!qrEnabled(target)) throw new ApiError("Presensi QR tidak diaktifkan untuk acara ini.", 403, "QR_DISABLED");
     const live = () => db.registrations.filter((item) => item.eventId === target.id && item.status === "REGISTERED");
     const board = (): QrDelivery => ({ eventTitle: target.title, eventPublished: target.status === "PUBLISHED", registered: live().length, issued: live().filter((item) => item.qrSecret).length });
     if (!qrEventMatch[2] && method === "GET") return board();
@@ -548,6 +609,8 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
     const account = active(db, "user");
     const found = db.registrations.find((item) => item.id === qrTicketMatch[1] && item.ownerId === account.id && item.status === "REGISTERED");
     if (!found) return fail(404, "NOT_FOUND");
+    const event = db.events.find(item => item.id === found.eventId);
+    if (!event || !qrEnabled(event)) throw new ApiError("Presensi QR tidak diaktifkan untuk acara ini.", 403, "QR_DISABLED");
     if (!found.qrSecret) return fail(409, "QR_NOT_SENT");
     const payload: TicketQr = { payload: `PH1.${found.qrSecret}` };
     return payload;
@@ -555,7 +618,7 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
   const committeeMatch = route.match(/^\/api\/events\/([^/]+)\/committee(\/opening|\/applications\/([^/]+)\/decision)?$/);
   if (committeeMatch) {
     const account = active(db, "organizer");
-    const target = db.events.find((item) => item.id === committeeMatch[1] && item.ownerId === account.id);
+    const target = db.events.find((item) => item.id === committeeMatch[1] && canManageEvent(db, item, account.id));
     if (!target) return fail(404, "NOT_FOUND");
     const opening = db.openings.find((item) => item.eventId === target.id) ?? null;
     if (!committeeMatch[2] && method === "GET") {
@@ -598,7 +661,10 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
       if (!move) return fail(409, "INVALID_TRANSITION");
       if (to === "ACCEPTED" && note.length < 10) return fail(422, "VALIDATION_ERROR", { note: "Tulis langkah berikutnya untuk panitia yang diterima, minimal 10 karakter." });
       const stage = stagesOf(db, application.openingId).find((entry) => entry.id === to);
-      if (stage) { application.status = "IN_SELECTION"; application.stageId = stage.id; }
+      if (stage) {
+        application.status = "IN_SELECTION"; application.stageId = stage.id;
+        if (application.visitedStageIds && !application.visitedStageIds.includes(stage.id)) application.visitedStageIds.push(stage.id);
+      }
       else if (to === "ACCEPTED") { application.status = "ACCEPTED"; application.stageId = null; }
       else application.status = "REJECTED";
       application.note = note || null;
@@ -610,12 +676,12 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
 
   if (route === "/api/sponsors/directory" && method === "GET") {
     active(db, "organizer");
-    return { items: db.accounts.filter((item) => item.role === "sponsor" && item.status === "active" && item.emailVerified).map((item) => ({ id: item.id, companyName: item.summary.find((entry) => entry.label === "Perusahaan")?.value || item.fullName, industry: item.summary.find((entry) => entry.label === "Industri")?.value || "-" })) };
+    return { items: sponsorDirectory(db) };
   }
   const offersMatch = route.match(/^\/api\/events\/([^/]+)\/sponsor-offers$/);
   if (offersMatch) {
     const account = active(db, "organizer");
-    const target = db.events.find((item) => item.id === offersMatch[1] && item.ownerId === account.id);
+    const target = db.events.find((item) => item.id === offersMatch[1] && canManageEvent(db, item, account.id));
     if (!target) return fail(404, "NOT_FOUND");
     if (method === "GET") return { eventTitle: target.title, eventPublished: target.status === "PUBLISHED", items: db.offers.filter((item) => item.eventId === target.id).map(strip2).sort((a, b) => b.createdAt.localeCompare(a.createdAt)) };
     if (method === "POST") {
@@ -649,6 +715,8 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
     const found = db.offers.find((item) => item.id === responseMatch[1] && item.sponsorId === account.id);
     if (!found) return fail(404, "NOT_FOUND");
     if (found.status !== "SENT") return fail(409, "ALREADY_ANSWERED");
+    const offerEvent = db.events.find(item => item.id === found.eventId);
+    if (offerEvent) assertEventWritable(db, offerEvent);
     if (json.status !== "ACCEPTED" && json.status !== "DECLINED") return fail(422, "VALIDATION_ERROR");
     found.status = json.status;
     if (found.status === "ACCEPTED") ensureAgreement(db, found.eventId, found.sponsorId, found.category);
@@ -660,7 +728,7 @@ async function dispatchParticipation(db: DemoDb, method: string, route: string, 
 
 function toRegistration(db: DemoDb, item: DemoDb["registrations"][number]): MyRegistration {
   const target = db.events.find((entry) => entry.id === item.eventId);
-  return { id: item.id, ticketReference: item.ticketReference, status: item.status, note: item.note ?? null, createdAt: item.createdAt, qrIssued: Boolean(item.qrSecret), priceIdr: db.forms[item.eventId]?.priceIdr ?? 0, event: { id: item.eventId, title: target?.title ?? "Acara", startsAt: target?.startsAt ?? null, venue: target?.venue ?? "" } };
+  return { id: item.id, ticketReference: item.ticketReference, status: item.status, note: item.note ?? null, createdAt: item.createdAt, qrIssued: Boolean(item.qrSecret), qrEnabled: Boolean(target && qrEnabled(target)), priceIdr: db.forms[item.eventId]?.priceIdr ?? 0, event: { id: item.eventId, title: target?.title ?? "Acara", startsAt: target?.startsAt ?? null, venue: target?.venue ?? "" } };
 }
 
 /** Called by the demo banner. Clears every change and signs out. */

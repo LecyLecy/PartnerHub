@@ -15,7 +15,7 @@ export default function CommitteeManagePage({ id }: { id: string }) { return <Pr
 function Manage({ id }: { id: string }) {
   const resource = useResource(id, getCommitteeWorkspace);
   if (resource.status === "loading") return <SkeletonCards label="Memuat data panitia…" count={2} />;
-  if (resource.status === "error") return <Notice error>{errorMessage(resource.error)} <button className={uiStyles.secondary} onClick={resource.reload}>Coba lagi</button> <Link href="/organizer">Ke workspace</Link></Notice>;
+  if (resource.status === "error") return <Notice error>{errorMessage(resource.error)} <button className={uiStyles.secondary} onClick={resource.reload}>Coba lagi</button> <Link href="/organizer">Daftar event</Link></Notice>;
   if (!resource.data) return null;
   return <Loaded id={id} data={resource.data} reload={resource.reload} />;
 }
@@ -74,20 +74,23 @@ function OpeningForm({ id, data, onSaved }: { id: string; data: CommitteeWorkspa
     } finally { setBusy(false); }
   }
   const onSubmit = (event: FormEvent<HTMLFormElement>) => { event.preventDefault(); void submit(true); };
-  return <section className={`${styles.section} ${styles.formCard}`} aria-labelledby="opening-title">
+  return <section className={styles.section} aria-labelledby="opening-title">
     <div className={styles.row}><h2 id="opening-title">Lowongan</h2>{opening && <Badge tone={opening.status === "OPEN" ? "success" : "neutral"}>{opening.status === "OPEN" ? "Dibuka" : "Ditutup"}</Badge>}</div>
-    <form ref={form} className={uiStyles.form} onSubmit={onSubmit} noValidate>
-      <TextAreaField name="description" label="Kebutuhan panitia" value={values.description} onChange={(description) => { setValues({ ...values, description }); setErrors({ ...errors, description: "" }); }} maxLength={1000} error={errors.description} hint="Jelaskan peran, waktu kerja, dan siapa yang cocok. Minimal 20 karakter." disabled={busy} />
-      <div className={styles.divisions} data-field="divisions">
-        <p className={styles.groupLabel}>Divisi yang dibuka</p>
+    <form ref={form} className={`${uiStyles.form} ${styles.openingForm}`} onSubmit={onSubmit} noValidate>
+      <section className={styles.formGroup} aria-labelledby="needs-title">
+        <h3 id="needs-title" className={styles.groupLabel}>Kebutuhan panitia</h3>
+        <TextAreaField name="description" label="Deskripsi kebutuhan" value={values.description} onChange={(description) => { setValues({ ...values, description }); setErrors({ ...errors, description: "" }); }} maxLength={1000} error={errors.description} hint="Jelaskan peran, waktu kerja, dan siapa yang cocok. Minimal 20 karakter." disabled={busy} />
+      </section>
+      <section className={`${styles.formGroup} ${styles.divisions}`} data-field="divisions" aria-labelledby="divisions-title">
+        <h3 id="divisions-title" className={styles.groupLabel}>Divisi yang dibuka</h3>
         <ul className={styles.divisionList}>{values.divisions.map((name, index) => <li key={index}>
           <div><TextField name={`divisions${index}`} label={`Divisi ${index + 1}`} value={name} onChange={(value) => setDivision(index, value)} maxLength={60} disabled={busy} error={index === 0 ? errors.divisions : undefined} /></div>
           {values.divisions.length > 1 && <button type="button" className={uiStyles.secondary} onClick={() => setValues({ ...values, divisions: values.divisions.filter((_, position) => position !== index) })} disabled={busy} aria-label={`Hapus divisi ${index + 1}`}>Hapus</button>}
         </li>)}</ul>
         {values.divisions.length < 12 && <button type="button" className={uiStyles.secondary} onClick={() => setValues({ ...values, divisions: [...values.divisions, ""] })} disabled={busy}>Tambah divisi</button>}
-      </div>
-      <div className={styles.divisions} data-field="stages">
-        <p className={styles.groupLabel}>Tahapan seleksi</p>
+      </section>
+      <section className={`${styles.formGroup} ${styles.divisions}`} data-field="stages" aria-labelledby="stages-title">
+        <h3 id="stages-title" className={styles.groupLabel}>Tahapan seleksi</h3>
         <p className={styles.note}>Pelamar selalu mulai di &ldquo;Lamaran masuk&rdquo; dan berakhir di &ldquo;Diterima&rdquo;. Atur tahapan di antaranya sesuai acaramu, maksimal 5.</p>
         <SelectionSteps label="Pratinjau alur seleksi" steps={[{ key: "in", label: "Lamaran masuk", state: "done" }, ...stages.map((stage, index) => ({ key: `p${stage.key}`, label: stage.name.trim() || `Tahap ${index + 1}`, state: "waiting" as const })), { key: "out", label: "Diterima", state: "waiting" as const }]} />
         <ul className={styles.divisionList}>{stages.map((stage, index) => <li key={stage.key}>
@@ -100,8 +103,11 @@ function OpeningForm({ id, data, onSaved }: { id: string; data: CommitteeWorkspa
         </li>)}</ul>
         {errors.stages && stages.length === 0 && <p className={styles.fieldError} role="alert">{errors.stages}</p>}
         {stages.length < 5 && <button type="button" className={uiStyles.secondary} onClick={() => setStages([...stages, draft({ id: null, name: "" })])} disabled={busy}>Tambah tahap</button>}
-      </div>
-      <TextField name="question" label="Pertanyaan untuk pelamar" optional value={values.question} onChange={(question) => setValues({ ...values, question })} maxLength={200} hint="Satu pertanyaan khusus acara ini, misalnya pengalaman kepanitiaan." disabled={busy} />
+      </section>
+      <section className={styles.formGroup} aria-labelledby="question-title">
+        <h3 id="question-title" className={styles.groupLabel}>Pertanyaan tambahan</h3>
+        <TextField name="question" label="Pertanyaan untuk pelamar" optional value={values.question} onChange={(question) => setValues({ ...values, question })} maxLength={200} hint="Satu pertanyaan khusus acara ini, misalnya pengalaman kepanitiaan." disabled={busy} />
+      </section>
       {message && <Notice error={message.error}>{message.text}</Notice>}
       <div className={styles.decideActions}>
         <button className={uiStyles.primary} disabled={busy}>{busy ? "Menyimpan…" : opening?.status === "OPEN" ? "Simpan perubahan" : "Buka lowongan"}</button>

@@ -34,7 +34,7 @@ function NewProposal() {
     setErrors(found);
     if (Object.keys(found).length) { focusFirstError(form.current, ["eventId", "category", "offer", "amountLabel"], found); return; }
     setBusy(true); setFailure("");
-    try { await createProposal({ eventId, category: values.category, offer: values.offer.trim(), amountLabel: values.amountLabel.trim() || null }); router.replace("/sponsor?sent=1"); }
+    try { await createProposal({ eventId, category: values.category, offer: values.offer.trim(), amountLabel: values.amountLabel.trim() || null }); router.replace("/sponsor/progress/proposals?sent=1"); }
     catch (error) { setFailure(errorMessage(error)); if (error instanceof ApiError) { setErrors(error.fields); focusFirstError(form.current, ["eventId", "category", "offer", "amountLabel"], error.fields); } }
     finally { setBusy(false); }
   }

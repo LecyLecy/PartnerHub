@@ -1,31 +1,29 @@
-import { z } from "zod";
+import { matchingFields, type MatchingField } from "../../contracts/matching";
 
-export const draftStorageKey = "partnerhub:event-draft:v1";
-
-const draftSchema = z.object({
-  title: z.string().max(100),
-  category: z.enum(["Seminar & diskusi", "Workshop", "Kegiatan komunitas"]),
-  summary: z.string().max(500),
-  date: z.string().max(10),
-  startTime: z.string().max(5),
-  endTime: z.string().max(5),
-  venue: z.string().max(150),
-  capacity: z.string().max(6),
-  modules: z.object({
-    registration: z.boolean(),
-    committee: z.boolean(),
-    attendance: z.boolean(),
-    sponsorship: z.boolean(),
-  }),
-});
-
-export type EventDraft = z.infer<typeof draftSchema>;
+export type EventDraft = {
+  title: string;
+  category: "Seminar & diskusi" | "Workshop" | "Kegiatan komunitas";
+  summary: string;
+  matchingFields: MatchingField[];
+  date: string;
+  startTime: string;
+  endTime: string;
+  venue: string;
+  capacity: string;
+  modules: {
+    registration: boolean;
+    committee: boolean;
+    attendance: boolean;
+    sponsorship: boolean;
+  };
+};
 export type DraftErrors = Partial<Record<keyof EventDraft, string>>;
 
 export const initialDraft: EventDraft = {
   title: "",
   category: "Seminar & diskusi",
   summary: "",
+  matchingFields: [],
   date: "",
   startTime: "",
   endTime: "",
@@ -42,9 +40,12 @@ export const initialDraft: EventDraft = {
 export function validateDraftStep(
   draft: EventDraft,
   step: number,
+  fieldsLocked = false,
 ): DraftErrors {
   const errors: DraftErrors = {};
   if (step === 0 || step === 2) {
+    if (!fieldsLocked && (!draft.matchingFields.length || draft.matchingFields.length > 5 || new Set(draft.matchingFields).size !== draft.matchingFields.length || draft.matchingFields.some(field => !matchingFields.includes(field))))
+      errors.matchingFields = "Pilih 1 sampai 5 bidang acara yang sesuai.";
     if (draft.title.trim().length < 3)
       errors.title = "Isi judul event, minimal 3 karakter.";
     if (draft.title.length > 100) errors.title = "Judul maksimal 100 karakter.";
@@ -78,21 +79,4 @@ export function validateDraftStep(
         "Scan kehadiran memerlukan registrasi peserta untuk tiket.";
   }
   return errors;
-}
-
-export function parseStoredDraft(value: string | null): EventDraft | null {
-  if (!value || value.length > 10000) return null;
-  try {
-    const result = z
-      .object({ version: z.literal(1), draft: draftSchema })
-      .safeParse(JSON.parse(value));
-    if (
-      !result.success ||
-      Object.keys(validateDraftStep(result.data.draft, 2)).length
-    )
-      return null;
-    return result.data.draft;
-  } catch {
-    return null;
-  }
 }

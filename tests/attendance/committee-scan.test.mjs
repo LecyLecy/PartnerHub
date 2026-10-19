@@ -1,0 +1,106 @@
+import assert from "node:assert/strict";
+import test, { beforeEach } from "node:test";
+import { loadTs } from "../helpers/load-ts.mjs";
+const storage = new Map();
+globalThis.sessionStorage = { getItem: key => storage.get(key) ?? null, setItem: (key, value) => storage.set(key, String(value)), removeItem: key => storage.delete(key) };
+globalThis.window = globalThis.window ?? { dispatchEvent() {} };
+const { demoRequest, resetDemoData } = loadTs("src/mocks/demo/router.ts");
+const { loadDb } = loadTs("src/mocks/demo/store.ts");
+const { DEMO_PASSWORD } = loadTs("src/mocks/demo/seed.ts");
+const call = (route, options = {}) => demoRequest(route, options);
+const post = (route, body) => call(route, { method: "POST", body });
+const login = role => call("/api/auth/login", { method: "POST", body: { email: role === "user" ? "demo.user@partnerhub.test" : role === "sponsor" ? "demo.sponsor@partnerhub.test" : "demo.penyelenggara@partnerhub.test", password: DEMO_PASSWORD }, auth: false });
+const scan = (payload, direction = "ENTRY", id = "demo-event-1") => post("/api/events/" + id + "/ticket-scans", { payload, direction });
+const denied = (promise, status) => assert.rejects(promise, error => error.status === status);
+beforeEach(() => { resetDemoData(); storage.clear(); });
+async function issued() {
+  await login("organizer");
+  await post("/api/events/demo-event-1/attendance", { mode: "ENTRY_EXIT" });
+  await post("/api/events/demo-event-1/qr/send", {});
+  const registration = loadDb().registrations.find(item => item.id === "demo-reg-4");
+  registration.answers = [{ fieldId: "private", label: "Bukti pembayaran", type: "image", value: "data:image/png;base64,aGVsbG8=" }];
+  registration.note = "Private review note";
+  return { registration, payload: "PH1." + registration.qrSecret };
+}
+test("QR-disabled events hide capabilities and reject issuance, display and scan without changing stored tickets", async () => {
+  const { registration, payload } = await issued();
+  const secret = registration.qrSecret;
+  await post("/api/events/demo-event-1/attendance", { mode: "NONE" });
+  await denied(call("/api/events/demo-event-1/qr"), 403);
+  await denied(post("/api/events/demo-event-1/qr/send", {}), 403);
+  await denied(scan(payload), 403);
+  const ownerBoard = await call("/api/events/demo-event-1/attendance");
+  assert.equal(ownerBoard.canConfigure, true);
+  assert.equal(ownerBoard.canScan, false);
+  await login("user");
+  const ticket = (await call("/api/me/registrations")).items.find(item => item.id === "demo-reg-1");
+  assert.equal(ticket.qrEnabled, false);
+  assert.equal(ticket.qrIssued, true, "Never delete an issued secret on module disable");
+  await denied(call("/api/me/registrations/demo-reg-1/qr"), 403);
+  assert.equal((await call("/api/me/committee-applications")).items.find(item => item.id === "demo-a1").canScanQr, false);
+  await denied(call("/api/events/demo-event-1/attendance"), 403);
+  await denied(scan(payload), 403);
+  assert.equal(registration.qrSecret, secret);
+  assert.equal(registration.checkedInAt ?? null, null);
+});
+test("accepted committee scans entry and exit idempotently, without answers, proof, private notes or bulk registrant access", async () => {
+  const { registration, payload } = await issued();
+  await login("user");
+  assert.equal((await call("/api/me/committee-applications")).items.find(item => item.id === "demo-a1").canScanQr, true);
+  const board = await call("/api/events/demo-event-1/attendance");
+  assert.equal(board.canConfigure, false);
+  assert.equal(board.canScan, true);
+  assert.deepEqual(board.items, []);
+  await denied(post("/api/events/demo-event-1/attendance", { mode: "NONE" }), 403);
+  await denied(call("/api/events/demo-event-1/registrants"), 403);
+  await denied(call("/api/events/demo-event-1/registration-form"), 403);
+  await denied(post("/api/events/demo-event-1/qr/send", {}), 403);
+  await assert.rejects(scan(payload, "EXIT"), error => error.code === "ENTRY_REQUIRED");
+  await denied(scan(payload, "OTHER"), 422);
+  const entry = await scan(payload);
+  assert.equal(entry.attendance, "RECORDED");
+  assert.equal(entry.participant.id, registration.id);
+  assert.deepEqual(entry.participant.answers, []);
+  assert.equal(entry.participant.note, null);
+  assert.equal("email" in entry.participant, false);
+  assert.equal("qrSecret" in entry.participant, false);
+  const repeat = await scan(payload);
+  assert.equal(repeat.attendance, "ALREADY_RECORDED");
+  assert.equal(repeat.participant.checkedInAt, entry.participant.checkedInAt);
+  const exit = await scan(payload, "EXIT");
+  assert.equal(exit.attendance, "EXIT_RECORDED");
+  const repeatedExit = await scan(payload, "EXIT");
+  assert.equal(repeatedExit.attendance, "ALREADY_EXIT_RECORDED");
+  assert.equal(exit.participant.checkedOutAt, repeatedExit.participant.checkedOutAt);
+  await login("organizer");
+  const registrant = (await call("/api/events/demo-event-1/registrants")).items.find(item => item.id === registration.id);
+  assert.ok(registrant.checkedInAt && registrant.checkedOutAt);
+  assert.equal(registrant.answers[0].label, "Bukti pembayaran", "Owner data remains intact");
+});
+test("non-accepted, foreign-event and revoked committee access is refused at API boundary", async () => {
+  const { registration, payload } = await issued();
+  await login("user");
+  const application = loadDb().applications.find(item => item.id === "demo-a1");
+  for (const status of ["SUBMITTED", "IN_SELECTION", "REJECTED", "WITHDRAWN"]) {
+    application.status = status;
+    assert.equal((await call("/api/me/committee-applications")).items.find(item => item.id === application.id).canScanQr, false);
+    await denied(call("/api/events/demo-event-1/attendance"), 403);
+    await denied(scan(payload), 403);
+  }
+  application.status = "ACCEPTED";
+  await denied(scan(payload, "ENTRY", "demo-event-2"), 403);
+  await denied(call("/api/events/demo-event-2/attendance"), 403);
+  const event = loadDb().events.find(item => item.id === "demo-event-1");
+  for (const status of ["CLOSED", "ARCHIVED", "DRAFT"]) {
+    event.status = status;
+    await denied(scan(payload), 403);
+  }
+  event.status = "PUBLISHED";
+  event.modules.registration = false;
+  await denied(scan(payload), 403);
+  event.modules.registration = true;
+  await login("sponsor");
+  await denied(scan(payload), 403);
+  await denied(call("/api/events/demo-event-1/attendance"), 403);
+  assert.equal(registration.checkedInAt ?? null, null);
+});

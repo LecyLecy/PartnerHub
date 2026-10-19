@@ -1,5 +1,7 @@
 # Connected frontend verification
 
+Historical verification snapshot, not the current feature specification. The old local-copy and browser-draft scenarios below have been removed from the product. PRD.md and ARCHITECTURE.md govern current behavior. Current focused checks include no-draft-browser-check.mjs, archive-subscription-browser-check.mjs, subscription-settings-browser-check.mjs and footer-legal-browser-check.mjs in their feature/workspace test folders. No tests were rerun merely by updating this note.
+
 **In progress**. These checks cover the frontend only. The authentication and event APIs do not exist in this repository. Browser scenarios intercept `/api/**` with test-only records. They prove client behavior, not server security, email delivery, persistence or image safety.
 
 ## Commands

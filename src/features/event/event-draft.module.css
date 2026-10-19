@@ -46,23 +46,6 @@
 .pagePreview .poster h3, .pagePreview .posterBottom { display: none; }
 .pagePreview .eventLogo { width: var(--space-16); height: var(--space-16); margin-top: var(--space-4); }
 .pagePreview .previewBody h3 { font-size: var(--text-h2); }
-.builderToolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3) var(--space-6); margin-bottom: var(--space-8); padding: var(--space-3) var(--space-4) var(--space-3) var(--space-6); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-1); }
-.builderToolbar p { margin: 0; color: var(--muted); font-size: var(--text-caption); flex: 1 1 14rem; }
-.builderToolbar > div { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
-.builderToolbar button { min-height: var(--touch-min); border: 0; background: transparent; color: var(--navy); padding: var(--space-2) var(--space-4); text-align: left; font-size: var(--text-caption); border-radius: var(--radius-control); }
-.builderToolbar .quickSave { background: var(--navy); color: var(--surface); font-weight: var(--weight-label); text-align: center; }
-.builderToolbar .quickSave:hover:not(:disabled) { background: var(--primary-hover); }
-.localStorage { position: relative; font-size: var(--text-caption); }
-.localStorage summary { display: flex; align-items: center; gap: var(--space-2); min-height: var(--touch-min); padding: var(--space-2) var(--space-4); list-style: none; cursor: pointer; border: var(--border-width) solid var(--control-border); border-radius: var(--radius-control); background: var(--surface); color: var(--navy); font-weight: var(--weight-label); }
-.localStorage summary::-webkit-details-marker { display: none; }
-.localStorage summary::after { content: "▾"; }
-.localStorage[open] summary::after { content: "▴"; }
-.localStorage summary:hover { background: var(--subtle); }
-.localActions { position: absolute; right: 0; top: calc(100% + var(--space-2)); z-index: 5; display: grid; min-width: 14rem; padding: var(--space-2); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-control); box-shadow: var(--shadow-3); }
-.builderToolbar .localActions > button { width: 100%; }
-.builderToolbar .localActions > button:hover:not(:disabled) { background: var(--subtle); }
-.localActions > button:last-child { color: var(--error); }
-@media (max-width: 40rem) { .builderToolbar { padding: var(--space-4); } .localActions { left: 0; right: auto; } }
 .layout { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--space-12); align-items: start; }
 .formColumn { min-width: 0; }
 .steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; gap: var(--space-2); padding: 0; margin: 0 0 var(--space-8); }
@@ -75,8 +58,8 @@
 .stepIntro h2 { font-size: var(--text-h2); }
 .stepIntro p { color: var(--muted); margin-top: var(--space-3); max-width: var(--reading-width); }
 .fields { display: flex; flex-direction: column; gap: var(--space-6); }
-.fields label { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); font-weight: var(--weight-label); min-width: 0; }
-.fields :is(input, select, textarea) { flex-basis: 100%; width: 100%; min-width: 0; padding: var(--space-3) var(--space-4); color: var(--navy); background: var(--surface); border: var(--border-width) solid var(--control-border); border-radius: var(--radius-control); min-height: var(--field-height); font-weight: var(--weight-body); }
+.fields > label, .fieldPair label { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); font-weight: var(--weight-label); min-width: 0; }
+.fields > label :is(input, select, textarea), .fieldPair input { flex-basis: 100%; width: 100%; min-width: 0; padding: var(--space-3) var(--space-4); color: var(--navy); background: var(--surface); border: var(--border-width) solid var(--control-border); border-radius: var(--radius-control); min-height: var(--field-height); font-weight: var(--weight-body); }
 .fields textarea { resize: vertical; }
 .fields :is(input, textarea)::placeholder { color: var(--muted); opacity: 1; }
 .fields [aria-invalid=true] { border-color: var(--error); }

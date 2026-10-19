@@ -13,10 +13,31 @@
 .fill > span:last-child { white-space: nowrap; }
 .noResults { padding: var(--space-8) 0; }
 .empty a { color: var(--navy); background: var(--surface); border-color: var(--control-border); }
-.rowActions { display: flex; align-items: center; gap: var(--space-1); width: max-content; }
+
+.dashboard { min-width: 0; }
+.summary > ul { display: flex; flex-wrap: wrap; gap: var(--space-6); padding-block: var(--space-4); border-block: 1px solid var(--line); margin-bottom: var(--space-6); }
+.summary li { display: flex; align-items: baseline; gap: var(--space-2); padding: 0; border: 0; background: transparent; border-radius: 0; }
+.summary li:hover { box-shadow: none; transform: none; }
+.summary strong { font-size: var(--text-h2); }
+.resume { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4) var(--space-6); border-left: 4px solid var(--yellow); background: var(--surface); margin-bottom: var(--space-8); }
+.resume p { margin: var(--space-1) 0 0; color: var(--muted); overflow-wrap: anywhere; }
 .rowStatus { white-space: nowrap; }
-.actionLink { position: relative; display: grid; place-items: center; width: var(--touch-min); height: var(--touch-min); border-radius: var(--radius-control); color: var(--muted); text-decoration: none; }
-.actionLink:hover, .actionLink:focus-visible { color: var(--navy); background: var(--subtle); }
-.actionTooltip { position: absolute; bottom: calc(100% + var(--space-1)); right: 0; z-index: 2; padding: var(--space-2) var(--space-3); border-radius: var(--radius-control); background: var(--navy); color: var(--surface); white-space: nowrap; font-size: var(--text-caption); font-weight: var(--weight-body); visibility: hidden; }
-.actionTooltip::after { content: ""; position: absolute; top: 100%; left: 0; right: 0; height: var(--space-1); }
-.actionLink:hover .actionTooltip, .actionLink:focus-visible .actionTooltip { visibility: visible; }
+.eventList table { min-width: 0; }
+.eventList td:last-child a { white-space: nowrap; padding-inline: var(--space-4); }
+@media (max-width: 48rem) {
+  .eventList table, .eventList thead, .eventList tbody { display: block; min-width: 0; }
+  .eventList thead tr { display: flex; flex-wrap: wrap; padding: var(--space-2); }
+  .eventList th { border: 0; padding: 0 var(--space-2); }
+  .eventList th:last-child { display: none; }
+  .eventList tbody tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--space-4); gap: var(--space-4); border-top: 1px solid var(--line); }
+  .eventList td { display: grid; gap: var(--space-1); min-width: 0; border: 0; padding: 0; }
+  .eventList td:first-child, .eventList td:last-child { grid-column: 1 / -1; }
+  .eventList td:not(:first-child):not(:last-child)::before { content: attr(data-label); color: var(--muted); }
+  .eventList .titleCell { min-width: 0; }
+  .eventList .fill { min-width: 0; gap: var(--space-1); flex-wrap: wrap; }
+  .eventList .fill > span:first-child { width: 3rem; }
+  .eventList td:last-child a { width: 100%; }
+
+  .filters { gap: var(--space-3); }
+  .summary > ul { gap: var(--space-4); }
+}

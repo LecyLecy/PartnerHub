@@ -6,6 +6,7 @@ import { useResource } from "@/lib/use-resource";
 import { Badge, EmptyState, Notice, SkeletonCards, uiStyles } from "@/lib/ui";
 import { statusLabel, statusTone } from "./registration-status";
 import { TicketQr } from "./qr/ticket-qr-dialog";
+import { RegistrationReceipt } from "./registration-receipt";
 import { listMyRegistrations } from "./services/registration-service";
 import styles from "./me.module.css";
 
@@ -13,7 +14,7 @@ import styles from "./me.module.css";
 export function MyTickets() {
   const tickets = useResource("tickets", listMyRegistrations);
   return <section className={styles.panel} aria-labelledby="tickets-title">
-    <div className={styles.panelHead}><h2 id="tickets-title">Tiket</h2><p>Acara yang sudah kamu ikuti, lengkap dengan QR masuk dari penyelenggara.</p></div>
+    <div className={styles.panelHead}><h2 id="tickets-title">Tiket</h2><p>Tiket dan status pendaftaran untuk acara yang kamu ikuti.</p></div>
     {tickets.status === "loading" ? <SkeletonCards label="Memuat tiket…" count={2} />
       : tickets.status === "error" ? <Notice error>{errorMessage(tickets.error)} <button className={uiStyles.secondary} onClick={tickets.reload}>Muat ulang</button></Notice>
       : !tickets.data?.length ? <EmptyState title="Belum ada tiket." href="/me" action="Lihat acara">Daftar ke sebuah acara. Tiketmu muncul di sini.</EmptyState>
@@ -24,11 +25,11 @@ export function MyTickets() {
           <p>{eventWhen(item.event.startsAt)}{item.event.venue ? ` · ${item.event.venue}` : ""}</p>
           <p>{formatPrice(item.priceIdr)}</p>
         </div>
-        {item.status === "PENDING" && <p className={styles.statusNote}>Penyelenggara sedang memeriksa bukti pembayaranmu. QR belum tersedia sampai dikonfirmasi.</p>}
+        {item.status === "PENDING" && <p className={styles.statusNote}>Penyelenggara sedang memeriksa bukti pembayaranmu. Pendaftaran aktif setelah dikonfirmasi.</p>}
         {item.status === "REJECTED" && <p className={styles.statusNote} data-tone="danger">Pembayaran ditolak{item.note ? `: ${item.note}` : "."} Daftar lagi dari halaman <a href="/me">Acara</a> dengan bukti baru.</p>}
         <p className={styles.reference}>Referensi tiket <strong>{item.ticketReference}</strong></p>
-        {item.status === "REGISTERED" && <div className={styles.ticketActions}><TicketQr registrationId={item.id} title={item.event.title} reference={item.ticketReference} sent={item.qrIssued} /></div>}
+        <div className={styles.ticketActions}><RegistrationReceipt id={item.id} title={item.event.title} />{item.status === "REGISTERED" && item.qrEnabled && <TicketQr registrationId={item.id} title={item.event.title} reference={item.ticketReference} sent={item.qrIssued} />}</div>
       </li>)}</ul>}
-    <p className={styles.hint}>QR dikirim penyelenggara per acara. Tunjukkan kode saat masuk atau keluar sesuai aturan presensi acara.</p>
+    {tickets.data?.some(item => item.qrEnabled) && <p className={styles.hint}>Tunjukkan QR kepada panitia saat masuk atau keluar sesuai aturan presensi acara.</p>}
   </section>;
 }

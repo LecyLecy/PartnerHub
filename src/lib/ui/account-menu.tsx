@@ -40,7 +40,7 @@ export function AccountMenu({ name, detail, placement, busy, onLeave, onNavigate
     </button>
     {open && <div id={panelId} className={styles.panel} role="group" aria-label="Akun">
       {items.map((item) => <Link key={item.href} href={item.href} onClick={() => { setOpen(false); onNavigate?.(); }}><Icon name={item.icon} size={18} />{item.label}</Link>)}
-      <Link href="/settings" aria-label="Profil & pengaturan" onClick={() => { setOpen(false); onNavigate?.(); }}><Icon name="settings" size={18} />Pengaturan</Link>
+      <Link href="/settings" onClick={() => { setOpen(false); onNavigate?.(); }}><Icon name="settings" size={18} />Pengaturan</Link>
       <button type="button" onClick={() => { setOpen(false); onLeave(); }} disabled={busy}><Icon name="logout" size={18} />{busy ? "Keluar…" : "Keluar"}</button>
     </div>}
   </div>;

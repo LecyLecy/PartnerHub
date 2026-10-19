@@ -15,8 +15,10 @@ test("new event publishes, accepts a participant, and closes with ownership and 
   const template = loadDb().events[0];
   const { id, ownerId, revision, updatedAt, status, ...input } = template;
   void id; void ownerId; void revision; void updatedAt; void status;
-  const created = await post("/api/events", { ...input, title: "Creative Community Workshop" });
+  const created = await post("/api/events", { ...input, matchingFields: ["Pendidikan"], title: "Creative Community Workshop" });
   await assert.rejects(post(`/api/events/${created.id}/lifecycle`, { action: "publish", revision: "old" }), error => error.status === 409);
+  const order = await post("/api/organizer/orders", { eventId: created.id, tier: "STARTER" });
+  await post(`/api/organizer/orders/${order.id}/verify-demo`, { confirmSimulation: true });
   const published = await post(`/api/events/${created.id}/lifecycle`, { action: "publish", revision: created.revision });
   assert.equal(published.status, "PUBLISHED");
   await switchRole("user");
@@ -64,6 +66,7 @@ test("proposal decision connects sponsor commitment to reviewed evidence and rej
 
 test("optional entry and exit preserve first timestamps and forbid exit before entry", async () => {
   await switchRole("organizer");
+  await post("/api/events/demo-event-1/attendance", { mode: "ENTRY" });
   await post("/api/events/demo-event-1/qr/send", {});
   await post("/api/events/demo-event-1/attendance", { mode: "ENTRY_EXIT" });
   await switchRole("user");
@@ -78,7 +81,7 @@ test("optional entry and exit preserve first timestamps and forbid exit before e
   assert.equal(repeated.attendance, "ALREADY_EXIT_RECORDED");
   assert.equal(first.participant.checkedOutAt, repeated.participant.checkedOutAt);
   await post("/api/events/demo-event-1/attendance", { mode: "NONE" });
-  assert.equal((await post("/api/events/demo-event-1/ticket-scans", { payload })).attendance, "DISABLED");
+  await assert.rejects(post("/api/events/demo-event-1/ticket-scans", { payload }), error => error.code === "QR_DISABLED");
 });
 
 test("demo account login survives reload without storing the raw password", async () => {

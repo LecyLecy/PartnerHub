@@ -1,7 +1,6 @@
 .layout { display: grid; gap: var(--space-6); padding-block: 0 var(--space-6); max-width: var(--form-width); margin-inline: auto; }
 .intro h1 { font-size: var(--text-h1); margin: var(--space-4) 0 0; }
 .intro p { color: var(--muted); max-width: var(--reading-width); margin: var(--space-3) 0 0; }
-.intro .backLink { display: inline-flex; min-height: var(--touch-min); align-items: center; font-size: var(--text-caption); color: var(--muted); }
 .formColumn { width: 100%; min-width: 0; padding: var(--space-8); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); box-shadow: var(--shadow-1); }
 @media (max-width: 40rem) { .formColumn { padding: var(--space-6) var(--space-4); } }
 .formColumn > p { color: var(--muted); margin: 0 0 var(--space-6); }

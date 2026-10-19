@@ -1,6 +1,5 @@
-import { CountUp } from "@/lib/motion";
 import { Badge } from "@/lib/ui";
-import { Icon } from "@/lib/ui/icons";
+import { Icon, LogoWordmark } from "@/lib/ui/icons";
 import { previewRows } from "./landing-data";
 import type { CSSProperties } from "react";
 import styles from "../landing.module.css";
@@ -9,7 +8,7 @@ import styles from "../landing.module.css";
 export function DashboardPreview() {
   return <div className={styles.mock} aria-hidden="true">
     <div className={styles.mockSide}>
-      <div className={styles.mockBrand}>PartnerHub.</div>
+      <div className={styles.mockBrand}><LogoWordmark width={120} /></div>
       <div className={styles.mockGroup}><small>Menu utama</small>
         <span className={styles.mockItem} data-active="true"><Icon name="calendar" size={16} />Event kamu</span>
         <span className={styles.mockItem}><Icon name="plus" size={16} />Susun event</span>
@@ -24,9 +23,9 @@ export function DashboardPreview() {
         <span className={styles.mockSearch}><Icon name="search" size={14} />Cari<kbd>Ctrl K</kbd></span>
       </div>
       <div className={styles.mockStats}>
-        <div><strong><CountUp value={276} /></strong><span>pendaftar</span></div>
-        <div><strong><CountUp value={39} /></strong><span>lamaran panitia</span></div>
-        <div><strong><CountUp value={4} /></strong><span>sponsor</span></div>
+        <div><strong>204</strong><span>pendaftar</span></div>
+        <div><strong>25</strong><span>lamaran panitia</span></div>
+        <div><strong>3</strong><span>sponsor</span></div>
       </div>
       <table className={styles.mockTable}>
         <thead><tr><th>Acara</th><th>Status</th><th>Pendaftar</th><th>Lamaran</th><th>Sponsor</th></tr></thead>

@@ -88,12 +88,12 @@ test("a newly registered organizer is pending, blocked from organizer APIs, and 
 test("actions change only this session's data and Reset restores the seed", async () => {
   await login("demo.user@partnerhub.test");
   const before = (await call("/api/me/registrations")).items.length;
-  await call("/api/public/events/demo-event-8/registrations", { method: "POST", body: {} });
+  await call("/api/public/events/demo-event-8/registrations", { method: "POST", body: { answers: { "demo-ticket-proof": "data:image/png;base64,iVBORw0KGgo=" } } });
   assert.equal((await call("/api/me/registrations")).items.length, before + 1);
   await assert.rejects(call("/api/public/events/demo-event-8/registrations", { method: "POST", body: {} }), (error) => error.code === "ALREADY_REGISTERED");
 
   await login("demo.penyelenggara@partnerhub.test");
-  const created = await call("/api/events", { method: "POST", body: { title: "Acara sesi uji", category: "Workshop", summary: "", startsAt: null, endsAt: null, timezone: "Asia/Jakarta", venue: "", capacity: null, registrationOpensAt: null, registrationClosesAt: null, modules: { registration: true, committee: false, attendance: false, sponsorship: false }, branding: { organizationName: "", eventLogo: null, organizationLogo: null, sponsors: [] } }, headers: { "Idempotency-Key": "k1" } });
+  const created = await call("/api/events", { method: "POST", body: { title: "Acara sesi uji", category: "Workshop", matchingFields: ["Pendidikan"], summary: "", startsAt: null, endsAt: null, timezone: "Asia/Jakarta", venue: "", capacity: null, registrationOpensAt: null, registrationClosesAt: null, modules: { registration: true, committee: false, attendance: false, sponsorship: false }, branding: { organizationName: "", eventLogo: null, organizationLogo: null, sponsors: [] } }, headers: { "Idempotency-Key": "k1" } });
   const retried = await call("/api/events", { method: "POST", body: { title: "Acara sesi uji" }, headers: { "Idempotency-Key": "k1" } });
   assert.equal(created.id, retried.id);
   assert.equal((await call("/api/events")).items.length, 6);

@@ -21,15 +21,15 @@ const go = (route) => page.goto(`${base}${route}`, { waitUntil: "networkidle" })
 const noOverflow = async (label) => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `overflow: ${label}`);
 async function signIn(email) {
   await go("/login");
-  await page.getByRole("button", { name: "Pilih akun demo", exact: true }).click();
+  await page.getByRole("button", { name: "Pilih akun", exact: true }).click();
   await page.getByRole("button", { name: new RegExp(email.replace(".", "\\.")) }).click();
   await page.waitForFunction((expected) => document.querySelector('input[name="password"]')?.value === expected, PASSWORD, { timeout: 5000 });
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
 }
 // Keluar and Pengaturan sit behind the profile button. On the organizer rail, hover first so the rail is open.
 async function openAccountMenu() {
-  const side = page.locator("#organizer-sidebar");
-  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#organizer-sidebar").getBoundingClientRect().width > 200); }
+  const side = page.locator("#workspace-sidebar");
+  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#workspace-sidebar").getBoundingClientRect().width > 200); }
   const trigger = page.getByRole("button", { name: /^Menu akun/ });
   if (!(await trigger.first().isVisible())) await page.getByRole("button", { name: "Buka menu" }).click();
   if (await trigger.first().isVisible()) await trigger.first().click();
@@ -46,19 +46,20 @@ try {
   // 1. User: accepted application shows the organizer's next steps, then applies to a second opening.
   await signIn("demo.user@partnerhub.test");
   await page.waitForURL("**/me");
-  await page.getByRole("navigation", { name: "Navigasi utama" }).getByRole("link", { name: "Panitia", exact: true }).click();
+  await page.getByRole("navigation", { name: "Navigasi utama" }).getByRole("link", { name: "Lowongan", exact: true }).click();
   await page.waitForURL("**/committee");
   await page.getByRole("heading", { name: "Lowongan panitia", level: 2 }).waitFor();
-  assert.equal(await page.getByRole("heading", { name: "Kepanitiaan", level: 2 }).count(), 0, "applications live under Acara saya, not here");
-  // Own applications are on Acara saya. Cards only summarize; the path and next steps live in the Detail dialog.
-  await go("/me/events");
+  assert.equal(await page.getByRole("heading", { name: "Kepanitiaan", level: 2 }).count(), 0, "applications live under Lamaran saya, not here");
+  // Own applications have a separate page. Cards summarize; next steps live in the Detail dialog.
+  await go("/me/applications");
   const mine = page.getByRole("region", { name: "Kepanitiaan" });
   assert.equal(await mine.getByText("Langkah berikutnya", { exact: true }).count(), 0, "next steps are not on the card");
   await mine.getByRole("button", { name: /^Detail Seminar Kepemimpinan Mahasiswa/ }).click();
   const detail = page.getByRole("dialog");
   await detail.getByRole("list", { name: /^Proses seleksi/ }).waitFor();
   for (const step of ["Lamaran masuk", "Daftar pendek", "Wawancara", "Diterima"]) await detail.getByText(step, { exact: true }).first().waitFor();
-  assert.equal(await detail.getByText("Selesai").count(), 4, "an accepted application shows every step done");
+  assert.equal(await detail.getByText("Selesai", { exact: true }).count(), 2, "submission and acceptance are known");
+  assert.equal(await detail.getByText("Tidak tercatat", { exact: true }).count(), 2, "legacy intermediate stages have no invented history");
   await detail.getByText("Langkah berikutnya", { exact: true }).waitFor();
   await detail.getByText(/grup WhatsApp panitia/).first().waitFor();
   await page.screenshot({ path: path.join(output, "user-application-detail.png") });
@@ -77,7 +78,7 @@ try {
   await page.getByRole("button", { name: "Kirim lamaran", exact: true }).click();
   await page.getByText(/Lamaran untuk Workshop Desain Poster Acara terkirim/).waitFor();
   await page.getByText("Sudah melamar").first().waitFor();
-  await go("/me/events");
+  await go("/me/applications");
   await page.getByRole("region", { name: "Kepanitiaan" }).getByRole("button", { name: /^Detail Workshop Desain Poster Acara/ }).click();
   const fresh = page.getByRole("dialog");
   await fresh.getByText("Dalam seleksi", { exact: true }).or(fresh.getByText("Menunggu", { exact: true }).first()).first().waitFor();
@@ -95,14 +96,14 @@ try {
   await page.waitForURL("**/events/demo-event-2/committee");
   await page.getByRole("complementary", { name: "Ruang kerja penyelenggara" }).waitFor();
   // The overview only links to three separate screens; the applicants themselves are not on it.
-  assert.equal(await page.getByRole("heading", { name: "Pengguna Demo", level: 3 }).count(), 0, "applicants are not on the overview");
+  assert.equal(await page.getByRole("heading", { name: "Nadia Putri", level: 3 }).count(), 0, "applicants are not on the overview");
   await page.getByRole("link", { name: /Lihat yang dalam seleksi/ }).waitFor();
   await page.getByRole("link", { name: /Lihat yang diterima/ }).waitFor();
   await page.getByRole("link", { name: /Lihat pelamar/ }).click();
   await page.waitForURL("**/events/demo-event-2/committee/pelamar");
   await page.getByRole("link", { name: "Kembali", exact: true }).waitFor();
-  await page.getByRole("heading", { name: "Pengguna Demo", level: 3 }).waitFor();
-  await page.getByText("Lihat jawaban").click();
+  await page.getByRole("heading", { name: "Nadia Putri", level: 3 }).waitFor();
+  await page.getByRole("heading", { name: "Jawaban pelamar", exact: true }).first().waitFor();
   await page.getByText("Saya ingin membantu menyiapkan materi workshop desain.").waitFor();
   assert.equal(await page.getByRole("button", { name: "Terima", exact: true }).count(), 0, "cannot accept straight from Terkirim");
   await page.getByRole("button", { name: "Pindah ke Daftar pendek", exact: true }).click();
@@ -120,11 +121,15 @@ try {
 
   // 3. Organizer asks a verified sponsor.
   await go("/events/demo-event-2/sponsors");
-  await page.getByRole("button", { name: "Kirim permintaan", exact: true }).click();
-  await page.getByText("Pilih sponsor.").waitFor();
-  await page.getByLabel("Sponsor", { exact: true }).selectOption({ index: 1 });
+  assert.equal(await page.getByRole("button", { name: "Kirim permintaan", exact: true }).count(), 0, "select a sponsor before composing a request");
+  await page.getByRole("link", { name: "Jelajahi sponsor lain", exact: true }).click();
+  await page.getByRole("list", { name: "Semua sponsor", exact: true }).getByRole("link", { name: "Pilih sponsor Lentera Sagara Teknologi", exact: true }).click();
+  await page.getByRole("heading", { name: "Siapkan ajakan sponsor", exact: true }).waitFor();
+  assert.equal(new URL(page.url()).pathname, "/events/demo-event-2/sponsors/invite");
+  assert.equal(new URL(page.url()).searchParams.get("sponsorId"), "demo-sponsor");
+  assert.equal(await page.locator('select[name="sponsorId"]').count(), 0, "company is fixed on the invitation form");
   await page.getByLabel("Bentuk dukungan").selectOption("Produk");
-  await page.getByLabel("Pesan untuk sponsor").fill("Kami mengajak Perusahaan Demo menyediakan perangkat lunak untuk peserta.");
+  await page.getByLabel("Pesan untuk sponsor").fill("Kami mengajak Lentera Sagara Teknologi menyediakan perangkat lunak untuk peserta.");
   await page.getByRole("button", { name: "Kirim permintaan", exact: true }).click();
   await page.getByText("Permintaan terkirim. Sponsor menerima notifikasi.").waitFor();
   await page.getByText("Menunggu tanggapan").waitFor();
@@ -135,8 +140,10 @@ try {
   // 4. Sponsor sees the request, is notified and answers.
   await signIn("demo.sponsor@partnerhub.test");
   await page.waitForURL("**/sponsor");
+  await go("/sponsor/progress");
+  await page.waitForURL("**/sponsor/progress");
   await page.getByRole("heading", { name: "Permintaan dari penyelenggara", level: 2 }).waitFor();
-  await (await openBell()).getByText(/mengajak Perusahaan Demo mendukung Workshop Desain Poster Acara/).waitFor();
+  await (await openBell()).getByText(/mengajak Lentera Sagara Teknologi mendukung Workshop Desain Poster Acara/).waitFor();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Detail permintaan Workshop Desain Poster Acara", exact: true }).click();
   await page.getByRole("button", { name: "Terima", exact: true }).first().click();

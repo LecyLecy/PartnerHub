@@ -97,11 +97,6 @@ test("switching roles keeps shared fields and clears role-only ones and document
   assert.equal(s.switchRole(filled, s.emptyFiles, "user", "user").values, filled);
 });
 
-test("the stored draft schema has no password or file fields", () => {
-  const keys = Object.keys(s.draftSchema.shape.values.shape);
-  for (const forbidden of ["password", "confirm", "logo", "document"]) assert.ok(!keys.includes(forbidden), forbidden);
-});
-
 test("payloads carry normalized phone, lower-cased email and digit-only identity numbers", () => {
   const organizer = buildOrganizer({ ...base, email: "Uji@Contoh.ID", organizerType: "individual", organizationName: "", description: "d".repeat(30), city: "K", address: "A", position: "P" });
   assert.equal(organizer.phone, "+6281234567890");

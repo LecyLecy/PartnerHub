@@ -2,8 +2,15 @@
 .section > h2 { margin: 0 0 var(--space-4); scroll-margin-top: var(--space-6); }
 .applicants { list-style: none; padding: 0; margin: var(--space-6) 0 0; display: grid; gap: var(--space-4); }
 .applicants > li { padding: var(--space-6); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-1); min-width: 0; }
-.formCard { padding: var(--space-8); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); box-shadow: var(--shadow-1); }
-@media (max-width: 48rem) { .formCard { padding: var(--space-6) var(--space-4); } }
+.openingForm { margin-top: var(--space-6); }
+.formGroup { min-width: 0; display: grid; gap: var(--space-4); padding: var(--space-6); background: var(--surface); border: var(--border-width) solid var(--line); border-radius: var(--radius-panel); }
+.formGroup > .groupLabel { width: 100%; padding-bottom: var(--space-4); border-bottom: var(--border-width) solid var(--line); font-size: var(--text-h3); }
+.openingForm > .decideActions { padding-top: var(--space-4); border-top: var(--border-width) solid var(--line); }
+@media (max-width: 48rem) {
+  .formGroup { padding: var(--space-4); }
+  .openingForm .divisionList > li { flex-wrap: wrap; }
+  .openingForm .divisionList > li > div { flex-basis: 100%; }
+}
 .applicants h3 { font-size: var(--text-h3); margin: 0; }
 .applicants p { color: var(--muted); margin: var(--space-2) 0 0; overflow-wrap: anywhere; max-width: var(--reading-width); }
 
@@ -38,14 +45,7 @@
 .row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-3); }
 .nextSteps { padding: var(--space-4); background: var(--warning-surface); border-radius: var(--radius-control); }
 .nextSteps p { color: var(--navy); margin: var(--space-2) 0 0; overflow-wrap: anywhere; }
-.apply { width: 100%; }
-.apply > summary { display: flex; align-items: center; justify-content: center; min-height: var(--control-height); padding: var(--space-2) var(--space-4); list-style: none; cursor: pointer; border: var(--border-width) solid var(--navy); border-radius: var(--radius-control); background: var(--navy); color: var(--surface); font-weight: var(--weight-label); }
-.apply > summary::-webkit-details-marker { display: none; }
-.apply > summary:hover { background: var(--primary-hover); }
-.apply[open] > summary { background: var(--surface); color: var(--navy); }
-.apply[open] > summary:hover { background: var(--subtle); }
-.answers > summary { display: flex; align-items: center; min-height: var(--touch-min); width: fit-content; text-decoration: underline; text-underline-offset: var(--space-1); font-weight: var(--weight-label); }
-.apply form { padding-top: var(--space-4); }
+.answers h4 { margin: 0; font-size: var(--text-body); font-weight: var(--weight-label); }
 .answers { margin-top: var(--space-2); }
 .answers dl { margin: var(--space-2) 0 0; padding: var(--space-4); background: var(--subtle); border-radius: var(--radius-control); max-width: var(--reading-width); }
 .answers dt { font-weight: var(--weight-label); color: var(--navy); }

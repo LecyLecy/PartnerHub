@@ -1,0 +1,122 @@
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
+const require = createRequire(import.meta.url);
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "playwright");
+const base = process.env.UI_BASE_URL || "http://127.0.0.1:3132";
+const output = path.resolve(".impeccable/delivery/matching");
+await mkdir(output, { recursive: true });
+const browser = await chromium.launch({ channel: "msedge", headless: true });
+const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
+const errors = [];
+page.on("pageerror", error => errors.push(error.message));
+const go = route => page.goto(`${base}${route}`, { waitUntil: "networkidle" });
+async function role(value, destination) {
+  await page.getByLabel("Ganti peran demo", { exact: true }).selectOption(value);
+  await page.waitForURL(`**${destination}`);
+}
+const offerCount = () => page.evaluate(() => JSON.parse(sessionStorage.getItem("partnerhub:demo:v3")).offers.length);
+try {
+  await go("/guide"); await role("organizer", "/organizer");
+  await page.getByRole("link", { name: "Kelola acara: Seminar Kepemimpinan Mahasiswa", exact: true }).click();
+  await page.getByRole("link", { name: "Ajak sponsor", exact: true }).click();
+  await page.getByRole("heading", { name: "Rekomendasi untuk event ini", exact: true }).waitFor();
+  const recommendedSponsors = page.getByRole("list", { name: "Rekomendasi sponsor", exact: true });
+  const allSponsors = page.getByRole("list", { name: "Semua sponsor", exact: true });
+  assert.equal(await allSponsors.count(), 0);
+  assert.equal(await page.getByRole("heading", { name: "Siapkan ajakan sponsor", exact: true }).count(), 0);
+  const before = await offerCount();
+  await recommendedSponsors.getByRole("link", { name: "Pilih sponsor Aksara Muda Institute", exact: true }).click();
+  await page.getByRole("heading", { name: "Siapkan ajakan sponsor", exact: true }).waitFor();
+  assert.equal(new URL(page.url()).searchParams.get("sponsorId"), "demo-sponsor-education");
+  assert.equal(await offerCount(), before, "choosing a sponsor does not send an offer");
+  await go("/events/demo-event-1/sponsors");
+  await page.getByRole("link", { name: "Jelajahi sponsor lain", exact: true }).click();
+  await allSponsors.waitFor();
+  assert.equal(await allSponsors.getByRole("listitem").count(), 6);
+  await page.getByLabel("Cari sponsor", { exact: true }).fill("tidakada");
+  await page.getByRole("button", { name: "Cari", exact: true }).click();
+  await page.getByRole("heading", { name: "Sponsor tidak ditemukan", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Hapus pencarian", exact: true }).click();
+  assert.equal(await page.getByRole("button", { name: "Simpan bidang", exact: true }).count(), 0);
+  assert.equal(await page.locator('main input[type="checkbox"]').count(), 0);
+  await allSponsors.waitFor();
+  await page.screenshot({ path: path.join(output, "organizer-matching-desktop.png"), fullPage: true });
+  await allSponsors.getByRole("link", { name: "Pilih sponsor Lentera Sagara Teknologi", exact: true }).click();
+  await page.getByLabel("Bentuk dukungan").selectOption("Media partner");
+  await page.getByLabel("Pesan untuk sponsor").fill("Kami mengajak perusahaan mendukung edukasi teknologi melalui seminar komunitas demo.");
+  await page.getByRole("button", { name: "Kirim permintaan", exact: true }).click();
+  await page.getByText("Permintaan terkirim. Sponsor menerima notifikasi.", { exact: true }).waitFor();
+  assert.equal(await offerCount(), before + 1);
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `organizer overflow ${width}`);
+    await page.screenshot({ path: path.join(output, `organizer-${width}.png`), fullPage: true });
+  }
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await role("sponsor", "/sponsor");
+  const recommendations = page.getByRole("region", { name: "Rekomendasi event untuk perusahaanmu", exact: true });
+  const recommendedEvents = page.getByRole("list", { name: "Rekomendasi event", exact: true });
+  await recommendedEvents.getByRole("heading", { name: "Seminar Kepemimpinan Mahasiswa", exact: true }).waitFor();
+  assert.equal(await recommendations.getByText("Lengkapi bidang perusahaan.", { exact: true }).count(), 0, "demo sponsor needs no setup");
+  assert.equal(await recommendedEvents.getByRole("heading", { name: "Workshop Desain Poster Acara", exact: true }).count(), 0);
+  await page.reload({ waitUntil: "networkidle" });
+  await recommendedEvents.getByRole("heading", { name: "Seminar Kepemimpinan Mahasiswa", exact: true }).waitFor();
+  assert.equal(await recommendations.getByText("Lengkapi bidang perusahaan.", { exact: true }).count(), 0);
+  assert.doesNotMatch(await recommendedEvents.innerText(), /pendaftar/i);
+  await page.screenshot({ path: path.join(output, "sponsor-matching-desktop.png"), fullPage: true });
+  await go("/sponsor/preferences");
+  await page.getByRole("heading", { name: "Bidang perusahaan", exact: true }).waitFor();
+  const fieldsBefore = await page.evaluate(() => JSON.parse(sessionStorage.getItem("partnerhub:demo:v3")).sponsorMatchingProfiles);
+  assert.equal(await page.locator('main select, main input[type="checkbox"], main form').count(), 0);
+  assert.equal(await page.getByRole("button", { name: "Simpan bidang", exact: true }).count(), 0);
+  await page.reload({ waitUntil: "networkidle" });
+  await page.getByRole("heading", { name: "Bidang perusahaan", exact: true }).waitFor();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(sessionStorage.getItem("partnerhub:demo:v3")).sponsorMatchingProfiles), fieldsBefore);
+  await go("/sponsor");
+  await recommendedEvents.getByRole("heading", { name: "Festival Literasi Kota", exact: true }).waitFor();
+  assert.equal(await recommendedEvents.getByRole("heading", { name: "Seminar Kepemimpinan Mahasiswa", exact: true }).count(), 1);
+  await go("/sponsor/progress");
+  await page.waitForURL("**/sponsor/progress");
+  await page.getByRole("button", { name: "Detail permintaan Seminar Kepemimpinan Mahasiswa", exact: true }).click();
+  await page.locator("dialog[open]").getByRole("button", { name: "Terima", exact: true }).click();
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `sponsor overflow ${width}`);
+    await page.screenshot({ path: path.join(output, `sponsor-${width}.png`), fullPage: true });
+  }
+  await role("organizer", "/organizer"); await go("/events/demo-event-1/sponsors");
+  await recommendedSponsors.waitFor();
+  assert.equal(await recommendedSponsors.getByRole("link", { name: "Pilih sponsor Lentera Sagara Teknologi", exact: true }).count(), 1);
+  await page.getByRole("list", { name: "Permintaan sponsor terkirim", exact: true }).getByText("Diterima sponsor", { exact: true }).waitFor();
+  await go("/events/new");
+  await page.locator('input[name="title"]').fill("Bidang Terkunci QA");
+  await page.getByRole("button", { name: "Lanjutkan", exact: true }).click();
+  await page.getByText("Pilih 1 sampai 5 bidang acara yang sesuai.", { exact: true }).waitFor();
+  await page.getByRole("checkbox", { name: "Teknologi", exact: true }).check();
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 1000 });
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+    await page.screenshot({ path: path.join(output, `creation-fields-${width}.png`), fullPage: true });
+  }
+  await page.getByRole("button", { name: "Lanjutkan", exact: true }).click();
+  const day = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+  for (const [field, value] of Object.entries({ date: day, startTime: "09:00", endTime: "12:00", venue: "Ruang QA", capacity: "100" })) await page.locator('input[name="' + field + '"]').fill(value);
+  await page.getByRole("button", { name: "Lanjutkan", exact: true }).click();
+  await page.locator('input[name="organizationName"]').fill("Komunitas QA");
+  await page.getByRole("button", { name: "Lanjutkan", exact: true }).click();
+  await page.getByRole("button", { name: "Selesai susunan", exact: true }).click();
+  await page.waitForURL(/\/organizer\/archive\?created=/);
+  const createdId = new URL(page.url()).searchParams.get("created");
+  await go("/events/" + createdId + "?edit=1");
+  await page.getByRole("region", { name: "Bidang acara", exact: true }).waitFor();
+  assert.equal(await page.getByRole("checkbox", { name: "Teknologi", exact: true }).count(), 0);
+  assert.deepEqual(await page.evaluate(id => JSON.parse(sessionStorage.getItem("partnerhub:demo:v3")).eventMatchingFields[id], createdId), ["Teknologi"]);
+  assert.deepEqual(errors, []);
+  console.log("PASS matching: creation-only event fields, read-only matching/profile, preserved sponsor fields, two-way recommendations, send/receive/accept, reload, mobile 390/320; no runtime errors.");
+} catch (error) {
+  console.error(await page.evaluate(() => [...document.querySelectorAll("body *")].map(element => ({ tag: element.tagName, className: String(element.className), right: element.getBoundingClientRect().right, left: element.getBoundingClientRect().left })).filter(item => item.right > innerWidth + 0.5 || item.left < -0.5).slice(0, 12)));
+  await page.screenshot({ path: path.join(output, "failure.png"), fullPage: true });
+  throw error;
+} finally { await browser.close(); }

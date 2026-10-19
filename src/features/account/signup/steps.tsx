@@ -67,7 +67,7 @@ function SponsorCompanyStep({ values, files, errors, busy, set, setFile }: StepP
   return <>
     <fieldset className={styles.fieldGroup}><legend>Profil perusahaan</legend>
     <TextField name="companyName" label="Nama perusahaan atau brand" value={values.companyName} onChange={(value) => set("companyName", value)} error={errors.companyName} disabled={busy} maxLength={100} autoComplete="organization" />
-    <SelectField name="industry" label="Bidang industri" value={values.industry} onChange={(value) => set("industry", value)} options={industries} error={errors.industry} disabled={busy} />
+    <SelectField name="industry" label="Bidang industri" value={values.industry} onChange={(value) => set("industry", value)} options={industries} error={errors.industry} disabled={busy} hint="Bidang ini digunakan untuk rekomendasi acara dan tidak dapat diubah setelah registrasi." />
     <SelectField name="scale" label="Skala perusahaan" optional value={values.scale} onChange={(value) => set("scale", value)} options={scales} error={errors.scale} disabled={busy} />
     </fieldset>
     <fieldset className={styles.fieldGroup}><legend>Legalitas perusahaan</legend>

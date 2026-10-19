@@ -13,8 +13,9 @@ const opening = z.object({
   divisions: z.array(z.object({ id: z.string().min(1), name: z.string().max(60) })).max(12), question: z.string().max(200).nullable(), status: z.enum(["OPEN", "CLOSED"]),
 });
 const application = z.object({
+  canScanQr: z.boolean().default(false),
   id: z.string().min(1), openingId: z.string().min(1), eventId: z.string().min(1), eventTitle: z.string().max(100), organizationName: z.string().max(100), eventLogoUrl: logo, organizationLogoUrl: logo, divisions: z.array(z.string().max(60)).max(12),
-  motivation: z.string().max(600), question: z.string().max(200).nullable(), answer: z.string().max(400).nullable(), status, stageId: z.string().nullable(), stages: z.array(stage).max(5), note: z.string().max(300).nullable(), createdAt: iso,
+  motivation: z.string().max(600), question: z.string().max(200).nullable(), answer: z.string().max(400).nullable(), status, stageId: z.string().nullable(), stages: z.array(stage).max(5), visitedStageIds: z.array(z.string().min(1)).optional(), note: z.string().max(300).nullable(), createdAt: iso,
 });
 const applicant = application.extend({ applicantName: z.string().max(120), allowed: z.array(z.object({ to: z.string().min(1), label: z.string().max(80) })).max(8) });
 const workspace = z.object({ eventTitle: z.string().max(100), eventPublished: z.boolean(), opening: opening.nullable(), applications: z.array(applicant).max(500) });

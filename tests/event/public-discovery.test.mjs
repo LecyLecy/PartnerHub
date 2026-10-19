@@ -12,6 +12,7 @@ beforeEach(() => { resetDemoData(); storage.clear(); });
 test("guests can list and read published events, never drafts or private fields", async () => {
   const list = await call("/api/public/events");
   assert.ok(list.items.length >= 6);
+  assert.ok(list.items.every(event => event.priceIdr > 0));
   assert.equal(loadDb().sessionAccountId, null);
   const expectedKeys = ["id", "title", "category", "summary", "startsAt", "endsAt", "venue", "capacity", "organizationName", "registeredCount", "priceIdr", "eventLogoUrl", "organizationLogoUrl", "sponsorNames"].sort();
   for (const event of list.items) {
@@ -23,6 +24,21 @@ test("guests can list and read published events, never drafts or private fields"
   await assert.rejects(call("/api/public/events/demo-event-3/registrations", { method: "POST", body: { answers: {} } }), error => error.status === 401);
 });
 
+test("existing demo tabs receive missing ticket prices without resetting edits or saved forms", () => {
+  const db = structuredClone(loadDb());
+  delete db.forms["demo-event-1"];
+  db.events[0].title = "Nama acara yang sudah diedit";
+  db.forms["demo-event-2"].priceIdr = 123000;
+  const registrationCount = db.registrations.length;
+  resetDemoData();
+  storage.set("partnerhub:demo:v3", JSON.stringify(db));
+  const restored = loadDb();
+  assert.equal(restored.events[0].title, "Nama acara yang sudah diedit");
+  assert.equal(restored.forms["demo-event-1"].priceIdr, 35000);
+  assert.equal(restored.forms["demo-event-2"].priceIdr, 123000);
+  assert.equal(restored.registrations.length, registrationCount);
+});
+
 test("only public supporter names and agreed sponsorships appear, with duplicates removed", async () => {
   const event = loadDb().events.find(item => item.id === "demo-event-3");
   assert.deepEqual((await call(`/api/public/events/${event.id}`)).sponsorNames, []);
@@ -31,9 +47,9 @@ test("only public supporter names and agreed sponsorships appear, with duplicate
   assert.deepEqual((await call(`/api/public/events/${event.id}`)).sponsorNames, []);
   await call("/api/demo/switch", { method: "POST", body: { role: "organizer" } });
   await call(`/api/events/${event.id}/sponsor-proposals/${proposal.id}/decision`, { method: "POST", body: { status: "ACCEPTED" } });
-  event.branding.sponsors.push({ id: "duplicate", name: " Perusahaan Demo ", logo: null });
+  event.branding.sponsors.push({ id: "duplicate", name: " Lentera Sagara Teknologi ", logo: null });
   await call("/api/auth/logout", { method: "POST" });
-  assert.deepEqual((await call(`/api/public/events/${event.id}`)).sponsorNames, ["Perusahaan Demo"]);
+  assert.deepEqual((await call(`/api/public/events/${event.id}`)).sponsorNames, ["Lentera Sagara Teknologi"]);
   event.status = "CLOSED";
   await assert.rejects(call(`/api/public/events/${event.id}`), error => error.status === 404);
 });

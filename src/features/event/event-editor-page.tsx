@@ -20,20 +20,20 @@ export default function EventEditorPage({ id }: { id?: string }) {
 
 function ExistingEditor({ id }: { id: string }) {
   const resource = useResource(id, getEvent);
-  if (resource.status === "loading") return <Loading>Memuat draft…</Loading>;
+  if (resource.status === "loading") return <Loading>Memuat acara…</Loading>;
   if (resource.status === "error") {
     return <Notice error>
       {errorMessage(resource.error)}
       <button className={uiStyles.secondary} onClick={resource.reload}>Coba lagi</button>
-      <Link href="/organizer">Ke workspace</Link>
+      <Link href="/organizer">Daftar event</Link>
     </Notice>;
   }
   if (!resource.data) return null;
   const event = resource.data;
   if (event.status !== "DRAFT") {
     return <>
-      <PageTitle title="Event ini bukan draft." />
-      <Notice>Perubahan event setelah publikasi belum tersedia. Status tidak diubah oleh editor ini.</Notice>
+      <PageTitle title="Acara ini sudah dipublikasikan." />
+      <Notice>Detail acara yang sudah dipublikasikan tidak dapat diubah dari halaman ini.</Notice>
       <Link href={`/events/${id}`}>Lihat detail event</Link>
     </>;
   }
@@ -108,18 +108,18 @@ function Editor({ record }: { record?: EventRecord }) {
     setStale(false);
     setPartialId(null);
     setPeriodDirty(false);
-    router.replace(`/events/${id}?saved=1`);
+    router.replace(record ? `/events/${id}?saved=1` : `/organizer/archive?created=${encodeURIComponent(id)}`);
   }
 
   return <>
-    <Breadcrumb href="/organizer" parent="Acara kamu" current={record ? "Edit draft" : "Acara baru"}/>
-    <PageTitle title={record ? "Lanjutkan draft acara" : "Susun acara baru"}>
-      Isi judul untuk menyimpan draft. Lengkapi jadwal, periode pendaftaran, dan identitas organisasi, lalu publikasikan dari detail acara.
+    <Breadcrumb href={record ? `/events/${record.id}` : "/organizer"} parent={record ? "Ringkasan acara" : "Acara kamu"} current={record ? "Edit acara" : "Acara baru"}/>
+    <PageTitle title={record ? "Edit detail acara" : "Susun acara baru"}>
+      Lengkapi informasi acara, jadwal, dan modul yang dibutuhkan. Acara yang selesai disusun masuk Arsip acara sebelum diunggah.
     </PageTitle>
     {partialId && <Notice>
-      Draft dasar sudah dibuat di server. Logo dan perubahan akhir belum dikonfirmasi.
-      Coba simpan lagi dari halaman ini untuk menggunakan draft yang sama.
-      <Link href={`/events/${partialId}`}>Lihat draft dasar</Link>
+      Acara sudah dibuat, tetapi logo atau perubahan terakhir belum tersimpan.
+      Coba simpan lagi dari halaman ini untuk melanjutkan acara yang sama tanpa membuat duplikat.
+      <Link href={`/events/${partialId}`}>Lihat acara</Link>
     </Notice>}
     {stale && <Notice error>
       Versi server sudah berubah. Salin isian penting sebelum memuat ulang, perubahan di halaman ini tidak digabung otomatis.
@@ -127,10 +127,10 @@ function Editor({ record }: { record?: EventRecord }) {
         Muat versi server
       </button>
     </Notice>}
-    <EventDraftBuilder initial={recordToEditor(record)} onSave={save} allowLocal={!record} extraDirty={periodDirty}>
+    <EventDraftBuilder initial={recordToEditor(record)} onSave={save} saveLabel={record ? "Simpan perubahan" : "Selesai susunan"} extraDirty={periodDirty} fieldsLocked={Boolean(record)}>
       <section className={`${uiStyles.form} ${styles.registrationPeriod}`} aria-labelledby="registration-period-title">
         <h3 id="registration-period-title">Periode pendaftaran</h3>
-        <p className={uiStyles.hint}>Opsional untuk draft, menggunakan WIB. Isi tanggal buka dan tutup bersamaan bila sudah ditentukan.</p>
+        <p className={uiStyles.hint}>Menggunakan WIB. Isi tanggal buka dan tutup bersamaan, atau atur sebelum publikasi.</p>
         <label>Registrasi dibuka
           <input type="datetime-local" value={opens} onChange={event => {
             setOpens(event.target.value); setPeriodDirty(true); setPeriodError("");

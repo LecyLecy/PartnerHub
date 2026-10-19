@@ -13,7 +13,7 @@ const login = (email) => call("/api/auth/login", { method: "POST", body: { email
 const scan = (payload, id = "demo-event-1") => call(`/api/events/${id}/ticket-scans`, { method: "POST", body: { payload } });
 const denied = (promise, status) => assert.rejects(promise, (error) => error.status === status);
 
-beforeEach(() => { resetDemoData(); storage.clear(); });
+beforeEach(() => { resetDemoData(); storage.clear(); for (const event of loadDb().events) event.modules.attendance = true; });
 
 async function issuedTicket() {
   await login("demo.penyelenggara@partnerhub.test");
@@ -43,11 +43,10 @@ test("issued QR resolves individual ticket and records entry once, also visible 
   assert.equal((await call("/api/events/demo-event-1/registrants")).items.find((item) => item.id === ticket.id).checkedInAt, first.participant.checkedInAt);
 });
 
-test("disabled attendance only inspects ticket and never creates an entry", async () => {
+test("disabled attendance refuses scanning and never creates an entry", async () => {
   const { payload } = await issuedTicket();
   loadDb().events.find((event) => event.id === "demo-event-1").modules.attendance = false;
-  assert.equal((await scan(payload)).attendance, "DISABLED");
-  assert.equal((await scan(payload)).participant.checkedInAt, null);
+  await denied(scan(payload), 403);
   assert.deepEqual((await call("/api/events/demo-event-1/attendance")).items, []);
 });
 
@@ -64,8 +63,9 @@ test("invalid, wrong event, inactive tickets and foreign events disclose no deta
   assert.deepEqual((await call("/api/events/demo-event-1/attendance")).items, []);
 });
 
-test("participant and sponsor cannot scan tickets or read attendance", async () => {
+test("ordinary participant and sponsor cannot scan tickets or read attendance", async () => {
   const { payload } = await issuedTicket();
+  loadDb().applications.filter(item => item.eventId === "demo-event-1").forEach(item => { item.status = "SUBMITTED"; });
   for (const email of ["demo.user@partnerhub.test", "demo.sponsor@partnerhub.test"]) {
     await login(email);
     await denied(scan(payload), 403);

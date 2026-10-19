@@ -1,5 +1,7 @@
 # Campus workspace and event-draft verification
 
+Historical verification snapshot. The workspace/draft/IndexedDB implementation described below is superseded, not a current acceptance requirement. Current product flows are consolidated in PRD.md and ARCHITECTURE.md: individual-event archive/upload, owner-account subscription, no browser draft-copy feature, stable navigation and optional entry/exit QR. Preserve this evidence without restoring removed behavior. This documentation update does not rerun or extend the historical tests.
+
 ## Scope
 
 ### Current revision: multi-organization identity uploads

@@ -1,4 +1,5 @@
 import type { OrganizerType, Role } from "@/contracts/account";
+import { matchingFields } from "@/contracts/matching";
 
 export const roles: readonly { value: Role; title: string; description: string; can: readonly string[] }[] = [
   { value: "user", title: "Peserta", description: "Cari acara dan ikuti pendaftaranmu.", can: ["Mendaftar ke acara", "Melihat referensi tiket", "Menerima pembaruan acara"] },
@@ -15,7 +16,7 @@ export const organizerTypes: readonly { value: OrganizerType; label: string; des
 
 export const interests = ["Seminar & diskusi", "Workshop", "Kegiatan komunitas"].map((value) => ({ value, label: value }));
 
-export const industries = ["Teknologi", "Makanan & minuman", "Keuangan & perbankan", "Pendidikan", "Kesehatan", "Media & hiburan", "Ritel & FMCG", "Transportasi & logistik", "Energi & manufaktur", "Lainnya"].map((value) => ({ value, label: value }));
+export const industries = matchingFields.map((value) => ({ value, label: value }));
 
 export const scales = [
   { value: "startup", label: "Startup" },

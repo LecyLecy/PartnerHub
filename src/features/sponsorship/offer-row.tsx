@@ -1,4 +1,5 @@
 "use client";
+import Link from "next/link";
 import type { SponsorOffer } from "@/contracts/sponsor-offer";
 import { Badge, uiStyles } from "@/lib/ui";
 import { DetailRow } from "./detail-row";
@@ -11,6 +12,7 @@ export function OfferRow({ item, busy, onAnswer }: { item: SponsorOffer; busy: b
     {(close) => <>
       <p>{item.organizationName || "Penyelenggara"} · {item.category}{item.amountLabel ? ` · ${item.amountLabel}` : ""}</p>
       <p>{item.message}</p>
+      <p><Link href={`/explore/${encodeURIComponent(item.eventId)}`}>Lihat detail acara</Link></p>
       {item.proposalUrl && <p><a href={item.proposalUrl} target="_blank" rel="noopener noreferrer">Buka dokumen proposal</a></p>}
       <div className={styles.receivedActions}>
         {item.status === "SENT" && <>

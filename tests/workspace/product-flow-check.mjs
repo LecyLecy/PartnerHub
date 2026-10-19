@@ -56,8 +56,8 @@ await context.route("**/test-logo.png", route => route.fulfill({ contentType: "i
 const goto = route => page.goto(`${base}${route}`, { waitUntil: "networkidle" });
 // Keluar and Pengaturan sit behind the profile button. On the organizer rail, hover first so the rail is open.
 async function openAccountMenu() {
-  const side = page.locator("#organizer-sidebar");
-  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#organizer-sidebar").getBoundingClientRect().width > 200); }
+  const side = page.locator("#workspace-sidebar");
+  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#workspace-sidebar").getBoundingClientRect().width > 200); }
   const trigger = page.getByRole("button", { name: /^Menu akun/ });
   if (!(await trigger.first().isVisible())) await page.getByRole("button", { name: "Buka menu" }).click();
   if (await trigger.first().isVisible()) await trigger.first().click();
@@ -117,7 +117,7 @@ try {
   await page.getByRole("button", { name: "Reset pencarian" }).click();
   await page.getByRole("combobox", { name: /Status/ }).selectOption("DRAFT");
   await openAccountMenu();
-  await page.getByRole("link", { name: "Profil & pengaturan", exact: true }).click();
+  await page.getByRole("link", { name: "Pengaturan", exact: true }).click();
   await page.getByLabel("Nama tampilan (opsional)").fill("Nama pengujian");
   await page.getByRole("button", { name: "Simpan profil" }).click();
   await page.getByText("Profil berhasil diperbarui.").waitFor();

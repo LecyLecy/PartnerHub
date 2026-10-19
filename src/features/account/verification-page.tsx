@@ -11,8 +11,8 @@ import { getVerificationInfo } from "./services/account-service";
 import styles from "./account.module.css";
 
 const copy = {
-  pending_verification: ["Akunmu sedang diverifikasi.", "Admin memeriksa data dan dokumenmu. Sampai disetujui, kamu hanya dapat melihat halaman ini dan mengubah profil. Membuat acara, mengirim proposal, dan fitur lain belum tersedia."],
-  rejected: ["Verifikasi belum disetujui.", "Admin belum dapat menyetujui akunmu. Periksa catatan dan data yang dikirim. Perbaikan dokumen dan pengajuan ulang belum tersedia dari halaman ini."],
+  pending_verification: ["Akunmu sedang diverifikasi.", "Admin memeriksa data dan dokumenmu. Sampai disetujui, kamu hanya dapat melihat halaman ini dan mengubah profil. Akses membuat acara dan mengirim proposal dibuka setelah akun disetujui."],
+  rejected: ["Verifikasi belum disetujui.", "Admin belum dapat menyetujui akunmu. Periksa catatan dan data yang dikirim. Gunakan halaman profil untuk memeriksa informasi akunmu."],
   active: ["Akunmu sudah aktif.", "Verifikasi selesai. Muat ulang halaman atau masuk kembali untuk membuka dashboardmu."],
 } as const;
 const loadVerification = (_key: string, signal: AbortSignal) => getVerificationInfo(signal);
@@ -36,7 +36,7 @@ function Status() {
   return <div className={styles.onboarding}>
     <Badge tone={info.status === "active" ? "success" : info.status === "rejected" ? "danger" : "warning"}>{info.status === "active" ? "Aktif" : info.status === "rejected" ? "Belum disetujui" : "Menunggu pemeriksaan"}</Badge>
     <PageTitle title={title}>{text}</PageTitle>
-    {process.env.NEXT_PUBLIC_PARTNERHUB_DEMO === "1" && info.status !== "active" && <Notice><p>Mode demo: persetujuan admin dapat disimulasikan agar kamu bisa melanjutkan alur. Tidak ada verifikasi dokumen nyata.</p><button className={uiStyles.primary} disabled={busy} onClick={() => void approveDemo()}>{busy ? "Memproses…" : "Simulasikan persetujuan admin"}</button>{error && <p role="alert">{error}</p>}</Notice>}
+    {process.env.NEXT_PUBLIC_PARTNERHUB_DEMO === "1" && info.status !== "active" && <Notice><p>Periksa kembali informasi akun, lalu lanjutkan ke ruang kerja.</p><button className={uiStyles.primary} disabled={busy} onClick={() => void approveDemo()}>{busy ? "Memproses…" : "Lanjutkan ke ruang kerja"}</button>{error && <p role="alert">{error}</p>}</Notice>}
     <p className={styles.accountHint}>Dikirim pada {new Date(info.submittedAt).toLocaleDateString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "long" })}.</p>
     {info.reviewNote && <Notice error>{info.reviewNote}</Notice>}
     <div className={styles.statusActions}><button className={uiStyles.primary} onClick={resource.reload}>Periksa status lagi</button><Link className={uiStyles.tertiary} href="/settings">Lihat profil akun</Link></div>

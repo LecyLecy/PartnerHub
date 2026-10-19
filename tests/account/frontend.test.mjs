@@ -3,7 +3,11 @@ import test from "node:test";
 import { loadTs } from "../helpers/load-ts.mjs";
 
 const { validateAccountForm } = loadTs("src/features/account/validation.ts");
-const { safeDestination, homeFor, canAccess, destinationAfterAuth } = loadTs("src/lib/navigation.ts");
+const { safeDestination, homeFor, canAccess, destinationAfterAuth, roleLabel } = loadTs("src/lib/navigation.ts");
+
+test("account labels identify roles without using participant or PIC names", () => {
+  assert.deepEqual(roleLabel, { user: "Peserta / Calon Panitia", organizer: "Penyelenggara", sponsor: "Sponsor" });
+});
 
 const session = (role, overrides = {}) => ({
   account: { id: "test", email: "owner@example.test", displayName: null, role, status: "active", ...overrides.account },

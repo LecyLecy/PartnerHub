@@ -32,23 +32,23 @@ async function loadIncoming(key: string, signal: AbortSignal) {
   return lists.flat().sort(newestFirst);
 }
 
-export default function OrganizerSponsorshipPage({ loadEvents }: { loadEvents: LoadEvents }) {
-  return <ProtectedPage><Page loadEvents={loadEvents} /></ProtectedPage>;
+export default function OrganizerSponsorshipPage({ loadEvents, view = "proposals" }: { loadEvents: LoadEvents; view?: "proposals" | "requests" }) {
+  return <ProtectedPage><Page loadEvents={loadEvents} view={view} /></ProtectedPage>;
 }
 
-function Page({ loadEvents }: { loadEvents: LoadEvents }) {
+function Page({ loadEvents, view }: { loadEvents: LoadEvents; view: "proposals" | "requests" }) {
   const events = useResource("sponsorship-events", loadEvents);
   return <>
-    <PageHeader title="Status sponsor.">Pantau permintaan dukungan yang kamu kirim dan proposal yang masuk untuk seluruh acaramu.</PageHeader>
+    <PageHeader title={view === "requests" ? "Ajakan sponsor" : "Proposal masuk"}>{view === "requests" ? "Pantau ajakan dan tindak lanjut ke perusahaan sponsor." : "Tinjau penawaran sponsor untuk acaramu."}</PageHeader>
     {events.status === "loading" ? <SkeletonCards label="Memuat status sponsor…" count={2} />
       : events.status === "error" ? <Notice error>{errorMessage(events.error)} <button type="button" className={uiStyles.secondary} onClick={events.reload}>Muat ulang acara</button></Notice>
-      : events.data && <Boards eventKey={JSON.stringify(events.data.items.map((event) => event.id))} />}
+      : events.data && <Boards key={view} view={view} eventKey={JSON.stringify(events.data.items.map((event) => event.id))} />}
   </>;
 }
 
-function Boards({ eventKey }: { eventKey: string }) {
-  const outgoing = useResource(eventKey, loadOutgoing);
-  const incoming = useResource(eventKey, loadIncoming);
+function Boards({ eventKey, view }: { eventKey: string; view: "proposals" | "requests" }) {
+  const outgoing = useResource(view === "requests" ? eventKey : "[]", loadOutgoing);
+  const incoming = useResource(view === "proposals" ? eventKey : "[]", loadIncoming);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   async function decide(eventId: string, proposalId: string, status: "IN_REVIEW" | "ACCEPTED" | "DECLINED") {
@@ -58,7 +58,7 @@ function Boards({ eventKey }: { eventKey: string }) {
     finally { setBusy(false); }
   }
   return <div className={styles.boards}>
-    <section className={styles.panel} aria-labelledby="outgoing-title">
+    {view === "requests" && <section className={styles.panel} aria-labelledby="outgoing-title">
       <div className={styles.panelHead}><h2 id="outgoing-title">Permintaan terkirim</h2>{outgoing.data && <span className={styles.count} aria-label={`${outgoing.data.length} permintaan`}>{outgoing.data.length}</span>}</div>
       <p className={styles.hint}>Dukungan yang kamu ajukan ke perusahaan sponsor.</p>
       <div className={styles.scroll} role="region" aria-label="Daftar permintaan terkirim" tabIndex={0}>
@@ -75,8 +75,8 @@ function Boards({ eventKey }: { eventKey: string }) {
             </>}
           </DetailRow>)}</ul>}
       </div>
-    </section>
-    <section className={styles.panel} aria-labelledby="incoming-title">
+    </section>}
+    {view === "proposals" && <section className={styles.panel} aria-labelledby="incoming-title">
       <div className={styles.panelHead}><h2 id="incoming-title">Proposal masuk</h2>{incoming.data && <span className={styles.count} aria-label={`${incoming.data.length} proposal`}>{incoming.data.length}</span>}</div>
       <p className={styles.hint}>Penawaran yang perusahaan sponsor kirim ke acaramu.</p>
       {failure && <Notice error>{failure}</Notice>}
@@ -94,6 +94,6 @@ function Boards({ eventKey }: { eventKey: string }) {
             </>}
           </DetailRow>)}</ul>}
       </div>
-    </section>
+    </section>}
   </div>;
 }

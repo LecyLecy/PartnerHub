@@ -148,17 +148,3 @@ export function switchRole(values: RegistrationValues, files: RegistrationFileVa
   // A document for one role is not valid proof for another, and organizer/sponsor logos mean different things.
   return { values: next, files: { logo: files.logo, document: null } };
 }
-
-/** Draft stored in sessionStorage. Never contains the password or files. */
-export const draftSchema = z.object({
-  version: z.literal(1),
-  role: z.enum(["user", "organizer", "sponsor"]).nullable(),
-  step: z.number().int().min(0).max(4),
-  values: z.object({
-    fullName: z.string().max(100), email: z.string().max(254), phone: z.string().max(30), acceptTerms: z.boolean(),
-    institution: z.string().max(100), city: z.string().max(80), interests: z.array(z.string().max(60)).max(10),
-    organizerType: z.string().max(20), organizationName: z.string().max(100), description: z.string().max(500), address: z.string().max(200), position: z.string().max(100), website: z.string().max(200), social: z.string().max(200), experience: z.string().max(500),
-    companyName: z.string().max(100), industry: z.string().max(60), scale: z.string().max(20), legalNumber: z.string().max(30), npwp: z.string().max(30), categories: z.array(z.string().max(60)).max(10), budget: z.string().max(60),
-  }),
-});
-export const draftKey = "partnerhub:register-draft:v1";

@@ -1,3 +1,4 @@
+import { canManageEvent, eventPackage } from "./billing";
 import { ApiError } from "@/lib/api-client";
 import type { EventReport } from "@/contracts/event-report";
 import type { DemoDb } from "./seed";
@@ -13,7 +14,7 @@ export function ensureAgreement(db: DemoDb, eventId: string, sponsorId: string, 
 export function dispatchReporting(db: DemoDb, method: string, route: string, body: Record<string, unknown>): EventReport | { ok: true } {
   const match = route.match(/^\/api\/events\/([^/]+)\/(report|benefits|benefits\/([^/]+)|sponsor-proposals\/([^/]+)\/decision)$/);
   const account = db.accounts.find((item) => item.id === db.sessionAccountId);
-  const event = db.events.find((item) => item.id === match?.[1] && item.ownerId === account?.id);
+  const event = db.events.find((item) => item.id === match?.[1] && Boolean(account && canManageEvent(db, item, account.id)));
   if (!account || account.role !== "organizer" || account.status !== "active" || !account.emailVerified || !event || !match) throw new ApiError("Acara tidak tersedia untuk akun ini.", 403, "FORBIDDEN");
   const agreement = (sponsorId: string, packageName: string) => ensureAgreement(db, event.id, sponsorId, packageName);
   if (match[4] && method === "POST") {
@@ -27,8 +28,10 @@ export function dispatchReporting(db: DemoDb, method: string, route: string, bod
     return { ok: true };
   }
   // Accepted organizer requests also create the same accountable benefit workspace.
-  for (const offer of db.offers.filter((item) => item.eventId === event.id && item.status === "ACCEPTED")) agreement(offer.sponsorId, offer.category);
-  for (const proposal of db.proposals.filter((item) => item.eventId === event.id && item.status === "ACCEPTED")) agreement(proposal.ownerId, proposal.category);
+  if (!eventPackage(db, event).readOnly) {
+    for (const offer of db.offers.filter((item) => item.eventId === event.id && item.status === "ACCEPTED")) agreement(offer.sponsorId, offer.category);
+    for (const proposal of db.proposals.filter((item) => item.eventId === event.id && item.status === "ACCEPTED")) agreement(proposal.ownerId, proposal.category);
+  }
   const agreements = db.sponsorships.filter((item) => item.eventId === event.id);
   if (match[2] === "benefits" && method === "POST") {
     const found = agreements.find((item) => item.id === body.sponsorshipId);

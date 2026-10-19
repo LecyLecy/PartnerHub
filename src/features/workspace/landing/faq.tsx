@@ -1,15 +1,7 @@
-"use client";
-import { useState } from "react";
-import { Accordion, TabPanel, Tabs, useTabsId } from "@/lib/ui";
-import { faqCategories, faqItems } from "./landing-data";
+import { faqItems } from "./landing-data";
 import styles from "../landing.module.css";
 
-/** Category tabs above a one-at-a-time accordion. The accordion remounts per category so nothing stays open by accident. */
+/** Short answers stay visible without disclosure controls. */
 export function Faq() {
-  const base = useTabsId();
-  const [value, setValue] = useState<string>(faqCategories[0].key);
-  return <div className={styles.faq}>
-    <Tabs idBase={base} label="Kategori pertanyaan" items={faqCategories} value={value} onChange={setValue} />
-    <TabPanel idBase={base} value={value}><Accordion key={value} items={faqItems[value]} /></TabPanel>
-  </div>;
+  return <div className={styles.faq}>{faqItems.umum.map(item => <section key={item.key} aria-labelledby={`faq-${item.key}`}><h3 id={`faq-${item.key}`}>{item.question}</h3><p>{item.answer}</p></section>)}</div>;
 }

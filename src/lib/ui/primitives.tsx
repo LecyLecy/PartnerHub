@@ -1,6 +1,8 @@
 import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import styles from "../ui.module.css";
+import { BackLink } from "./header-back";
+export { BackLink };
 
 type Variant = "primary" | "secondary" | "tertiary" | "destructive";
 export function Button({ variant = "primary", children, className = "", ...props }: ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant }) {
@@ -11,10 +13,6 @@ export function Badge({ children, tone = "info" }: { children: ReactNode; tone?:
 }
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return <div className={`${styles.card} ${className}`}>{children}</div>;
-}
-/** Back button for any page that is reached from another page. It always goes to a fixed parent, so the destination is predictable. */
-export function BackLink({ href, children = "Kembali" }: { href: string; children?: ReactNode }) {
-  return <Link className={styles.back} href={href}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M19 12H5M11 6l-6 6 6 6" /></svg>{children}</Link>;
 }
 export function Breadcrumb({ href, parent, current }: { href: string; parent: string; current: string }) {
   return <div className={styles.crumbs}>

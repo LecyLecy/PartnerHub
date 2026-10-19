@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import type { MatchingField } from "@/contracts/matching";
 import {
   initialDraft,
   validateDraftStep,
@@ -9,7 +10,6 @@ import {
 } from "./draft";
 import styles from "./event-draft.module.css";
 import { ApiError, errorMessage } from "@/lib/api-client";
-import { validatePartialDraft } from "./editor-model";
 import { useUnsavedChanges } from "./use-unsaved-changes";
 import EventPreview from "./event-preview";
 import EventFields from "./event-fields";
@@ -19,11 +19,6 @@ import {
   emptyBranding,
   type EventBranding,
 } from "./event-branding";
-import {
-  deleteLocalDraft,
-  restoreLocalDraft,
-  saveLocalDraft,
-} from "./local-draft";
 
 const stepLabels = [
   "Ide & cerita",
@@ -58,17 +53,16 @@ const moduleOptions = [
   },
 ] as const;
 
-export default function EventDraftBuilder({ initial, onSave, children, onDirty, allowLocal = true, extraDirty = false }: {
+export default function EventDraftBuilder({ initial, onSave, children, saveLabel = "Buat acara", extraDirty = false, fieldsLocked = false }: {
   initial?: { draft: EventDraft; branding: EventBranding };
-  onSave?: (draft: EventDraft, branding: EventBranding) => Promise<void>;
+  onSave: (draft: EventDraft, branding: EventBranding) => Promise<void>;
   children?: import("react").ReactNode;
-  onDirty?: () => void;
-  allowLocal?: boolean;
+  saveLabel?: string;
   extraDirty?: boolean;
+  fieldsLocked?: boolean;
 }) {
   const [draft, setDraft] = useState<EventDraft>(initial?.draft || initialDraft);
   const [step, setStep] = useState(0);
-  const [furthest, setFurthest] = useState(3);
   const [errors, setErrors] = useState<DraftErrors>({});
   const [notice, setNotice] = useState("");
   const [saved, setSaved] = useState(false);
@@ -76,17 +70,17 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
   const [branding, setBranding] = useState<EventBranding>(initial?.branding || emptyBranding());
   const [dirty, setDirty] = useState(false);
   useUnsavedChanges(dirty || extraDirty);
-  const [storageBusy, setStorageBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [previewMode, setPreviewMode] = useState<"poster" | "page">("poster");
   const form = useRef<HTMLFormElement>(null);
   const stepHeading = useRef<HTMLHeadingElement>(null);
 
-  function update(field: keyof Omit<EventDraft, "modules">, value: string) {
+  function update(field: keyof Omit<EventDraft, "modules">, value: string | MatchingField[]) {
     setDraft((previous) => ({ ...previous, [field]: value }));
     setErrors((previous) => ({ ...previous, [field]: undefined }));
     setNotice("");
     setSaved(false);
-    setDirty(true); onDirty?.();
+    setDirty(true);
   }
 
   function moveTo(next: number) {
@@ -98,22 +92,22 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
   function updateBranding(next: EventBranding) {
     setBranding(next);
     setSaved(false);
-    setDirty(true); onDirty?.();
+    setDirty(true);
     setNotice("");
   }
 
-  async function submit(event?: FormEvent<HTMLFormElement>, saveNow = false) {
-    event?.preventDefault();
-    if (storageBusy) return;
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (saving) return;
     if (form.current?.querySelector('[aria-busy="true"]')) {
       setNotice("Tunggu pemeriksaan gambar selesai sebelum melanjutkan.");
       return;
     }
-    const nextErrors = onSave ? validatePartialDraft(draft) : validateDraftStep(draft, step >= 2 ? 2 : step);
+    const nextErrors = validateDraftStep(draft, step >= 2 ? 2 : step, fieldsLocked);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length) {
-      setNotice("Ada detail yang perlu dilengkapi. Draft kamu tetap ada.");
-      if (nextErrors.title || nextErrors.summary) setStep(0);
+      setNotice("Lengkapi detail yang ditandai sebelum melanjutkan.");
+      if (nextErrors.title || nextErrors.summary || nextErrors.matchingFields) setStep(0);
       else setStep(1);
       requestAnimationFrame(() =>
         form.current
@@ -123,147 +117,45 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
       return;
     }
     setNotice("");
-    if ((step >= 2 || saveNow) && brandingError(branding)) {
+    if (step >= 2 && brandingError(branding)) {
       setNotice(brandingError(branding)!);
       moveTo(2);
       return;
     }
-    if (step < 3 && !saveNow) {
-      setFurthest(Math.max(furthest, step + 1));
+    if (step < 3) {
       moveTo(step + 1);
       return;
     }
-    setStorageBusy(true);
+    setSaving(true);
     try {
-      if (onSave) await onSave(draft, branding);
-      else await saveLocalDraft(
-        { ...draft, title: draft.title.trim(), venue: draft.venue.trim() },
-        branding,
-      );
+      await onSave(draft, branding);
       setSaved(true);
       setDirty(false);
-      setNotice(
-        onSave ? "Draft dikonfirmasi oleh server. Belum dipublikasikan." : "Draft tersimpan di browser ini. Belum dipublikasikan atau dikirim ke server.",
-      );
+      setNotice("Acara tersimpan.");
     } catch (error) {
       setSaved(false);
       if (error instanceof ApiError && Object.keys(error.fields).length) {
         setErrors(error.fields);
-        setStep(error.fields.title || error.fields.summary ? 0 : 1);
+        setStep(error.fields.title || error.fields.summary || error.fields.matchingFields ? 0 : 1);
         requestAnimationFrame(() => form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus());
       }
-      setNotice(
-        onSave ? errorMessage(error) : "Browser tidak mengizinkan penyimpanan lokal. Draft masih ada di halaman ini, jangan tutup dulu.",
-      );
+      setNotice(errorMessage(error));
     } finally {
-      setStorageBusy(false);
+      setSaving(false);
     }
   }
-
-  async function restore() {
-    if (storageBusy) return;
-    if (
-      !saved &&
-      (JSON.stringify(draft) !== JSON.stringify(initialDraft) ||
-        JSON.stringify(branding) !== JSON.stringify(emptyBranding())) &&
-      !window.confirm(
-        "Pulihkan draft tersimpan? Isian dan logo yang belum disimpan akan diganti.",
-      )
-    )
-      return;
-    setStorageBusy(true);
-    try {
-      const restored = await restoreLocalDraft();
-      if (!restored) {
-        setNotice(
-          "Belum ada draft tersimpan di browser ini. Mulai dari ide kamu di bawah.",
-        );
-        return;
-      }
-      setDraft(restored.draft);
-      setBranding(restored.branding);
-      setStep(0);
-      setFurthest(3);
-      setErrors({});
-      setSaved(!onSave);
-      setDirty(true); onDirty?.();
-      setNotice("Draft lokal dipulihkan. Kamu bisa melanjutkan mengeditnya.");
-    } catch (error) {
-      setNotice(
-        error instanceof Error && error.message.includes("tidak valid")
-          ? error.message
-          : "Penyimpanan lokal tidak bisa dibaca. Isian dan logo saat ini tidak diubah.",
-      );
-    } finally {
-      setStorageBusy(false);
-    }
-  }
-
-  async function saveBrowserCopy() {
-    const validation = validateDraftStep(draft, 2);
-    if (Object.keys(validation).length || brandingError(branding)) {
-      setNotice("Salinan lokal lama memerlukan detail dan jadwal lengkap. Gunakan simpan server untuk draft yang belum lengkap.");
-      return;
-    }
-    setStorageBusy(true);
-    try { await saveLocalDraft(draft, branding); setNotice("Salinan detail dan logo tersimpan di browser ini, bukan di server. Salinan ini mengganti draft lokal sebelumnya."); }
-    catch { setNotice("Salinan lokal belum dapat disimpan. Isian tetap ada di halaman ini."); }
-    finally { setStorageBusy(false); }
-  }
-
-  async function deleteStored() {
-    if (storageBusy) return;
-    if (
-      !window.confirm(
-        "Hapus draft yang tersimpan di browser ini? Isian formulir saat ini tetap ada.",
-      )
-    )
-      return;
-    setStorageBusy(true);
-    try {
-      await deleteLocalDraft();
-      setSaved(false);
-      setNotice(
-        "Draft lokal dihapus dari browser. Isian formulir saat ini tidak diubah.",
-      );
-    } catch {
-      setNotice(
-        "Browser tidak mengizinkan penghapusan. Draft tersimpan belum diubah.",
-      );
-    } finally {
-      setStorageBusy(false);
-    }
-  }
-
 
   return (
     <div className={styles.builder}>
-      <div className={styles.builderToolbar}>
-        <p>
-          {onSave ? "Simpan kapan saja. Jadwal boleh menyusul." : "Detail dan logo tersimpan di browser ini."}
-        </p>
-        <div>
-          {onSave && <button className={styles.quickSave} type="button" onClick={() => void submit(undefined, true)} disabled={storageBusy}>Simpan draft sekarang</button>}
-          {allowLocal && <details className={styles.localStorage}><summary>Salinan lokal</summary><div className={styles.localActions}>
-          {onSave && <button type="button" onClick={saveBrowserCopy} disabled={storageBusy}>Simpan salinan lokal</button>}
-          <button type="button" onClick={restore} disabled={storageBusy}>
-            Buka salinan lokal
-          </button>
-          <button type="button" onClick={deleteStored} disabled={storageBusy}>
-            Hapus draft lokal
-          </button>
-          </div></details>}
-        </div>
-      </div>
       <div className={styles.layout}>
         <div className={styles.formColumn}>
-          <ol className={styles.steps} aria-label="Langkah menyusun draft">
+          <ol className={styles.steps} aria-label="Langkah membuat acara">
             {stepLabels.map((label, index) => (
               <li key={label}>
                 <button
                   type="button"
                   onClick={() => moveTo(index)}
-                  disabled={storageBusy || index > furthest}
+                  disabled={saving}
                   aria-current={step === index ? "step" : undefined}
                 >
                   <span>{index + 1}</span>
@@ -273,7 +165,7 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
             ))}
           </ol>
           <form ref={form} onSubmit={submit} noValidate>
-            <fieldset disabled={storageBusy} className={styles.formFieldset}>
+            <fieldset disabled={saving} className={styles.formFieldset}>
               <div className={styles.stepIntro}>
                 <h2 ref={stepHeading} tabIndex={-1}>
                   {step === 0
@@ -291,10 +183,10 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
                       ? "Jadwal menggunakan WIB, untuk event yang selesai pada hari yang sama."
                       : step === 2
                         ? "Logo milik acara, organisasi penyelenggara, dan sponsor. Semuanya kamu yang menentukan."
-                        : "Pilih modul sesuai kebutuhan. Setelah tersimpan, lengkapi detail dan publikasikan untuk melanjutkan alur demo."}
+                        : "Selesai disusun? Acara masuk Arsip acara. Pembayaran diperiksa saat kamu ingin mengunggahnya."}
                 </p>
               </div>
-              {step < 2 && <EventFields draft={draft} errors={errors} step={step} update={update} optionalSchedule={Boolean(onSave)}/>}
+              {step < 2 && <EventFields draft={draft} errors={errors} step={step} update={update} fieldsLocked={fieldsLocked}/>}
               {step === 1 && children}
               {step === 2 && <EventBrandingFields branding={branding} update={updateBranding}/>}
               {step === 3 && (
@@ -332,14 +224,14 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
                             },
                           }));
                            setSaved(false);
-                           setDirty(true); onDirty?.();
+                           setDirty(true);
                           setNotice("");
                         }}
                       />
                     </label>
                   ))}
                   <p className={styles.hint}>
-                    Pengaturan disimpan bersama draft. Presensi lanjutan tersedia pada halaman Presensi setelah acara dibuat.
+                    Pengaturan disimpan bersama acara. Presensi lanjutan tersedia pada halaman Presensi setelah acara dibuat.
                   </p>
                 </div>
               )}
@@ -363,12 +255,12 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
                 <button
                   type="submit"
                   className={styles.nextButton}
-                  disabled={storageBusy}
+                  disabled={saving}
                 >
-                  {storageBusy
+                  {saving
                     ? "Memproses…"
                     : step === 3
-                      ? onSave ? "Simpan draft ke server" : "Simpan draft lokal"
+                      ? saveLabel
                       : "Lanjutkan"}
                   <svg
                     aria-hidden="true"
@@ -428,7 +320,7 @@ export default function EventDraftBuilder({ initial, onSave, children, onDirty, 
           <div
             className={`${styles.preview} ${previewOpen ? styles.previewOpen : ""} ${previewMode === "page" ? styles.pagePreview : ""}`}
           >
-            <EventPreview draft={draft} branding={branding} saved={saved && !extraDirty} remote={Boolean(onSave)}/>
+            <EventPreview draft={draft} branding={branding} saved={saved && !extraDirty}/>
           </div>
         </aside>
       </div>

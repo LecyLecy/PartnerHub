@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useResource } from "@/lib/use-resource";
 import { errorMessage } from "@/lib/api-client";
 import { useSession } from "@/lib/session";
@@ -11,31 +11,16 @@ import { Badge, DataTable, EmptyState, Meter, Notice, PageHeader, ProtectedPage,
 import type { EventList, EventRecord } from "@/contracts/event";
 import styles from "./dashboard.module.css";
 import type { OrganizerSummary } from "@/contracts/participation";
-import { Icon, type IconName } from "@/lib/ui/icons";
+import { Icon } from "@/lib/ui/icons";
 
-type Loaders = { loadEvents: (key:string,signal:AbortSignal)=>Promise<EventList>; loadSummary: (key:string,signal:AbortSignal)=>Promise<OrganizerSummary> };
-type Row = EventRecord & { registered: number | null; applications: number | null; sponsors: number | null };
-const statusLabel = { DRAFT: "Draft", PUBLISHED: "Terpublikasi", CLOSED: "Selesai", ARCHIVED: "Arsip" } as const;
+type Loaders = { loadEvents: (key:string,signal:AbortSignal)=>Promise<EventList>; loadSummary: (key:string,signal:AbortSignal)=>Promise<OrganizerSummary>; archive?: boolean; isReady?: (event: EventRecord) => boolean };
+type Row = EventRecord & { registered: number | null; applications: number | null; sponsors: number | null; ready?: boolean };
+const statusLabel = { DRAFT: "Siap diunggah", PUBLISHED: "Terpublikasi", CLOSED: "Selesai", ARCHIVED: "Acara selesai diarsipkan" } as const;
 const when = (iso: string | null) => iso ? `${new Date(iso).toLocaleString("id-ID", { timeZone: "Asia/Jakarta", dateStyle: "long", timeStyle: "short" })} WIB` : "Jadwal belum ditentukan";
 const count = (value: number | null) => value === null ? "-" : value;
+const rowStatus = (row: Row) => row.status === "DRAFT" && row.ready === false ? "Perlu dilengkapi" : statusLabel[row.status];
 
 export default function DashboardPage(props: Loaders) { return <ProtectedPage><Dashboard {...props}/></ProtectedPage>; }
-
-function ActionLink({ href, label, eventTitle, icon }: { href: string; label: string; eventTitle: string; icon: IconName | "edit" }) {
-  const tooltipId = useId();
-  const [dismissed, setDismissed] = useState(false);
-  const [hovered, setHovered] = useState(false);
-  useEffect(() => {
-    if (!hovered || dismissed) return;
-    const dismiss = (event: KeyboardEvent) => { if (event.key === "Escape") setDismissed(true); };
-    document.addEventListener("keydown", dismiss);
-    return () => document.removeEventListener("keydown", dismiss);
-  }, [hovered, dismissed]);
-  return <Link href={href} className={styles.actionLink} aria-label={`${label}: ${eventTitle}`} aria-describedby={dismissed ? undefined : tooltipId} onKeyDown={(event) => { if (event.key === "Escape") setDismissed(true); }} onBlur={() => setDismissed(false)} onPointerEnter={() => { setHovered(true); setDismissed(false); }} onPointerLeave={() => { setHovered(false); setDismissed(false); }}>
-    {icon === "edit" ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m16 3 5 5-12 12-6 1 1-6L16 3Zm-2 2 5 5" /></svg> : <Icon name={icon} size={18} />}
-    {!dismissed && <span id={tooltipId} role="tooltip" className={styles.actionTooltip}>{label}</span>}
-  </Link>;
-}
 
 const columns: readonly Column<Row>[] = [
   { key: "title", header: "Acara", sortValue: (row) => row.title, render: (row) => <div className={styles.titleCell}>
@@ -43,52 +28,45 @@ const columns: readonly Column<Row>[] = [
     <span>{when(row.startsAt)}{row.venue ? ` · ${row.venue}` : ""}</span>
     <span>{row.branding.organizationName}</span>
   </div> },
-  { key: "status", header: "Status", sortValue: (row) => statusLabel[row.status], render: (row) => <span className={styles.rowStatus}><Badge tone={row.status === "PUBLISHED" ? "success" : "neutral"}>{statusLabel[row.status]}</Badge></span> },
+  { key: "status", header: "Status", sortValue: rowStatus, render: (row) => <span className={styles.rowStatus}><Badge tone={row.status === "PUBLISHED" ? "success" : "neutral"}>{rowStatus(row)}</Badge></span> },
   { key: "registered", header: "Pendaftar", sortValue: (row) => row.registered ?? -1, render: (row) => row.registered === null ? "-" : <span className={styles.fill}>
     {row.capacity ? <Meter value={row.registered} max={row.capacity} label={`Kapasitas terisi ${row.title}`} /> : null}
     <span>{row.capacity ? `${row.registered}/${row.capacity}` : row.registered}</span>
   </span> },
   { key: "applications", header: "Lamaran", sortValue: (row) => row.applications ?? -1, render: (row) => count(row.applications) },
   { key: "sponsors", header: "Sponsor", sortValue: (row) => row.sponsors ?? -1, render: (row) => count(row.sponsors) },
-  { key: "actions", header: "Aksi", render: (row) => <div className={styles.rowActions}>
-    {row.status === "DRAFT" && <ActionLink href={`/events/${row.id}/edit`} label="Edit draft" eventTitle={row.title} icon="edit" />}
-    <ActionLink href={`/events/${row.id}/registration`} label="Pendaftaran peserta" eventTitle={row.title} icon="ticket" />
-    <ActionLink href={`/events/${row.id}/committee`} label="Kelola panitia" eventTitle={row.title} icon="users" />
-    <ActionLink href={`/events/${row.id}/sponsors`} label="Ajak sponsor" eventTitle={row.title} icon="briefcase" />
-    <ActionLink href={`/events/${row.id}/qr`} label="QR tiket" eventTitle={row.title} icon="qr" />
-    <ActionLink href={`/events/${row.id}/scan`} label="Scan QR peserta" eventTitle={row.title} icon="search" />
-  </div> },
+  { key: "actions", header: "Kelola", render: (row) => <Link className={uiStyles.secondary} href={`/events/${row.id}`} aria-label={`Kelola acara: ${row.title}`}>Kelola acara</Link> },
 ];
 
-function Dashboard({ loadEvents, loadSummary }: Loaders) {
+function Dashboard({ loadEvents, loadSummary, archive = false, isReady }: Loaders) {
   const resource = useResource("events", loadEvents);
   const summary = useResource("organizer-summary", loadSummary);
   const auth = useSession();
   const router = useRouter();
   const [query, setQuery] = useState(""); const [status, setStatus] = useState("all");
   const name = auth.session?.account.displayName?.trim();
-  const rows = useMemo<Row[]>(() => (resource.data?.items ?? []).map((item) => {
+  const rows = useMemo<Row[]>(() => (resource.data?.items ?? []).filter(item => archive ? item.status === "DRAFT" : item.status !== "DRAFT").map((item) => {
     const line = summary.data?.events.find((entry) => entry.eventId === item.id);
-    return { ...item, registered: line ? line.registered : null, applications: line ? line.applications : null, sponsors: line ? line.sponsors : null };
-  }), [resource.data, summary.data]);
+    return { ...item, ready: isReady?.(item), registered: line ? line.registered : null, applications: line ? line.applications : null, sponsors: line ? line.sponsors : null };
+  }), [resource.data, summary.data, archive, isReady]);
   const shown = rows.filter((item) => item.title.toLocaleLowerCase("id-ID").includes(query.trim().toLocaleLowerCase("id-ID")) && (status === "all" || item.status === status));
   const total = (pick: (entry: OrganizerSummary["events"][number]) => number) => summary.data?.events.reduce((sum, entry) => sum + pick(entry), 0);
   const registered = total((entry) => entry.registered), applications = total((entry) => entry.applications), sponsors = total((entry) => entry.sponsors);
-  return <>
-    <PageHeader title={name ? `Halo, ${name}.` : "Acara yang kamu kelola"} action={<Link className={uiStyles.primary} href="/events/new"><Icon name="plus" size={20} />Susun event baru</Link>}>
-      {name ? "Acara yang kamu kelola. Lanjutkan draft dan pantau pendaftaran." : "Lanjutkan draft dan pantau pendaftaran acara milikmu."}
+  return <div className={styles.dashboard}>
+    <PageHeader title={archive ? "Arsip acara" : "Event kamu"} action={<Link className={uiStyles.primary} href="/events/new"><Icon name="plus" size={20} />Susun event baru</Link>}>
+      {archive ? "Acara yang selesai disusun belum terlihat publik. Pilih acara untuk mengunggahnya." : name ? `Halo, ${name}. Kelola acara yang sudah dipublikasikan.` : "Kelola acara yang sudah dipublikasikan."}
     </PageHeader>
-    {registered !== undefined && applications !== undefined && sponsors !== undefined && <StatGrid items={[{ label: "pendaftar", value: registered }, { label: "lamaran panitia", value: applications }, { label: "sponsor", value: sponsors }]} />}
+    {!archive && <div className={styles.summary}>{registered !== undefined && applications !== undefined && sponsors !== undefined && <StatGrid items={[{ label: "pendaftar", value: registered }, { label: "lamaran panitia", value: applications }, { label: "sponsor", value: sponsors }]} />}</div>}
     {summary.status === "error" && <Notice error>{errorMessage(summary.error)} <button className={uiStyles.secondary} onClick={summary.reload}>Muat ulang ringkasan</button></Notice>}
-    <section aria-label="Daftar acara">
+    <section aria-label="Daftar acara" className={styles.eventList}>
     {resource.status === "loading" ? <SkeletonCards label="Memuat event kamu…" count={3} />
       : resource.status === "error" ? <Notice error>{errorMessage(resource.error)} <button className={uiStyles.secondary} onClick={resource.reload}>Muat ulang event</button></Notice>
-      : !resource.data?.items.length ? <div className={styles.empty}><EmptyState title="Event berikutnya mulai di sini." href="/events/new" action="Susun event pertama">Buat draft, isi detail yang sudah kamu tahu, lalu lanjutkan melengkapinya ketika siap.</EmptyState></div>
+      : !rows.length ? <div className={styles.empty}><EmptyState title={archive ? "Belum ada acara siap diunggah." : "Belum ada acara terpublikasi."} href={archive ? "/events/new" : "/organizer/archive"} action={archive ? "Susun event pertama" : "Buka Arsip acara"}>Selesaikan susunan acara, lalu unggah dari Arsip acara.</EmptyState></div>
       : <>
-      <div className={styles.filters}><label>Cari event<input type="search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Nama event"/></label><label>Status<select value={status} onChange={event=>setStatus(event.target.value)}><option value="all">Semua</option><option value="DRAFT">Draft</option><option value="PUBLISHED">Terpublikasi</option><option value="CLOSED">Selesai</option><option value="ARCHIVED">Arsip</option></select></label></div>
-      {shown.length > 0 && <DataTable caption="Acara yang kamu kelola" columns={columns} rows={shown} rowKey={(row) => row.id} onRowClick={(row) => router.push(`/events/${row.id}`)} />}
+      <div className={styles.filters}><label>Cari event<input type="search" value={query} onChange={event=>setQuery(event.target.value)} placeholder="Nama event"/></label>{!archive && <label>Status<select value={status} onChange={event=>setStatus(event.target.value)}><option value="all">Semua</option><option value="PUBLISHED">Terpublikasi</option><option value="CLOSED">Selesai</option><option value="ARCHIVED">Acara selesai diarsipkan</option></select></label>}</div>
+      {shown.length > 0 && <DataTable caption={archive ? "Acara siap diunggah" : "Acara yang kamu kelola"} columns={archive ? columns.filter(column => ["title", "status", "actions"].includes(column.key)) : columns} rows={shown} rowKey={(row) => row.id} onRowClick={(row) => router.push(`/events/${row.id}`)} />}
       {!shown.length && <section className={styles.noResults} role="status"><h2>Tidak ada event yang cocok.</h2><button className={uiStyles.secondary} onClick={()=>{setQuery("");setStatus("all");}}>Reset pencarian</button></section>}
     </>}
     </section>
-  </>;
+  </div>;
 }

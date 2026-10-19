@@ -1,9 +1,8 @@
 "use client";
-import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useState } from "react";
 import { SessionGate } from "@/lib/session";
-import { SiteFrame } from "@/lib/ui";
+import { BackLink, SiteFrame } from "@/lib/ui";
 import AccountForm from "./account-form";
 import EmailVerification from "./email-verification";
 import type { AccountFormMode } from "./validation";
@@ -31,6 +30,6 @@ function Login() {
 }
 
 export default function AccountPage({ mode }: { mode: AccountFormMode }) {
-  const content = <SiteFrame><div className={styles.layout}><section className={styles.intro}><Link className={styles.backLink} href="/">Kembali ke beranda</Link><h1>{copy[mode][0]}</h1><p>{copy[mode][1]}</p></section><section className={styles.formColumn} aria-label={mode === "login" ? "Masuk akun" : "Form akun"}>{mode === "verify" ? <EmailVerification/> : mode === "login" ? <Login/> : <AccountForm mode={mode}/>}</section></div></SiteFrame>;
+  const content = <SiteFrame><div className={styles.layout}><section className={styles.intro}><BackLink href="/">Beranda</BackLink><h1>{copy[mode][0]}</h1><p>{copy[mode][1]}</p></section><section className={styles.formColumn} aria-label={mode === "login" ? "Masuk akun" : "Form akun"}>{mode === "verify" ? <EmailVerification/> : mode === "login" ? <Login/> : <AccountForm mode={mode}/>}</section></div></SiteFrame>;
   return mode === "login" ? <SessionGate guest>{content}</SessionGate> : content;
 }

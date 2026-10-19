@@ -1,286 +1,176 @@
 # PartnerHub Product Requirements Document
 
-## Classroom demo delivery, 2026-10-16
+Updated: 18 October 2026. This consolidated baseline replaces conflicting dated requirements previously accumulated in this file. Historical delivery evidence is not a current product specification.
 
-The owner authorized merging all available member branches into `production` and completing a hosted demonstration with fictional local data. This supersedes earlier frontend-only scope restrictions and the prohibition on a demo build as the hosted classroom experience. A real production backend, real payments, email delivery, commercial packages, and real customer claims are not required. The long-term product requirements below remain architectural targets, not claims of deployed real services.
+## Product and audience
 
-The demo must connect event creation and valid publication, consented participant registration, organizer review, committee selection, QR delivery, optional no-QR/entry/entry-and-exit attendance, sponsor proposal decisions, benefit evidence, and reporting. Switching seeded roles preserves one dataset within the same browser tab. Newly registered organizers can explicitly simulate admin approval. All synthetic activity is visibly disclosed. See `DEMO-DELIVERY.md` for feedback provenance, changes, evidence, and remaining audit items.
+PartnerHub is a web-based individual-event operations platform for campus organizations (BEM, Himpunan, UKM), youth communities and small event organizers. It connects event preparation, participant registration, committee recruitment, optional QR attendance and sponsorship management. Sponsorship discovery and benefit accountability are the differentiator, not ticketing alone.
 
-## Product summary
+Organizers currently coordinate through forms, spreadsheets, chats and personal sponsorship files. PartnerHub aims to reduce repeated data entry, unclear selection status, missed follow-ups and scattered evidence. These value and willingness-to-pay claims remain hypotheses, not validated outcomes.
 
-### Public event discovery, 2026-10-17
+The current build demonstrates connected flows locally with fictional data. Real authentication, email, shared persistence, secure uploads, payment processing and production authorization remain **In progress**. Functional QA is not a user study, customer adoption or revenue evidence.
 
-Approved scope: event frontend, public navigation, existing public contracts/services, demo data/router, tests, and documentation. `/explore` lists published ongoing and upcoming events without login, with search and a time filter. `/explore/:id` is a shareable event detail page showing schedule, venue, description, organizer, ticket information, and public supporter names. Sponsor review does not require registration; submitting a proposal still requires an approved sponsor account.
+## Users and authorization
 
-Hide the entire sponsor section when no supporter exists. Names come from organizer-declared public supporters or accepted sponsor commitments, never pending or declined proposals. Do not expose participant identities, contact details, ticket secrets, commercial terms, evidence URLs, or follow-up notes. Draft, closed, archived, and unknown events are unavailable to public detail lookups. Elapsed published events leave the discovery catalog; their direct public page may show the completed schedule until the organizer closes them. A missing/invalid schedule never claims an ongoing event. Existing Vercel deployment protection is separate from application login.
+- Accounts register as `user`, `organizer` or `sponsor`. Organizer/sponsor approval and email verification gate private actions. Production approval tooling is **In progress**.
+- Users may be participants in one event and accepted committee members in another. These relations are event-scoped, not extra global account roles.
+- Organizers own events and may assign event-specific managers. No organization/workspace creation, switching, workspace membership or cross-event workspace analytics remains.
+- Sponsors can browse public event information without login. Proposals, invitations and private progress require an approved sponsor account.
+- Demo account menu labels stay Penyelenggara, Sponsor and Peserta / Calon Panitia. Keep the top Ganti peran demo control.
+- Assistant/project onboarding must not block work by asking "siapa nama kamu" or carrying over former-project identity rules. This does not remove necessary account/profile fields from the product.
 
-The classroom demo remains browser-tab-local. These guest-readable endpoints are simulated in demo builds; real backend endpoints and shared cross-browser persistence remain **In progress**.
+## Organizer lifecycle
 
-Verification: 114 unit tests, lint, typecheck, boundary checks, and the demo production build pass. `tests/event/public-discovery-browser-check.mjs` verifies guest navigation and deep links, reload, sponsor section presence/absence, unavailable draft/unknown events, ongoing/ended filtering, search/empty state, 390/320px layouts, and authentication only on proposal submission. Both the local production build and Vercel preview deployment `dpl_2mTppdvAkvSHhiFyAcyJmTeRTttS` passed with no page runtime errors. The existing full event/registration/QR/sponsor/evidence browser flow also passed again. The preview serves application commit `9203832`; the production branch is unchanged.
+1. Complete event setup: title, category, 1 to 5 matching fields, description, same-day WIB schedule, venue, capacity, registration period, identity and desired modules. Matching fields are chosen during creation and locked once the event is created, including while it remains unpublished in Arsip acara.
+2. Finish setup to store the event privately in **Arsip acara** at `/organizer/archive`. Complete records display **Siap diunggah**; incomplete historical records display **Perlu dilengkapi**. Creation alone creates no billing order.
+3. Review and edit from Ringkasan acara before publication. No partial-draft quick-save, persistent signup draft or browser local-copy save/restore/delete feature exists. Form steps retain input in memory only.
+4. Upload the event. Validate publication readiness and either verified per-event coverage or a currently qualifying owner-account subscription.
+5. Only publication makes it visible to guests, sponsors and participants. Published event details cannot be edited through either the summary edit action or legacy edit URL.
+6. Manage enabled registration, recruitment, attendance and sponsorship flows. Close the event, then retain historical records.
 
-PartnerHub is a web-based event operations workspace for campus organizations, youth communities, and small event organizers that run recurring events. It connects event setup, reusable participant registration, committee recruitment, QR attendance, and sponsorship management in one system.
+Internal `DRAFT` means unpublished, not a restored user-facing draft feature. Internal `ARCHIVED` means completed-event history, not the waiting-to-upload Arsip acara list. `/organizer` lists published/completed events, not waiting uploads.
 
-The first version must prove one complete event flow at the Venture Creation booth. PartnerHub is not a national ticket marketplace, payment processor, generic CRM, or full HR system.
+## Publication pricing and subscription
 
-## Problem and hypotheses
+Prices and limits are authoritative in `src/contracts/billing.ts`.
 
-Small and medium event teams often split work across forms, spreadsheets, chat groups, ticket tools, and personal sponsorship files. This can lead to repeated data entry, unclear application status, weak committee handovers, slow check-in, missed sponsor follow-ups, and scattered evidence of delivered sponsor benefits.
+| Tier | Per event | Annual account subscription | Participants per event | Managers per event |
+| --- | --- | --- | --- | --- |
+| Paket Starter | Rp149.000 | Rp699.000/year | 300 | 3, including owner |
+| Paket Growth | Rp499.000 | Rp1.499.000/year | 1.500 | 10, including owner |
 
-These remain hypotheses until direct research is completed:
+- A single-event Starter-to-Growth upgrade costs Rp350.000. Custom means a special offer, not an invented price or entitlement.
+- Annual subscriptions belong to the organizer account, not a workspace. Both allow unlimited events within their per-event limits. Growth covers smaller Starter-sized events.
+- Per-event payment and qualifying subscription coverage are alternatives. Covered uploads create no per-event charge or zero-value transaction.
+- Creating an order does not activate rights. Confirmation is separate. Pending orders expire after 30 minutes; retries must not duplicate purchases.
+- An annual term starts at explicit confirmation and lasts one calendar year. No auto-renewal, stacking or mid-term annual upgrade is offered.
+- Recheck the owner, subscription expiry, participant capacity, manager count and event end at every upload. The event must end no later than subscription expiry.
+- Pin subscription coverage only when publication succeeds. Published-event rights last through event end plus 30 days, even if the subscription expires sooner. New/unpublished events still require current qualifying coverage.
+- Preserve exact historical amounts, old published coverage and operational records. Removed organization-scoped annual orders remain read-only and never grant new rights.
+- Subscription displays exactly three cards: Paket Starter, Paket Growth and Custom. Custom uses **Kontak PartnerHub** to `/contact`. No separate feature disclosure, transaction history or loose Custom section.
+- Active tier and expiry appear inside its card. Checkout uses a feature-local dialog with explicit create/confirm actions, pending-order resume, cancellation and keyboard focus handling.
+- **Riwayat transaksi** is accessed only through **Pengaturan**, not the sidebar or Subscription. Keep a single newest-first list, including read-only historical records.
 
-- Organizers find a connected workspace more useful than separate tools.
-- Participants value reusing consented profile data across events.
-- Committee applicants and organizers value structured division choices and application status.
-- QR entry improves check-in speed and clarity.
-- Sponsorship tracking and benefit evidence improve organizer accountability.
-- Organizations that run recurring events are willing to pay for the combined workflow.
+These are local product rules, not proof of real money collection. Production gateway, webhooks, billing persistence and transaction concurrency remain **In progress**.
 
-## Target users
+## Public discovery
 
-| User | Primary job | First-version value |
+`/explore` lists published ongoing/upcoming events with local search/time filters. `/explore/:id` shows shareable details, schedule, venue, organizer, ticket information and public supporter names without application login.
+
+- Do not show public registration totals, capacity-fill indicators or invented popularity claims. Private organizer operational counts remain.
+- Hide the entire sponsor section when empty. Only organizer-declared supporters and accepted commitments may appear, never pending/declined proposals.
+- Never expose participant identities, contact data, QR secrets, commercial terms, private evidence URLs or follow-up notes.
+- Unpublished, closed, archived and unknown events are unavailable publicly. Elapsed published events leave discovery; a direct page may show their completed schedule until closure.
+- Registration/proposal actions still enforce account, publication, module and date/window eligibility. Login continuation preserves the selected event.
+
+## Participant registration and tickets
+
+- Reuse necessary consented profile data separately from event-specific answers. Answer labels are snapshotted so later form edits do not rewrite past submissions.
+- Current forms use one event-level ticket price and payment instructions. All seeded events have illustrative paid prices; the current contract still permits price 0 for new events. Multiple ticket categories, multi-ticket orders and discounts are not implemented.
+- Participant ticket payment is separate from the organizer's PartnerHub publication fee. PartnerHub does not process ticket money.
+- Paid registration starts `PENDING`; organizer reviews proof and confirms `REGISTERED` or rejects `REJECTED` with an optional note. Free registration starts `REGISTERED`. Rejection permits a new submission; duplicate pending/confirmed registrations and over-capacity confirmations are refused.
+- `/me/events` contains Tiket saya and a private read-only registration receipt. Proof and answers are loaded on demand for the registration owner, never included in public lists.
+- QR display requires confirmed registration, explicit organizer issuance and currently enabled registration plus attendance modules. Fetch the opaque payload only when the participant opens Tampilkan QR.
+- Pending/rejected/cancelled or unissued tickets do not receive QR. Existing secrets/receipts are retained when a module is disabled, not erased.
+
+## Committee recruitment
+
+`/committee` lists openings; `/me/applications` contains Lamaran saya. Applications are not mixed into the ticket page.
+
+Organizers configure a needs description, 1 to 12 unique divisions, zero to five ordered custom selection stages and one optional question. Needs, divisions, stages and question have separate bordered sections and one save action area.
+
+Applicants choose preferred divisions, provide motivation and answer the optional question. Services return the allowed transitions; arbitrary status changes are rejected. Acceptance requires a next-steps note. Opening/closing recruitment does not itself revoke an accepted membership.
+
+Current statuses are `SUBMITTED`, `IN_SELECTION` with `stageId`, `ACCEPTED`, `REJECTED`, and `WITHDRAWN`. `visitedStageIds` records reached stages for new applications. Unvisited stages display Dilewati; missing legacy history displays Tidak tercatat, never fabricated completion. Full immutable stage-definition audit history remains **In progress**.
+
+## Optional QR attendance
+
+- Modes are `NONE`, `ENTRY`, and `ENTRY_EXIT`. QR requires registration and attendance modules. Disabled-module actions are hidden and direct use rejected, not inspection-only.
+- Participants show their own issued QR in Tiket saya. Organizers scan under Presensi; accepted committee members scan from their own Lamaran saya card at `/me/committee/:id/scan`.
+- Check current accepted membership, correct event, account approval, event publication and modules on every scan. Ordinary participants, sponsors, rejected/withdrawn members and members of other events cannot scan.
+- Committee responses contain only display-safe ticket identity/status and entry/exit timestamps. No answers, proof, notes, contact details, secrets or bulk registrant list. Committee cannot configure attendance, issue QR or confirm payments.
+- Camera or local QR-image decoding stays on-device. Only the decoded opaque payload is sent. Camera stops on result, dismissal, page hide and unmount.
+- First entry/exit timestamps remain stable under retries. Reject exit-before-entry and disabled exit. QR screenshots are bearer proofs, not identity verification.
+- No redundant Scan QR shortcut remains in Pendaftaran or QR delivery. No offline synchronization or hardware integration is promised.
+
+## Sponsorship and two-way matching
+
+- Organizer opens **Ajak sponsor** for an event. The page contains matching sponsor recommendations and a separate sent-request card section, not an invitation form or the full directory. Smart Matching has a leading matching icon and a Jelajahi sponsor lain action.
+- Selecting a sponsor opens `/events/:id/sponsors/invite?sponsorId=...`, where that specific company is shown above the existing request fields. Merely selecting/browsing never sends a request. Sending requires a published, authorized event and a verified sponsor; pending duplicates remain blocked.
+- `/organizer/sponsors` is the separate Jelajahi sponsor sidebar destination, with company/industry search and pagination. Opening it from an event preserves eventId. Without event context, selecting a sponsor asks which authorized published event to use before opening the invitation form. Sent cards retain sponsor name and response status, with available illustrative photography; empty history has a bounded empty state. Request detail and follow-up use the existing dialog.
+- Sponsor recommendations are at `/sponsor`, full catalog at `/sponsor/events`, and a read-only field summary at `/sponsor/preferences`. Sponsors select industry at registration; new accounts use it for matching without a second setup. Prepared sponsor accounts retain their existing fields.
+- Event matching fields are selected only during event creation and cannot be changed after creation, even before upload. Matching pages show saved fields and recommendations without field-selection controls. Existing legacy data is preserved; unknown fields stay unknown rather than being fabricated.
+- Matching uses deterministic shared category/industry/interest fields and understandable reasons. It is not real AI, a confidence score, a notification service or guaranteed funding.
+- Sponsor collaboration is separate from discovery: requests at `/sponsor/progress`, proposals at `/sponsor/progress/proposals`, benefit/evidence at `/sponsor/progress/benefits`.
+- Organizer incoming proposals and outgoing invitations use separate pages. Requests and sponsor-initiated proposals remain separate records; a suggested match never creates a deal.
+- Track decisions, commitments and benefit evidence with scoped services. Evidence is verified through explicit authorized review, never inferred from a logo, a click or a recommendation.
+- Proposal, portfolio and evidence attachments remain URLs. Real file storage, advanced analytics, matching notifications and success-fee collection remain **In progress**.
+- Removing Laporan & bukti from selected-event navigation does not delete evidence records or compatibility report URLs.
+
+## Navigation and interface
+
+- Stable, grouped left sidebar for each role. Selected-event subsections belong above content, not injected into the sidebar.
+- Selected-event links: Ringkasan acara, Pendaftaran, Kelola panitia, module-dependent QR tiket/Presensi, Ajak sponsor and Pengelola. No Laporan & bukti, Paket acara or Edit detail subsection.
+- Summary shows actual coverage as Paket Starter or Paket Growth, not a tier guessed from capacity. Uncovered events offer package checkout.
+- Account popup uses **Pengaturan**, not Profil. Settings retains profile editing, has no Back action and exposes transaction history only for eligible organizers.
+- Existing page Back controls are arrow-only in the shared header, with explicit destinations and accessible labels. Form step controls remain separate.
+- No global search, command palette or Ctrl/Cmd+K handler. Page-specific filters remain.
+- Header, sidebar, canvas, footer and internal form sections use visibly distinct surfaces/borders and spacing. Landing stays short: hero, three-step workflow, role entry points and short visible FAQ answers, without feature tabs or repeated calls to action.
+- Content must not be hidden in accordions or details/summary dropdowns anywhere in the application. Use open, labeled sections with visible separation. Form select controls, account/navigation menus, dialogs and normal feature actions remain available. Do not restore the removed shared Accordion component.
+- Event summary aligns status text with the title, uses short readiness labels derived from existing publication errors, and places detail, schedule and registration in full-width sequential sections. Visual identity, module settings, management and lifecycle actions remain visible without disclosure clicks. Preserve all readiness/payment/authorization checks and lifecycle confirmations.
+- Terms and privacy links appear in the shared footer only, not sidebars. Preserve `/terms` and `/privacy`.
+- Use shared custom asynchronous application confirmations. Cancel/Escape never mutates; contain and restore focus. Browser refresh/tab-close beforeunload remains native.
+- Keep product-style Indonesian UI copy without simulation/prototype/In progress notices, except the retained demo role switch. Technical documentation must disclose unfinished integrations honestly.
+- Use realistic fictional fixtures and bundled photography with provenance, never fake real customers or partnerships. Maintain keyboard access, visible focus, readable contrast, reduced motion and 320px mobile usability.
+
+## Functional acceptance
+
+| ID | Requirement | Acceptance |
 | --- | --- | --- |
-| Event organizer | Prepare and monitor an event | One workspace for setup, registration, committee applications, attendance, and sponsorship progress |
-| Committee applicant | Apply for an event role and understand the result | Division preferences, event-specific questions, and visible application status |
-| Committee member | Support event operations after acceptance | Event membership recorded without creating a permanent global role |
-| Participant | Register without re-entering the same basic information | Reusable consented profile plus event-specific questions and QR ticket |
-| Gate staff | Record attendance reliably | Immediate result for valid, duplicate, invalid, or wrong-event QR scans |
-| Sponsor or partner | Understand an event and its promised benefits | Structured package, agreement status, commitments, and post-event evidence |
+| FR-01 | Prepare, archive and publish an event | No charge at creation; private until authorized publication; published detail locked |
+| FR-02 | Consent and reusable profile | Profile data separated from per-event answers and reviewed by participant |
+| FR-03 | Role and event scope | Account role plus approved status and event ownership/membership enforced |
+| FR-04 | Registration | Window, capacity, duplicate and proof-review rules enforced |
+| FR-05 | Ticket privacy | Opaque PH1 secret, no personal data in QR or list payloads |
+| FR-06 | Optional attendance | No disabled-module use; idempotent entry/exit and least-privilege committee scanning |
+| FR-07 | Committee application | Stable division preferences, motivation and optional answer |
+| FR-08 | Selection | Custom stages and allowed moves; truthful history and acceptance note |
+| FR-09 | Committee membership | Acceptance required for same-event scan permission |
+| FR-10 | Sponsorship | Two-way discovery and separate progress; explicit decisions and evidence review |
+| FR-11 | Operational totals | Authorized data only, no public registrant/popularity display |
+| FR-12 | Ticket payment review | Paid pending, confirm/reject, no QR before confirmation |
+| FR-13 | Publication billing | Account subscription or per-event coverage, never duplicate charge |
+| FR-14 | Navigation | Stable sidebar, content-level event nav, settings-only history, footer-only legal links |
 
-## Product positioning
-
-PartnerHub helps a team prepare, run, and learn from an event. Ticketing is one operational module, not the entire product. Sponsorship management is the main differentiator because it connects event records with sponsor follow-up, commitments, and proof.
-
-The first market is BEM, Himpunan, UKM, campus committees, youth communities, and small organizers that run recurring events. Professional organizers, concerts, festivals, seminars, workshops, sports communities, charity events, and national communities are later segments to validate.
-
-## Product principles
-
-- Protect one complete event lifecycle before adding broad feature coverage.
-- Collect only profile data the account holder agrees to reuse.
-- Each account has one account role chosen at registration: user, organizer, or sponsor company (owner decision, 2026-10-05). This supersedes the earlier "no permanent account classification" rule. Event-level roles (committee membership, gate staff) remain event-scoped and are not account roles.
-- Never encode personal data, database identifiers, or credentials in a QR payload.
-- Make attendance configurable. The first prototype supports no scan or entry scan; exit scan remains deferred.
-- Keep sponsorship as an accountable workflow, not a speculative marketplace.
-- Label unfinished behavior **In progress** and never present planned work as implemented.
-
-## First-version scope
-
-### Included
-
-1. Organizer creates and publishes an event page with title, schedule, venue or delivery mode, description, capacity, and registration window.
-2. Participant creates or signs in to an account and controls reusable profile details.
-3. Organizer creates event-specific participant registration questions.
-4. Participant registers, confirms consent, completes event-specific questions, and receives an opaque QR ticket.
-5. Organizer creates committee divisions and event-specific application questions.
-6. Applicant chooses preferred divisions, submits an application, and can see its status.
-7. Organizer can shortlist, invite to interview, accept, or reject a committee application.
-8. Accepted applicant becomes a committee member for that event only.
-9. Organizer can disable attendance or use entry-only QR scanning with duplicate-scan protection.
-10. Organizer tracks sponsorship campaigns, organization prospects, proposals, follow-up status, promised benefits, and evidence URLs.
-11. Dashboard shows persisted counts for registration, committee applications, entry attendance, and sponsorship progress.
-
-### Deferred until after validation
-
-- Ticket tiers, discount codes, waitlists, automated reminders, and payment gateway.
-- Exit scans, certificates, attendance export, and hardware integrations.
-- Committee task boards, schedules, and shifts.
-- Sponsor analytics, curated matching, and automatic matching notifications.
-- Document uploads. Proposal, portfolio, and evidence remain URLs. User-uploaded event, organizer, and sponsor-display logos are now an approved frontend requirement; production image storage is **In progress**.
-- Real-time chat, broad notification system, and managed sponsorship sales.
-- Public marketplace, ticket resale, complex refunds, and full accounting.
-
-## Primary workflows
-
-### Organizer prepares an event
-
-1. Organizer signs in through the protected organizer flow.
-2. Organizer creates an event and enters its public details, capacity, registration period, and attendance mode.
-3. Organizer configures participant questions, committee divisions, and committee questions as needed.
-4. System keeps the event in `DRAFT` until publish criteria pass.
-5. Organizer publishes the event. The public event page and enabled application flows become available.
-
-### Participant registration and ticket
-
-1. Participant opens the public event page and signs in or creates an account.
-2. System rejects registration before opening, after closing, or once capacity is reached.
-3. Participant reviews reusable profile data, accepts the event consent, and answers event-specific questions.
-4. System creates one event registration and one opaque ticket secret.
-5. Participant receives a ticket reference and QR payload. The payload contains no profile data.
-
-### Committee recruitment
-
-1. Applicant opens the event's committee recruitment page and signs in.
-2. Applicant chooses one or more preferred divisions and answers event-specific questions.
-3. Organizer reviews the application and moves it through allowed states.
-4. Applicant sees the current result.
-5. Acceptance creates an event-scoped committee membership.
-
-### Entry attendance
-
-1. Gate staff opens the protected scanning screen for an event with entry attendance enabled.
-2. System verifies the ticket secret, event, registration status, and attendance mode.
-3. First valid entry creates one check-in record.
-4. A repeated valid scan returns `already checked in` without creating another record.
-5. Invalid, cancelled, or wrong-event tickets return a safe error without profile detail.
-
-### Sponsorship tracking
-
-1. Organizer creates a campaign inside the event workspace.
-2. Organizer records sponsor organizations, package or proposal URLs, stage, and next follow-up date.
-3. When an organization agrees, the organizer records promised benefits.
-4. Organizer adds evidence URLs after delivery and verifies each benefit.
-5. Campaign closes only after incomplete benefits have been reviewed.
-
-## Functional requirements
-
-### Ticket inspection and optional automatic entry, 2026-10-06
-
-**In progress** (frontend and demo only). The organizer can open Scan QR peserta from the event action table, registration page, or QR delivery page. Camera scanning and selecting a PNG/JPEG/WebP QR image resolve the existing issued `PH1.secret` ticket, never personal data inside the QR. Camera images are decoded locally, not uploaded; explicit permission is required, with denial and unsupported-camera feedback.
-
-Only the approved event owner can inspect a ticket. A valid, issued `REGISTERED` ticket displays the participant's display name, reference, event, and event-specific form answers, not account email or phone. When the event's attendance module is enabled, the same operation records entry once and returns the first entry time. Repeated scans display the original time and do not create duplicates. With attendance disabled, the operation only inspects the ticket. Unknown, malformed, other-event, pending, rejected, and cancelled tickets never create attendance or disclose participant details. Organizer registration includes a Hadir filter and entry time; the scanner includes the refreshed Hadir list. Camera stops on result, explicit close, page hide, or navigation. This is not identity verification, offline entry, exit tracking, or a production backend.
-
-Acceptance: generated participant QR resolves the same individual ticket; first and repeated scans produce one stable attendance entry; disabled module produces none; owner/role/event boundaries and inactive tickets are rejected; camera and local-image decoding work without sending image bytes; scanner and sponsor dialogs remain usable on phone and keyboard. Production persistence and concurrency requirements are tracked in `todobackend.md`.
-
-### Approved connected frontend flow, 2026-10-05
-
-**In progress**. The owner approved frontend account/workspace/event integration and shared route/layout/style changes. Backend, API handlers, Prisma, dependencies and environment files are excluded from this task. This section supersedes the earlier browser-only navigation and unresolved frontend authentication direction.
-
-- Authentication UI uses email/password and email verification. New passwords contain 12–128 characters. Email is required; display name is optional. No phone, student identity or permanent account classification is requested.
-- Flow: landing, register, verification, onboarding, dashboard; login returns to an allowlisted internal destination. Recovery uses an emailed single-use token and reset returns to login. Logout requires confirmed server revocation before claiming success.
-- Session state comes from an HttpOnly-cookie API, never browser token/password storage. Frontend guards are navigation controls, not security. Backend must enforce account and event membership on every request.
-- Dashboard lists only API-returned events. Create/detail/edit use real routes. Saving a titled draft may omit schedule/location/capacity; provided values must be valid. Publication and operational modules remain **In progress**.
-- Forms retain input on failure; expose validation, loading and success feedback; warn about unsaved editor changes. Local draft restoration is explicit and browser-wide legacy storage is not account isolation.
-- Backend authentication provider, email delivery, session lifetime, rate limits, deletion/retention periods and reusable-profile consent wording remain release blockers. No real account data should be collected before these decisions and services are implemented.
-
-Acceptance evidence must distinguish test-only mocked API responses from real backend availability. No production mock fallback is allowed.
-
-### Committee recruitment and organizer-initiated sponsor requests, 2026-10-06
-
-**In progress** (frontend only). The owner approved these flows for the committee and sponsorship frontends, the shared contracts, navigation, and the demo backend. Backend, Prisma schema, and migrations are excluded and remain release blockers.
-
-- Organizer opens a committee recruitment for a published event: description, 1 to 12 unique divisions, and one optional event-specific question. The organizer can close or reopen it.
-- A user (account role `user`) sees open recruitments at `/committee`, chooses one or more divisions, writes a motivation (at least 20 characters), and answers the optional question. One active application per recruitment.
-- Organizer reviews applicants at `/events/:id/committee` and moves each application only through allowed states: `SUBMITTED` to `SHORTLISTED` or `REJECTED`; `SHORTLISTED` to `INTERVIEW`, `ACCEPTED`, or `REJECTED`; `INTERVIEW` to `ACCEPTED` or `REJECTED`. Accepting requires a note with the next steps (for example joining the committee WhatsApp group, a meeting time, or a link). The frontend only offers the moves the service lists as allowed.
-- The applicant sees the current status and the organizer note under "Lamaran saya" and receives an in-app notification for each decision. Accepted applicants see the note as "Langkah berikutnya". Email delivery is not part of this flow.
-- Organizers can also start sponsorship: at `/events/:id/sponsors` an organizer sends a request to a verified sponsor company for a published event (category, message, optional value, optional https proposal URL). The sponsor sees it under "Permintaan dari penyelenggara", receives a notification, and accepts or declines once. The organizer is notified of the answer. The sponsor directory exposes only company name and industry.
-- Sponsor-initiated proposals (`/sponsor/proposals/new`) remain. The two directions are separate records; accepting a request does not yet create a `SponsorBenefit`. That link needs a backend decision.
-- Organizer status dashboard at `/organizer/sponsorship`: two independently scrollable panels show outgoing requests and incoming sponsor proposals across the organizer's events, newest first. Each row opens its details and identifies the sponsor, event, and status. Loading, empty, and retryable error states are separate for each panel. This is a read-only overview, not a new proposal decision flow. **In progress** (frontend and demo mode; production endpoints remain pending).
-- Organizer navigation replaces the sidebar's duplicate "Susun event" entry with "Status sponsor". Creation stays available through the plus-labelled button on "Event kamu" and `/events/new`. Event-table actions link to draft editing, registration, committee, sponsor requests, and QR delivery with labelled icons and hover/focus tooltips; editing remains draft-only.
-- Not included: file uploads (proposal and evidence stay URLs), chat, automatic matching, payments, and committee membership records beyond the accepted status. Account role rules are unchanged: event-level committee membership is not an account role.
-- Open backend decisions: how an accepted request becomes a sponsorship record, retention of applicant answers, and whether `WITHDRAWN` is offered to applicants.
-
-### Workspace and event frontend
-
-#### Production frontend direction, 2026-10-05
-
-The owner clarified that PartnerHub is intended for real use across multiple organizations, not a single organization's branded demo. Current authorization is frontend event/workspace only; backend implementation is recorded in `todobackend.md`. The existing synthetic examples must not populate the default workspace or impersonate the organizer's records. Connection, publication, authorization, and server storage remain **In progress**, not silently successful local actions.
-
-User-uploaded visual identity is part of event preparation: optional event logo, organizer name/logo, and up to six named sponsor-display entries with optional logos. A name is required when an organizer logo is used and for each sponsor entry. Sponsorship commitments/prospects remain a separate feature, not implied by a logo placement.
-
-Frontend acceptance: native file selection plus drag/drop; PNG/JPEG/WebP up to 2 MB and 4096 pixels per axis; reject empty, unsupported, corrupt, oversized, and multiple files without replacing the current valid image. Preview uses contain sizing, user-provided names, replacement/removal, and poster/page modes. SVG and GIF are excluded. These are browser guardrails, not a substitute for backend inspection and image normalization.
-
-One browser-only draft with its logo blobs can be explicitly saved/restored/deleted using IndexedDB. Existing v1 text-only localStorage drafts remain readable. No logo request leaves the browser and no server upload is claimed. Browser storage is not organization membership, shared-device isolation, durable backup, or production persistence. Users may delete local content after use; backend ownership, lifecycle, and retention must be resolved before release.
-
-The historical criteria below describe the earlier implementation and are superseded where this section differs: the editor now has four stages including visual identity; default workspace is empty; browser draft saving includes logos. Product-wide auth/privacy decisions remain unchanged.
-
-#### Earlier workspace implementation (superseded where noted)
-
-**In progress**. After rejecting the initial admin-style dashboard, the user approved a bolder campus-program workspace, larger typography, and a usable frontend event-draft flow. Navy is retained with self-hosted display/body typography and a warm-yellow primary action. Workspace records remain explicitly labelled synthetic data. The prototype does not satisfy FR-01 authorization/publishing or FR-11 persisted counts.
-
-UI acceptance criteria:
-
-- A persistent notice identifies sample events, sponsor labels, and figures as demo data with no database connection.
-- Organizer can search/filter/select synthetic events and inspect the selected event's contextual information or sponsorship preview.
-- A preview selector exposes demo, empty, loading, and simulated error states without pretending to contact a server.
-- Organizer can enter title/category/optional description, choose same-day WIB schedule, location, capacity, and registration/committee/entry/sponsorship modules in a three-stage draft flow.
-- Event preview updates while typing. Field errors preserve input and explain missing title, invalid date, reversed time, or invalid capacity. Entry-scan configuration requires registration.
-- Save explicitly stores one versioned draft in this browser only. Re-saving replaces the prior local draft. Restore validates stored shape/version; deletion requires confirmation and preserves current form input. Storage failures do not discard the form. The draft survives workspace-view switches, but reload requires explicit restoration.
-- Only non-personal event planning fields may be stored. A shared-device user should delete the local draft after use. Retention is browser storage until overwritten, explicitly deleted, or cleared by the browser; this is not an account retention policy.
-- Desktop, tablet, and mobile layouts preserve keyboard access, visible focus, readable contrast, and native dialog Escape behavior.
-- Body and form text is 16px or larger at default text size; supporting labels are 14px or larger and primary controls at least 48px high. The rejected tiny-label/sidebar/statistics/table composition is not retained.
-- No personal profile fields, real sponsor identities, ticket secrets, backend mutations, publication, or deferred product services are collected or implemented.
-
-| ID | Requirement | Acceptance signal |
-| --- | --- | --- |
-| FR-01 | Create and publish a valid event through an authorized organizer flow | Unauthorized requests fail and invalid schedules cannot publish |
-| FR-02 | Store reusable profile data only with account-holder consent | Profile fields can be reviewed and consent is recorded |
-| FR-03 | Allow one account to hold different event-scoped roles | No global participant, committee, or organizer classification is required |
-| FR-04 | Accept participant registration only while the event is published, the window is open, and capacity remains | Extra, duplicate, or late registration is rejected server-side |
-| FR-05 | Generate a unique opaque ticket reference and secret | QR contains no personal or database data |
-| FR-06 | Record entry once per registration when attendance is enabled | Repeat scan is idempotent and disabled attendance rejects scans |
-| FR-07 | Capture committee division preferences and event-specific answers | Application preserves choices and validated answers |
-| FR-08 | Enforce committee application transitions | Arbitrary status replacement is rejected |
-| FR-09 | Create event membership only from an accepted application | Rejected or pending applications cannot become memberships |
-| FR-10 | Track sponsor prospects, follow-ups, commitments, and evidence URLs | Stage and evidence validation is enforced |
-| FR-11 | Display operational counts from persisted data | Counts exclude cancelled registrations and duplicate scans |
-| FR-12 | Organizer reviews payment proof for paid events and confirms or rejects the registrant | Paid registrations start `PENDING` with no QR; confirm gives `REGISTERED`; reject gives `REJECTED` with an optional reason and the participant may register again; free events stay `REGISTERED`. **In progress** (demo mode only; backend and `prisma/schema.prisma` enum still need alignment) |
+Demo checks exercise these behaviors locally; they do not establish production server/database guarantees.
 
 ## State model
 
-| Entity | Planned states |
+| Entity | Current contract states |
 | --- | --- |
-| Event | `DRAFT`, `PUBLISHED`, `CLOSED`, `ARCHIVED` |
-| Registration | `PENDING`, `REGISTERED`, `REJECTED`, `CANCELLED` |
-| Committee application | `SUBMITTED`, `SHORTLISTED`, `INTERVIEW`, `ACCEPTED`, `REJECTED`, `WITHDRAWN` |
-| Sponsor prospect | `PLANNED`, `CONTACTED`, `NEGOTIATING`, `AGREED`, `DECLINED` |
-| Sponsor benefit | `PLANNED`, `VERIFIED` |
+| Event | DRAFT, PUBLISHED, CLOSED, ARCHIVED |
+| Registration | PENDING, REGISTERED, REJECTED, CANCELLED |
+| Committee application | SUBMITTED, IN_SELECTION, ACCEPTED, REJECTED, WITHDRAWN |
+| Sponsor proposal | SENT, IN_REVIEW, ACCEPTED, DECLINED |
+| Sponsor prospect | PLANNED, CONTACTED, NEGOTIATING, AGREED, DECLINED |
+| Sponsor benefit | PLANNED, VERIFIED |
+| Billing order | PENDING, SUCCEEDED, EXPIRED |
 
-## Data and privacy boundaries
+These frontend/demo contracts exceed the older Prisma schema. Schema alignment is **In progress**, not implied by this document.
 
-The broader Venture Creation concept now requires accounts and reusable profiles. This replaces the earlier anonymous-only product direction. The implementation must still minimize personal data.
+## Validation and commercial boundaries
 
-- Required identity and authentication fields need a final privacy and authentication decision before implementation.
-- Name, email, phone number, student identity, portfolio, dietary needs, and other event data must be collected only when necessary and with clear consent.
-- Reusable profile fields must be separate from event-specific answers.
-- Organizers must not receive unrelated profile data.
-- QR payloads must remain opaque and must never contain profile fields.
-- Logs must not contain passwords, authentication tokens, ticket secrets, or full QR payloads.
-- Retention, profile deletion, and account recovery rules are **In progress**.
+Research targets, not achieved results: interview 5 to 10 organizers, test registration with 5 participants, review recruitment with applicants/organizer, run QR valid/duplicate/invalid/wrong-event checks, and review sponsor invitation/proposal progress. Record completion time, confusion, errors, switching intent and willingness to pay.
 
-## Venture Creation validation
+Current organizer prices are product decisions, not validated demand. Sponsorship success fee, premium sponsor reporting and ticket transaction fees are future hypotheses only, without a current percentage, price or collection claim. Do not claim revenue, actual partnerships, customers or completed user testing without evidence.
 
-The current opportunity assessment is 15 out of 20. This is a reasoned working score, not proof of demand or traction. No owned interview dataset, pilot result, paid usage, or revenue result currently validates the expanded concept.
+## Challenge review and release blockers
 
-Research targets, not achieved results:
-
-- Interview 5 to 10 organizers or committee leaders about their latest event workflow.
-- Ask 5 participants to test profile reuse, event registration, and QR handoff.
-- Test the committee application flow with applicants and at least one organizer.
-- Run a small QR entry test covering valid, duplicate, invalid, and wrong-event scans.
-- Review sponsorship tracking and reporting with an organizer or sponsor contact.
-- Record completion time, errors, confusion, willingness to switch, and willingness to pay.
-
-## Business model hypotheses
-
-The revenue model remains provisional:
-
-- Organizer subscription for organizations that run recurring events.
-- Per-event plan for one-off organizers.
-- Premium sponsor reporting when sponsors value structured results and evidence.
-- Sponsorship success fee only when PartnerHub's contribution is measurable and terms are agreed in advance.
-- Ticket transaction fee only after payments, refunds, compliance, and support are ready.
-
-The project must not claim achieved revenue. A previous aspiration of approximately Rp100 million annual revenue remains a hypothesis.
-
-## Challenge review
-
-| Risk or missing edge case | Product decision |
-| --- | --- |
-| Scope grows into a full event suite | Protect the first booth flow and defer tasks, payments, chat, matching, and marketplace work |
-| Account data increases privacy risk | Minimize fields, record consent, separate reusable profile data from event answers, and define deletion before production |
-| Two people take the final capacity slot | Enforce capacity in one database transaction |
-| One account registers twice | Enforce one active registration per account and event |
-| Committee application skips review states | Allow explicit transitions in feature logic only |
-| QR screenshot is reused | Use opaque ticket secret and one entry record per registration |
-| Wrong-event or forged QR is scanned | Verify event and secret hash and return a generic failure |
-| Sponsor evidence link disappears or is private | Keep benefit unverified until the organizer reviews the URL |
-| Sponsor matching creates a two-sided marketplace problem | Defer matching and notifications until both sides are validated |
-| Existing tools are good enough | Compare real current workflows against the prototype and measure switching intent |
-
-## Open decisions
-
-- Backend authentication provider, credential/session/token policies and organizer membership authorization. Frontend email/password, verification and emailed recovery are approved above.
-- Minimum reusable profile fields and exact consent wording.
-- Data retention, export, and deletion periods.
-- Supported custom question types and which answers may be reusable.
-- Whether the first demo uses self-service accounts or prepared demo accounts.
-- Hosting provider and data region.
+- Subscription expiry/limits can change between load and upload. Recheck at mutation; preserve historical amounts and pin only successful publication coverage.
+- Concurrent purchase confirmations, last-seat registration and repeated scans need transactional production guarantees. Browser-local tests do not supply them.
+- Preserve old records and secrets; do not reset storage or silently reactivate legacy annual entitlements.
+- Protect proof, verification documents, profile answers and private proposal terms. Decide retention, deletion, export, recovery and exact consent before real-data release.
+- Define production authentication, secure cookie/session policies, abuse limits, provider integrations, image normalization/storage and operational support.
+- Free-price support remains in current contracts despite paid seed examples. Any requirement to prohibit all free new events needs a separate approved implementation, not a false documentation claim.
+- Keep one modular application. Do not add workspaces, a generic workflow engine, a new billing abstraction, real AI, chat, task boards or a broad marketplace to solve this scope.
+- Multi-day/overnight schedules, ticket categories, multi-ticket orders, waitlists, certificates, templates, refunds, settlement and production deployment remain **In progress** or explicitly deferred.

@@ -27,7 +27,7 @@ export function DataTable<T>({ columns, rows, rowKey, caption, onRowClick }: { c
           ? <button type="button" className={styles.sortButton} data-direction={sort?.key === column.key ? sort.direction : undefined} onClick={() => toggle(column.key)}>{column.header}<svg className={styles.sortArrow} viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 10V2M2.5 5.5 6 2l3.5 3.5" /></svg></button>
           : column.header}
       </th>)}</tr></thead>
-      <tbody>{sorted.map((row) => <tr key={rowKey(row)} data-clickable={onRowClick ? "true" : undefined} onClick={onRowClick ? (event) => { if (!(event.target as HTMLElement).closest("a, button, input, select, textarea, summary")) onRowClick(row); } : undefined}>{columns.map((column) => <td key={column.key}>{column.render(row)}</td>)}</tr>)}</tbody>
+      <tbody>{sorted.map((row) => <tr key={rowKey(row)} data-clickable={onRowClick ? "true" : undefined} onClick={onRowClick ? (event) => { if (!(event.target as HTMLElement).closest("a, button, input, select, textarea, summary")) onRowClick(row); } : undefined}>{columns.map((column) => <td key={column.key} data-label={column.header}>{column.render(row)}</td>)}</tr>)}</tbody>
     </table>
   </div>;
 }

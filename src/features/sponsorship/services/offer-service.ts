@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ApiError, apiRequest } from "@/lib/api-client";
-import type { SponsorDirectoryItem, SponsorOffer, SponsorOfferBoard, SponsorOfferInput } from "@/contracts/sponsor-offer";
+import type { SponsorOffer, SponsorOfferBoard, SponsorOfferInput } from "@/contracts/sponsor-offer";
 
 const offer = z.object({
   id: z.string().min(1), eventId: z.string().min(1), eventTitle: z.string().max(100), organizationName: z.string().max(100), sponsorId: z.string().min(1), sponsorName: z.string().max(120),
@@ -26,12 +26,6 @@ export async function getOfferBoard(eventId: string, signal: AbortSignal): Promi
 export async function createOffer(eventId: string, input: SponsorOfferInput): Promise<SponsorOffer> {
   // TODO(backend): POST /api/events/:id/sponsor-offers JSON SponsorOfferInput -> 201 SponsorOffer (SENT). Event owner only, event must be PUBLISHED, sponsor must be approved. Errors: 404, 409 open offer exists, 422 {fields:{sponsorId,category,message,amountLabel,proposalUrl}}, 429. Creates a notification for the sponsor.
   return parse(offer, await apiRequest<unknown>(`/api/events/${encodeURIComponent(eventId)}/sponsor-offers`, { method: "POST", body: input }), "Permintaan belum dapat dikonfirmasi.");
-}
-
-export async function listSponsorDirectory(_key: string, signal: AbortSignal): Promise<SponsorDirectoryItem[]> {
-  // TODO(backend): GET /api/sponsors/directory -> 200 {items:[{id,companyName,industry}]}. Approved sponsor accounts only, no contact details. Approved organizer accounts only.
-  const schema = z.object({ items: z.array(z.object({ id: z.string().min(1), companyName: z.string().max(120), industry: z.string().max(80) })).max(500) });
-  return parse(schema, await apiRequest<unknown>("/api/sponsors/directory", { signal }), "Daftar sponsor tidak dapat dibaca.").items;
 }
 
 export async function listReceivedOffers(_key: string, signal: AbortSignal): Promise<SponsorOffer[]> {

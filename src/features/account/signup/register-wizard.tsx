@@ -25,13 +25,12 @@ export default function RegisterWizard() {
   const auth = useSession();
   const preset = search.get("role");
   const next = safeDestination(search.get("next"));
-  const { state, ready, pickRole, clearRole, setValue, setFile, setErrors, goTo, clearDraft } = useRegistration(isRole(preset) ? preset : null);
+  const { state, pickRole, clearRole, setValue, setFile, setErrors, goTo } = useRegistration(isRole(preset) ? preset : null);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState("");
   const form = useRef<HTMLFormElement>(null);
   const title = useRef<HTMLHeadingElement>(null);
 
-  if (!ready) return <div className="route-state" role="status">Menyiapkan formulir…</div>;
   if (!state.role) return <RolePicker onPick={pickRole} next={next} />;
 
   const role = state.role;
@@ -68,7 +67,6 @@ export default function RegisterWizard() {
       const result = role === "user" ? await registerUser(buildUser(state.values))
         : role === "organizer" ? await registerOrganizer(buildOrganizer(state.values), files)
         : await registerSponsor(buildSponsor(state.values), files);
-      clearDraft();
       if (result.verificationRequired || !result.session) {
         router.replace(`/verify-email?registered=${role}&next=${encodeURIComponent(next)}`);
       } else {
@@ -105,7 +103,6 @@ export default function RegisterWizard() {
         {state.step > 0 ? <button type="button" className={styles.back} onClick={() => { goTo(state.step - 1); setFailure(""); }} disabled={busy}>Kembali</button> : <button type="button" className={styles.back} onClick={clearRole} disabled={busy}>Ubah peran</button>}
         <button type="submit" className={uiStyles.primary} disabled={busy}>{busy ? "Mengirim…" : last ? "Buat akun" : "Lanjutkan"}</button>
       </div>
-      <p className={styles.draftNote}>Isianmu disimpan sementara di tab ini bila halaman dimuat ulang. Password dan file tidak disimpan.</p>
     </form>
   </section>;
 }

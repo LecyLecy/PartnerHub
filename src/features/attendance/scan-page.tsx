@@ -13,9 +13,9 @@ import { readQrFile } from "./qr-reader";
 import { configureAttendance, getAttendance, scanTicket } from "./services/attendance-service";
 import styles from "./scan.module.css";
 
-export default function ScanPage({ id }: { id: string }) { return <ProtectedPage><Scanner id={id} /></ProtectedPage>; }
+export default function ScanPage({ id, committee = false }: { id: string; committee?: boolean }) { return <ProtectedPage><Scanner id={id} committee={committee} /></ProtectedPage>; }
 
-function Scanner({ id }: { id: string }) {
+function Scanner({ id, committee }: { id: string; committee: boolean }) {
   const board = useResource(id, getAttendance);
   const [camera, setCamera] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -51,19 +51,19 @@ function Scanner({ id }: { id: string }) {
     finally { locked.current = false; if (mounted.current) setBusy(false); }
   }
   if (board.status === "loading" && !result) return <SkeletonCards label="Memuat data acara…" count={2} />;
-  if (board.status === "error" && !result) return <Notice error>{errorMessage(board.error)} <button type="button" className={uiStyles.secondary} onClick={board.reload}>Coba lagi</button></Notice>;
+  if (board.status === "error") return <Notice error>{errorMessage(board.error)} <button type="button" className={uiStyles.secondary} onClick={board.reload}>Coba lagi</button></Notice>;
   const title = board.data?.eventTitle ?? result?.eventTitle;
   return <>
-    <Breadcrumb href={`/events/${id}/registration`} parent={title || "Pendaftaran peserta"} current="Scan tiket" />
-    <PageHeader title="Scan tiket peserta.">Periksa tiket individual peserta.{board.data?.attendanceEnabled ? " QR valid otomatis masuk ke daftar Hadir." : " Modul kehadiran tidak aktif, scan hanya memeriksa tiket."}</PageHeader>
-    <div className={styles.config}><label>Mode presensi<select aria-label="Mode presensi" disabled={busy || camera} value={board.data?.attendanceMode ?? (board.data?.attendanceEnabled ? "ENTRY" : "NONE")} onChange={(event) => void setMode(event.target.value as "NONE" | "ENTRY" | "ENTRY_EXIT")}><option value="NONE">Tanpa presensi QR</option><option value="ENTRY">Scan masuk saja</option><option value="ENTRY_EXIT">Scan masuk dan keluar</option></select></label>{board.data?.attendanceMode === "ENTRY_EXIT" && <label>Jenis scan<select aria-label="Jenis scan" value={direction} disabled={busy || camera} onChange={(event) => { setDirection(event.target.value as "ENTRY" | "EXIT"); setResult(null); }}><option value="ENTRY">Masuk</option><option value="EXIT">Keluar</option></select></label>}</div>
-    <div className={styles.layout}>
+    <Breadcrumb href={committee ? "/me/applications" : `/events/${id}/registration`} parent={committee ? "Kepanitiaan saya" : title || "Pendaftaran peserta"} current="Scan tiket" />
+    <PageHeader title="Scan tiket peserta.">Periksa tiket peserta untuk mencatat masuk atau keluar sesuai mode presensi acara.</PageHeader>
+    <div className={styles.config}>{board.data?.canConfigure && <label>Mode presensi<select aria-label="Mode presensi" disabled={busy || camera} value={board.data?.attendanceMode ?? (board.data?.attendanceEnabled ? "ENTRY" : "NONE")} onChange={(event) => void setMode(event.target.value as "NONE" | "ENTRY" | "ENTRY_EXIT")}><option value="NONE">Tanpa presensi QR</option><option value="ENTRY">Scan masuk saja</option><option value="ENTRY_EXIT">Scan masuk dan keluar</option></select></label>}{board.data?.canScan && board.data?.attendanceMode === "ENTRY_EXIT" && <label>Jenis scan<select aria-label="Jenis scan" value={direction} disabled={busy || camera} onChange={(event) => { setDirection(event.target.value as "ENTRY" | "EXIT"); setResult(null); }}><option value="ENTRY">Masuk</option><option value="EXIT">Keluar</option></select></label>}</div>
+    {!board.data?.canScan ? <Notice>Presensi QR tidak aktif atau acara sudah ditutup.</Notice> : <div className={styles.layout}>
       <section className={styles.controls} aria-labelledby="scan-controls">
         <h2 id="scan-controls">Periksa QR tiket</h2><p>Gunakan kamera atau pilih gambar QR dari tiket peserta. Gambar dibaca di perangkat, tidak diunggah.</p>
         {camera ? <CameraScanner onRead={check} onStop={stop} /> : <div className={styles.actions}><button type="button" className={uiStyles.primary} disabled={busy} onClick={() => { setFailure(""); setResult(null); setCamera(true); }}><Icon name="qr" size={18} />Buka kamera</button><label className={styles.fileLabel}>Pilih gambar QR<input type="file" accept="image/png,image/jpeg,image/webp" disabled={busy} aria-label="Pilih gambar QR" onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) void choose(file); }} /></label></div>}
         {busy && <p role="status">Memeriksa tiket dan status hadir…</p>}
         {failure && <Notice error>{failure}</Notice>}
-        <Link href={`/events/${id}/qr`}>Kelola pengiriman QR</Link>
+        {board.data?.canConfigure && <Link href={`/events/${id}/qr`}>Kelola pengiriman QR</Link>}
       </section>
       <section className={styles.ticket} aria-labelledby="scan-result">
         <h2 id="scan-result" ref={heading} tabIndex={-1}>Hasil pengecekan</h2>
@@ -72,13 +72,13 @@ function Scanner({ id }: { id: string }) {
           <h3 className={styles.name}>{result.participant.name}</h3><p>{result.eventTitle}</p>
           <dl className={styles.facts}><div><dt>Referensi tiket</dt><dd>{result.participant.ticketReference}</dd></div><div><dt>Status tiket</dt><dd>Terdaftar</dd></div><div><dt>Waktu hadir</dt><dd>{result.participant.checkedInAt ? exportTime(result.participant.checkedInAt) : "Tidak dicatat, modul kehadiran nonaktif"}</dd></div></dl>
           {result.participant.checkedOutAt && <p>Waktu keluar: {exportTime(result.participant.checkedOutAt)}</p>}
-          {result.participant.answers.length > 0 && <section className={styles.answers}><h3>Jawaban pendaftaran</h3>{result.participant.answers.map((answer) => <div key={answer.fieldId}><strong>{answer.label}</strong>{answer.type === "image" ? <img src={answer.value} alt={answer.label} /> : <p>{answer.value}</p>}</div>)}</section>}
+          {board.data?.canConfigure && result.participant.answers.length > 0 && <section className={styles.answers}><h3>Jawaban pendaftaran</h3>{result.participant.answers.map((answer) => <div key={answer.fieldId}><strong>{answer.label}</strong>{answer.type === "image" ? <img src={answer.value} alt={answer.label} /> : <p>{answer.value}</p>}</div>)}</section>}
           <button type="button" className={uiStyles.primary} onClick={() => { setResult(null); setFailure(""); setCamera(true); }}>Scan peserta berikutnya</button>
         </>}
       </section>
-    </div>
-    <section className={styles.attendance} aria-labelledby="attendance-title"><h2 id="attendance-title">Daftar Hadir{board.data ? ` (${board.data.items.length})` : ""}</h2>
-      {board.status === "loading" ? <p role="status">Memuat daftar hadir…</p> : board.status === "error" ? <Notice error>{errorMessage(board.error)} <button type="button" className={uiStyles.secondary} onClick={board.reload}>Muat ulang daftar hadir</button></Notice> : !board.data?.items.length ? <p>Belum ada peserta tercatat hadir.</p> : <ul>{board.data.items.map((item) => <li key={item.id}><div><strong>{item.name}</strong><span>{item.ticketReference}</span></div><span>{exportTime(item.checkedInAt!)}</span></li>)}</ul>}
-    </section>
+    </div>}
+    {board.data?.canConfigure && <section className={styles.attendance} aria-labelledby="attendance-title"><h2 id="attendance-title">Daftar Hadir{board.data ? ` (${board.data.items.length})` : ""}</h2>
+      {board.status === "loading" ? <p role="status">Memuat daftar hadir…</p> : !board.data?.items.length ? <p>Belum ada peserta tercatat hadir.</p> : <ul>{board.data.items.map((item) => <li key={item.id}><div><strong>{item.name}</strong><span>{item.ticketReference}</span></div><span>{exportTime(item.checkedInAt!)}</span></li>)}</ul>}
+    </section>}
   </>;
 }

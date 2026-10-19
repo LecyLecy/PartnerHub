@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useState } from "react";
 import { errorMessage } from "@/lib/api-client";
 import { useResource } from "@/lib/use-resource";
@@ -31,7 +30,6 @@ function Delivery({ id }: { id: string }) {
     finally { setBusy(false); }
   }
   return <>
-    <p><Link className={uiStyles.secondary} href={`/events/${id}/scan`}><Icon name="qr" size={18} />Scan QR peserta</Link></p>
     <Breadcrumb href={`/events/${id}`} parent={data.eventTitle} current="QR tiket" />
     <PageHeader title="QR tiket peserta.">Buat QR masuk untuk setiap peserta yang terdaftar, lalu kirim. Peserta membukanya lewat tombol Tampilkan QR di halaman tiket mereka.</PageHeader>
     {!data.eventPublished && <Notice>QR hanya bisa dikirim untuk acara yang terpublikasi. Buka detail acara untuk memeriksa kesiapan publikasi.</Notice>}
@@ -44,7 +42,7 @@ function Delivery({ id }: { id: string }) {
         : `${waiting} peserta belum menerima QR. Tombol di bawah membuat kode baru hanya untuk mereka dan mengabari mereka lewat notifikasi.`}</p>
       {failure && <Notice error>{failure}</Notice>}
       <button type="button" className={uiStyles.primary} onClick={() => void send()} disabled={busy || !data.eventPublished || waiting === 0}><Icon name="qr" size={18} />{busy ? "Mengirim…" : waiting === data.registered && waiting > 0 ? "Buat dan kirim QR" : "Kirim QR yang tertunda"}</button>
-      <p className={styles.fine}>Kode berisi rahasia acak tanpa data pribadi. Gunakan Scan QR peserta untuk memeriksa tiket dan mencatat presensi bila diaktifkan.</p>
+      <p className={styles.fine}>Kode berisi rahasia acak tanpa data pribadi. Peserta menampilkan QR dari tiketnya. Panitia yang diterima memindainya untuk mencatat presensi.</p>
     </section>
   </>;
 }

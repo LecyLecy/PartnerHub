@@ -613,10 +613,9 @@
   font-size: 0.875rem;
   color: var(--muted);
 }
-.previewOptions summary {
-  cursor: pointer;
-  min-height: 48px;
-  padding: 0 0 12px;
+.previewOptions h2 {
+  margin: 0;
+  font-size: 1rem;
   color: var(--ink);
 }
 .previewOptions label {
@@ -780,8 +779,8 @@
     gap: 5px;
   }
   .brand svg {
-    width: 30px;
-    height: 30px;
+    width: 148px;
+    height: auto;
   }
   .helpButton {
     font-size: 0.875rem !important;

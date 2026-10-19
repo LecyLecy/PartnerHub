@@ -40,4 +40,4 @@ export function destinationAfterAuth(session: Session, next?: string | null): st
   return target && !target.startsWith("/dashboard") && canAccess(session, target) ? target : home;
 }
 
-export const roleLabel = { user: "User", organizer: "Penyelenggara", sponsor: "Sponsor" } as const;
+export const roleLabel = { user: "Peserta / Calon Panitia", organizer: "Penyelenggara", sponsor: "Sponsor" } as const;

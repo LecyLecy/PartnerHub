@@ -44,7 +44,7 @@ function Report({ id }: { id: string }) {
   return <><BackLink href={`/events/${id}`} /><PageHeader title="Laporan & bukti sponsor">{data.eventTitle}. Evaluasi acara dan tinjau bukti sebelum menandai benefit terpenuhi.</PageHeader>
     <button className={uiStyles.secondary} onClick={() => window.print()}>Cetak / simpan PDF</button>
     <StatGrid items={[{ label: "peserta terdaftar", value: data.registered }, { label: "menunggu konfirmasi", value: data.pending }, { label: "lamaran panitia", value: data.applications }, { label: "presensi tercatat", value: data.attended }]} />
-    <p className={styles.hint}>Presensi menghitung tiket yang benar-benar dipindai di demo ini. Angka peserta contoh lainnya adalah data fiktif.</p>
+    <p className={styles.hint}>Presensi menghitung tiket peserta yang telah dipindai. Gunakan ringkasan ini untuk mengevaluasi pelaksanaan acara.</p>
     <section className={styles.section}><h2>Komitmen dan bukti pemenuhan</h2>
       {!data.sponsorships.length ? <EmptyState title="Belum ada komitmen sponsor.">Terima proposal atau tunggu sponsor menyetujui permintaan sebelum mencatat benefit.</EmptyState> : <>
         {data.sponsorships.map((item) => <section key={item.id} className={styles.registration} style={{ marginBottom: 24 }}><h2>{item.sponsorName}</h2><p>{item.packageName}</p>{!item.benefits.length && <p>Tambahkan benefit yang benar-benar disepakati di bawah.</p>}{item.benefits.map((benefit) => <Evidence key={`${benefit.id}:${benefit.status}:${benefit.evidenceUrl}`} eventId={id} benefit={benefit} reload={resource.reload} />)}</section>)}

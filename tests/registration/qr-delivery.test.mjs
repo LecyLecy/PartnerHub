@@ -7,8 +7,9 @@ globalThis.sessionStorage = { getItem: (k) => storage.get(k) ?? null, setItem: (
 globalThis.window = globalThis.window ?? { dispatchEvent() {} };
 const { demoRequest, resetDemoData } = loadTs("src/mocks/demo/router.ts");
 const { DEMO_PASSWORD } = loadTs("src/mocks/demo/seed.ts");
+const { loadDb } = loadTs("src/mocks/demo/store.ts");
 
-beforeEach(() => { resetDemoData(); storage.clear(); });
+beforeEach(() => { resetDemoData(); storage.clear(); for (const event of loadDb().events) event.modules.attendance = true; });
 
 const call = (route, options = {}) => demoRequest(route, options);
 const login = (email) => call("/api/auth/login", { method: "POST", body: { email, password: DEMO_PASSWORD }, auth: false });
@@ -58,6 +59,7 @@ test("a participant can show a QR only after it was sent, and the payload holds 
 
 test("every registration gets its own code", async () => {
   await login(USER);
+  delete loadDb().forms["demo-event-3"];
   const free = await call("/api/public/events/demo-event-3/registrations", { method: "POST", body: {} });
   const paid = await call("/api/public/events/demo-event-2/registrations", { method: "POST", body: { answers: { "demo-f1": "UKM Desain Demo", "demo-f2": "Pemula", "demo-f3": "data:image/png;base64,iVBORw0KGgo=" } } });
   await login(ORGANIZER);

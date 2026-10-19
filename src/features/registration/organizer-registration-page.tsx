@@ -1,5 +1,4 @@
 "use client";
-import Link from "next/link";
 import { useRef, useState, type FormEvent } from "react";
 import type { FormFieldType, Registrant, RegistrationForm } from "@/contracts/participation";
 import { ApiError, errorMessage } from "@/lib/api-client";
@@ -35,11 +34,10 @@ function Page({ id }: { id: string }) {
   return <>
     <Breadcrumb href={`/events/${id}`} parent={board.data.eventTitle} current="Pendaftaran" />
     <PageHeader title="Pendaftaran peserta." action={<ExportButton title={board.data.eventTitle} items={board.data.items} />}>Lihat siapa yang mendaftar, atur harga tiket, dan tentukan pertanyaan yang harus diisi peserta.</PageHeader>
-    <StatGrid label="Ringkasan pendaftaran" items={[{ label: "peserta terdaftar", value: active.length }, ...(board.data.priceIdr > 0 || pending.length ? [{ label: "menunggu konfirmasi", value: pending.length }] : []), { label: "QR terkirim", value: active.filter((item) => item.qrIssued).length }]} />
-    <p><Link className={uiStyles.secondary} href={`/events/${id}/scan`}><Icon name="qr" size={18} />Scan QR peserta</Link></p>
+    <StatGrid label="Ringkasan pendaftaran" items={[{ label: "peserta terdaftar", value: active.length }, ...(board.data.priceIdr > 0 || pending.length ? [{ label: "menunggu konfirmasi", value: pending.length }] : []), ...(board.data.qrEnabled ? [{ label: "QR terkirim", value: active.filter((item) => item.qrIssued).length }] : [])]} />
     <Tabs idBase={base} label="Bagian pendaftaran" value={tab} onChange={setTab} items={[{ key: "peserta", label: "Peserta" }, { key: "hadir", label: "Hadir" }, { key: "form", label: "Harga dan form" }]} />
     <TabPanel idBase={base} value={tab}>
-      {tab === "hadir" && !board.data.items.some((item) => item.checkedInAt) ? <EmptyState title="Belum ada peserta hadir.">Scan QR tiket peserta untuk mencatat kehadiran jika modul kehadiran aktif.</EmptyState> : tab !== "form" ? <Registrants eventId={id} items={tab === "hadir" ? board.data.items.filter((item) => item.checkedInAt) : board.data.items} price={board.data.priceIdr} onChanged={board.reload} />
+      {tab === "hadir" && !board.data.items.some((item) => item.checkedInAt) ? <EmptyState title="Belum ada peserta hadir.">Kehadiran muncul setelah panitia memindai tiket, jika presensi QR diaktifkan.</EmptyState> : tab !== "form" ? <Registrants eventId={id} items={tab === "hadir" ? board.data.items.filter((item) => item.checkedInAt) : board.data.items} price={board.data.priceIdr} onChanged={board.reload} />
         : <FormEditor id={id} form={form.data} onSaved={() => { form.reload(); board.reload(); }} />}
     </TabPanel>
   </>;

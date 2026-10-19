@@ -54,11 +54,21 @@ try {
   await page.getByRole("button", { name: "Lanjutkan", exact: true }).click();
   await page.locator('input[name="organizationName"]').fill("Komunitas Kreatif Demo");
   await page.getByRole("button", { name: "Lanjutkan", exact: true }).click();
-  await page.getByRole("button", { name: "Simpan draft ke server", exact: true }).click();
-  await page.waitForURL(/\/events\/[^/]+\?saved=1/);
-  const eventId = new URL(page.url()).pathname.split("/")[2];
-  await page.getByRole("button", { name: "Publikasikan acara", exact: true }).click();
-  await page.getByRole("button", { name: "Tutup acara", exact: true }).waitFor();
+  await page.getByRole("button", { name: "Selesai susunan", exact: true }).click();
+  await page.waitForURL(/\/organizer\/archive\?created=/);
+  const eventId = new URL(page.url()).searchParams.get("created");
+  await page.getByRole("heading", { name: "Arsip acara", exact: true }).waitFor();
+  await go(`/events/${eventId}/package`);
+  await page.getByRole("button", { name: "Pilih paket Starter", exact: true }).click();
+  await page.getByRole("button", { name: "Buat pesanan", exact: true }).click();
+  await page.getByRole("button", { name: "Konfirmasi pembayaran", exact: true }).click();
+  await page.getByRole("dialog", { name: "Konfirmasi pembayaran?", exact: true }).getByRole("button", { name: "Konfirmasi pembayaran", exact: true }).click();
+  await page.getByText("Paket acara sudah aktif. Tidak ada biaya paket tambahan untuk acara ini.", { exact: true }).waitFor();
+  await go(`/events/${eventId}`);
+  await page.getByRole("button", { name: "Unggah acara", exact: true }).click();
+  await page.getByText("Terpublikasi", { exact: true }).waitFor();
+  assert.equal(await page.getByRole("link", { name: "Lihat pendaftar", exact: true }).count(), 0);
+  await page.getByRole("navigation", { name: "Navigasi acara", exact: true }).getByRole("link", { name: "Pendaftaran", exact: true }).waitFor();
   await page.screenshot({ path: path.join(output, "published-event.png"), fullPage: true });
   await role("user", "/me");
   await page.getByRole("button", { name: "Detail Creative Community Workshop", exact: true }).click();
@@ -70,7 +80,10 @@ try {
   await page.getByText("Creative Community Workshop", { exact: true }).first().waitFor();
   await role("organizer", "/organizer");
   await go(`/events/${eventId}/registration`);
-  await page.getByText("Pengguna Demo", { exact: true }).first().waitFor();
+  await page.getByText("Nadia Putri", { exact: true }).first().waitFor();
+  await go(`/events/${eventId}/scan`);
+  await page.getByLabel("Mode presensi", { exact: true }).selectOption("ENTRY");
+  await page.getByRole("button", { name: "Buka kamera", exact: true }).waitFor();
   await go(`/events/${eventId}/qr`);
   const qrButton = page.getByRole("button").filter({ hasText: /Buat.*QR|Kirim.*QR|Buat dan kirim/i });
   await qrButton.first().click();
@@ -81,7 +94,7 @@ try {
   for (const width of [390, 320]) {
     await page.setViewportSize({ width, height: 844 });
     await page.waitForTimeout(200);
-    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `report overflow ${width}`);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `report overflow ${width}: ${await page.evaluate(() => [...document.querySelectorAll('body *')].filter(item => item.getBoundingClientRect().right > innerWidth && getComputedStyle(item).visibility !== 'hidden').map(item => `${item.tagName}.${item.className}`).join(', '))}`);
     await page.screenshot({ path: path.join(output, `event-report-${width}.png`), fullPage: true });
   }
   await page.setViewportSize({ width: 1440, height: 1000 });
@@ -97,7 +110,7 @@ try {
   await page.locator('[name="category"]').selectOption({ index: 1 });
   await page.locator('[name="offer"]').fill("Perusahaan demo menawarkan dukungan publikasi workshop melalui kanal komunitas.");
   await page.getByRole("button", { name: "Kirim proposal", exact: true }).click();
-  await page.waitForURL(/\/sponsor(?:\?sent=1)?$/);
+  await page.waitForURL(/\/sponsor\/progress\/proposals(?:\?sent=1)?$/);
   await role("organizer", "/organizer");
   await go("/organizer/sponsorship");
   await page.getByRole("button", { name: /Proposal .*Creative Community Workshop/ }).click();
@@ -120,6 +133,7 @@ try {
   });
   await page.screenshot({ path: path.join(output, "sponsor-evidence.png"), fullPage: true });
   await role("sponsor", "/sponsor");
+  await go("/sponsor/progress/benefits");
   await page.getByText("Logo sponsor di poster acara demo:", { exact: false }).waitFor();
   await go("/guide");
   await page.getByRole("heading", { name: "Satu acara, dari ide sampai laporan." }).waitFor();

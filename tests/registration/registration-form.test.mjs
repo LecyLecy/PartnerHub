@@ -9,6 +9,7 @@ globalThis.window = globalThis.window ?? { dispatchEvent() {} };
 globalThis.FileReader ??= class { readAsDataURL(file) { file.arrayBuffer().then((buffer) => { this.result = `data:${file.type};base64,${Buffer.from(buffer).toString("base64")}`; this.onload?.(); }, (error) => { this.error = error; this.onerror?.(); }); } };
 const { demoRequest, resetDemoData } = loadTs("src/mocks/demo/router.ts");
 const { DEMO_PASSWORD } = loadTs("src/mocks/demo/seed.ts");
+const { loadDb } = loadTs("src/mocks/demo/store.ts");
 const { formatPrice } = loadTs("src/lib/money.ts");
 
 beforeEach(() => { resetDemoData(); storage.clear(); });
@@ -31,7 +32,9 @@ test("public events carry their price; an event without a saved form is free", a
   await login(USER);
   const events = (await call("/api/public/events")).items;
   assert.equal(events.find((item) => item.id === "demo-event-2").priceIdr, 50000);
-  assert.equal(events.find((item) => item.id === "demo-event-1").priceIdr, 0);
+  assert.ok(events.every(item => item.priceIdr > 0), "all seeded public events have ticket prices");
+  // Explicitly configure the free fallback fixture, rather than relying on the paid demo dataset.
+  delete loadDb().forms["demo-event-1"];
   const form = await call("/api/public/events/demo-event-1/registration-form");
   assert.equal(form.isDefault, true);
   assert.equal(form.priceIdr, 0);

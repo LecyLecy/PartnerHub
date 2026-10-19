@@ -40,7 +40,7 @@ function Content({ registrationId, title, reference, close }: { registrationId: 
       : qr.data ? <>
         <QrImage payload={qr.data.payload} label={`QR masuk untuk ${title}`} />
         <p className={styles.reference}>Referensi tiket {reference}</p>
-        <p>Tunjukkan kode ini di pintu masuk. Jangan bagikan tangkapan layarnya ke orang lain.</p>
+        <p>Tunjukkan kode ini kepada panitia saat masuk atau keluar sesuai aturan acara. Jangan bagikan tangkapan layarnya ke orang lain.</p>
       </> : null}
   </>;
 }

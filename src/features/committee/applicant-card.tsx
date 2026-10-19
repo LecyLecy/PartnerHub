@@ -27,7 +27,7 @@ export function Applicant({ eventId, item, onDone }: { eventId: string; item: Ap
     <div className={styles.row}><h3>{item.applicantName}</h3><Badge tone={applicationTone(item.status)}>{applicationLabel[item.status]}</Badge></div>
     <p>Divisi pilihan: {item.divisions.join(", ")}</p>
     <SelectionSteps steps={selectionPath(item)} label={`Proses seleksi ${item.applicantName}`} />
-    <details className={styles.answers}><summary>Lihat jawaban</summary><dl><dt>Motivasi</dt><dd>{item.motivation}</dd>{item.question && <><dt>{item.question}</dt><dd>{item.answer}</dd></>}</dl></details>
+    <section className={styles.answers} aria-label={`Jawaban ${item.applicantName}`}><h4>Jawaban pelamar</h4><dl><dt>Motivasi</dt><dd>{item.motivation}</dd>{item.question && <><dt>{item.question}</dt><dd>{item.answer}</dd></>}</dl></section>
     {item.note && <p>Catatan terkirim: {item.note}</p>}
     {item.allowed.length > 0 && <div className={styles.decide} ref={field}>
       <TextAreaField name={`note-${item.id}`} label="Catatan untuk pelamar" optional={!canAccept} value={note} onChange={(value) => { setNote(value); setNoteError(""); }} maxLength={300} rows={3} error={noteError} hint="Wajib saat menerima: tulis langkah berikutnya, misalnya bergabung ke grup WhatsApp panitia, jadwal rapat, atau tautan." disabled={busy} />

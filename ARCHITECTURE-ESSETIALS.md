@@ -1,92 +1,53 @@
 # PartnerHub Architecture Essentials
 
-## Current classroom build
+Updated: 18 October 2026. Quick reference only; PRD.md governs product behavior and ARCHITECTURE.md contains technical detail.
 
-- Guest discovery: `/explore` and `/explore/:id` require no application login. Only PUBLISHED records and public event/supporter fields may be returned; management remains protected. Empty sponsor sections are omitted; pending/declined proposals are never supporters. Real public endpoints remain In progress outside demo builds.
+## Runtime
 
-- Delivery branch: `production`, integrating available `adin` and `jad` heads.
-- Owner-approved demo hosting uses `npm run build:demo`; Vercel selects it explicitly. Normal builds remain non-demo by default.
-- Existing typed clients call the browser-only demo router and versioned in-tab sessionStorage. No real database, email, or payment processing.
-- Event lifecycle, registration windows, optional entry/exit, proposal decisions, sponsor evidence and printable reports connect through the same dataset.
-- `/guide` and the demo banner explain scope, role switching, reset, and next steps. Use fictional data only.
-- `DEMO-DELIVERY.md` tracks feedback and verification. Historical production requirements below remain release targets.
+- One modular Next.js 16 App Router application, React 19, TypeScript, Tailwind CSS 4/CSS Modules, Zod, Prisma 5.
+- Frontend typed clients are working. Explicit NEXT_PUBLIC_PARTNERHUB_DEMO=1 uses browser-only services and in-tab sessionStorage; normal builds default to 0 and never fall back to mocks.
+- Production accounts, authorization, PostgreSQL integration, secure storage, email, billing and payment gateway remain **In progress**. Existing Prisma schema does not represent all demo contracts.
+- src/app is thin composition/transport; src/features owns frontend; src/backend owns server-only logic; src/contracts contains agreed DTOs; src/lib contains shared frontend-safe utilities. No feature-internal cross-imports or frontend/backend imports.
 
-Read this first. Use `ARCHITECTURE.md` for complete detail.
+## Product invariants
 
-## Product guardrails
+- Individual events, no organization/workspace product. Complete setup, private Arsip acara, coverage check at upload, then public discovery. Creation creates no order; published details cannot be edited.
+- Internal DRAFT is unpublished, not a draft-save feature. No browser copy or signup persistence. Internal ARCHIVED is completed history, not the upload queue.
+- Account roles are user/organizer/sponsor plus approval status. Registration, committee and managers are event-scoped relations. API authorization must enforce both.
+- Public event views require no login, hide registrant counts and omit empty sponsor lists. Never expose proof, answers, contact data or secrets.
+- Paid ticket registration requires organizer proof review, separate from PartnerHub publication billing. Contract still permits free events; paid seed examples do not change that.
+- Committee uses 0 to 5 custom stages, IN_SELECTION/stageId and visitedStageIds. Unknown legacy history is not completion.
+- QR is opaque PH1.secret. Confirmed participants show issued QR; accepted same-event committee scan with least privilege. Registration and attendance modules must be enabled. NONE/ENTRY/ENTRY_EXIT, stable first timestamps, no exit-before-entry.
+- Two-way matching is deterministic shared fields, not AI or automatic matching notifications. Sponsor industry is fixed at registration; event fields are fixed at creation, including before publication. Matching views and endpoints are read-only. Preserve existing profiles/fields, never invent unknown legacy fields. Sponsor discovery is separate from collaboration progress.
 
-- First-version product: event setup, reusable participant profiles, event-specific forms, committee recruitment, optional QR entry, and sponsorship benefit evidence.
-- Each account has one account role (user, organizer, sponsor) chosen at registration, plus an approval status (`active`, `pending_verification`, `rejected`). Organizer and sponsor accounts need admin approval. Event-level roles such as committee membership stay event-scoped. Frontend guards only steer navigation; every API must enforce role, status and ownership.
-- Demo mode is a build-time flag (`NEXT_PUBLIC_PARTNERHUB_DEMO=1`). Demo code and fictional data live only in `src/mocks/demo` and are imported through flag-guarded dynamic imports. `next.config.ts` pins the default to `0`. Verified by searching `.next/static`: with the variable unset or `0` no demo strings are emitted; with `1` three demo chunks are emitted.
-- Collect personal data only when necessary, with clear consent and retention rules.
-- QR contains only a ticket reference plus opaque secret.
-- Payments, document uploads, chat, sponsor matching, matching notifications, marketplace, and committee task management are deferred. User-uploaded event/organizer/sponsor-display logos are approved frontend scope; server image storage is In progress.
-- The current Prisma schema covers the earlier anonymous-registration foundation. Account and committee persistence changes are **In progress**.
+## Billing
 
-## Stack
+| Tier | Single event | Annual account | Per-event limits |
+| --- | --- | --- | --- |
+| Starter | Rp149.000 | Rp699.000 | 300 participants, 3 managers including owner |
+| Growth | Rp499.000 | Rp1.499.000 | 1.500 participants, 10 managers including owner |
 
-- Next.js 16 App Router, React 19, TypeScript.
-- Tailwind CSS 4 for interface styling.
-- Route Handlers for server endpoints.
-- Supabase-hosted PostgreSQL plus Prisma ORM for persistence and migrations. Actual database connection is **In progress**. No Supabase Auth, SDK, or Edge Functions are configured.
-- Zod at server boundaries.
-- Approved frontend authentication: email/password, email verification, emailed single-use recovery, optional display name. Backend provider, session/token lifetimes, retention and deletion are **In progress** and block real-data release.
+- src/contracts/billing.ts defines prices; src/mocks/demo/billing.ts implements local decisions. Single-event upgrade Rp350.000.
+- Annual owner-account term: one calendar year from confirmation, unlimited qualifying events, no stacking/auto-renew/mid-term annual upgrade.
+- At every upload recheck owner, term, capacity, managers and event end within term. Covered upload creates no extra order/charge; pin coverage only on successful publication.
+- Published coverage lasts through event end plus 30 days. New/unpublished events need current rights.
+- eventBilling remains intact; additive accountBilling stores subscriptions. Legacy organization billing is read-only and never grants new rights. Preserve exact historical amounts/data.
 
-## Boundaries
+## Navigation and interactions
 
-```text
-src/app       routes and page composition
-src/features  frontend UI, client state, and API calls per feature
-src/backend   server-only services and Prisma access per feature
-src/contracts agreed shared API transport types
-src/lib       shared frontend-safe utilities
-prisma        database schema and migrations
-tests         focused unit, integration, and flow tests
-```
+- Stable per-role sidebar, selected-event links above content. No report/package/edit-detail subsection or global search/command palette.
+- Organizer sponsorship discovery: event recommendations and sent-request cards at /events/:id/sponsors, full searchable/paginated catalog at /organizer/sponsors, selected-company form at /events/:id/sponsors/invite. Preserve event context; select a published event if entering from the global catalog. Browsing never sends an invitation. Use existing request services and detail/follow-up dialogs.
+- Subscription: exactly Starter, Growth, Custom cards; Custom links to /contact. Local checkout dialog, explicit creation/confirmation, pending resume and safe cancellation.
+- Pengaturan via account popup; profile edit retained without Back. History only through settings, one chronological list. Legal links only in footer.
+- Existing page Back is an accessible arrow in header with explicit destination. Custom shared asynchronous confirmations; browser beforeunload is native.
+- Distinct header/sidebar/canvas/footer surfaces, bounded sections, mobile drawer focus, visible focus and reduced motion.
+- No content accordion or details/summary elements. Open sections replace them across event, committee, sponsorship, packages, guide and FAQ. Normal form selects, account/navigation menus and dialogs remain. Summary readiness labels are presentation mappings of existing publication errors, not a second validator.
+- Keep Ganti peran demo. No simulation/status disclaimers in UI, but truthful production gaps in technical docs.
 
-Pages never query the database directly. Route handlers validate input, call backend feature logic, and return a response. Backend feature logic owns authorization, state transitions, and Prisma access. Frontend features never import backend modules. Backend runtime entry modules import `server-only`.
+## Safety and verification
 
-Before editing, ask the user which feature and layer to develop and confirm allowed files. Never edit or import another feature's internals. Shared schema, contracts, dependencies, and infrastructure require separate approval. Use separate branches and isolated checkouts for parallel development. Run `npm run lint` and `npm run test:boundaries`; also review changed paths against the agreed scope.
-
-Supabase runtime connection uses `DATABASE_URL`; Prisma migration connection uses `DIRECT_URL`. Keep credentials server-only. Supabase Auth is not configured. Frontend credential fields are approved; backend privacy/lifecycle decisions remain open.
-
-### Earlier browser-only implementation (superseded by connected frontend revision)
-
-The event frontend saves one draft with user-selected logo blobs in IndexedDB (`partnerhub-event-drafts`, `drafts`, `current`) only on explicit save. Restore validates details/branding and decodes logos; legacy v1 localStorage text drafts remain readable. Confirmed delete removes only these draft records. Raster limit: PNG/JPEG/WebP, 2 MB and 4096px per axis, up to six sponsor-display entries. No server uploads, backend calls, publishing or real module activation. User identity is per organizer/event, never hard-coded. The route composes workspace/event through a ReactNode slot without cross-feature internal imports. See complete architecture for retention, same-day WIB limits and `todobackend.md` for release blockers.
-
-## Data direction
-
-Connected frontend routes use typed feature services and shared HTTP/session utilities. No production mock fallback, browser auth token storage, or component-level fetching. Guards provide UX only; APIs must authorize every action. Incomplete event drafts require backend/schema changes outside this frontend task. See the connected frontend revision in the complete architecture and `todobackend.md`.
-
-`prisma/schema.prisma` remains authoritative for implemented persistence. Current records cover events, anonymous registrations, attendance, sponsorship, and timeline history. The approved target model adds:
-
-- Account and consented reusable profile.
-- Event-scoped organizer and committee membership.
-- Committee division, application, preferences, and answers.
-- Account ownership on participant registration.
-- Configurable attendance mode.
-
-Do not claim these target records are implemented until the schema and migration are committed.
-
-## State rules
-
-- Event: `DRAFT` to `PUBLISHED` to `CLOSED` to `ARCHIVED`.
-- Registration: `REGISTERED` or `CANCELLED`.
-- Committee application: `SUBMITTED`, `SHORTLISTED`, `INTERVIEW`, `ACCEPTED`, `REJECTED`, `WITHDRAWN`.
-- Entry scan: zero or one `ENTRY` record per registration when enabled.
-- Sponsor prospect: `PLANNED`, `CONTACTED`, `NEGOTIATING`, `AGREED`, `DECLINED`.
-- Benefit: `PLANNED` or `VERIFIED`.
-
-## Security
-
-- Hash authentication credentials, session tokens, and ticket secrets as appropriate.
-- Do not log credentials, tokens, ticket secrets, personal form answers, or full QR payloads.
-- Apply server-side authorization, capacity, registration-window, and duplicate-registration checks.
-- Expose only profile fields required for the current event action.
-- Return generic ticket failures to the scanner.
-
-## Update triggers
-
-- Product change: update `PRD.md` first.
-- Model, state, API, stack, authentication, or security change: update `ARCHITECTURE.md`, this file, and schema.
-- Environment change: update `.env.example`, architecture, and README.
+- Browser/demo guards are not production security. Production requires secure sessions, server validation, scoped authorization, hashed secrets, proof privacy and no sensitive logs.
+- Atomic capacity/duplicate checks, committee acceptance, billing confirmation and scan idempotence need database transactions and constraints.
+- Preserve existing events, answers, tickets, evidence, assignments and old secrets. No implicit reset or destructive migration.
+- Scope gate in AGENTS.md applies before edits. Update PRD for product decisions; architecture/essentials/contracts for technical decisions; schema only in approved persistence tasks.
+- Run relevant tests and git diff --check. Local QA is not real-user validation, actual revenue or proof of production readiness.

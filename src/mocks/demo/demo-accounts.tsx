@@ -13,9 +13,9 @@ const accounts = [
 export default function DemoAccounts({ onPick }: { onPick: (value: { email: string; password: string }) => void }) {
   const [open, setOpen] = useState(false);
   return <section aria-labelledby="demo-accounts" className={styles.picker}>
-    <button id="demo-accounts" type="button" className={styles.toggle} aria-expanded={open} aria-controls="demo-account-options" onClick={() => setOpen(!open)}>Pilih akun demo</button>
+    <button id="demo-accounts" type="button" className={styles.toggle} aria-expanded={open} aria-controls="demo-account-options" onClick={() => setOpen(!open)}>Pilih akun</button>
     <div id="demo-account-options" hidden={!open}>
-    <p>Pilih peran untuk mengisi email dan password, lalu tekan Masuk. Data demo fiktif dan hanya berlaku di tab ini.</p>
+    <p>Pilih akun sesuai peranmu, lalu tekan Masuk untuk melanjutkan.</p>
     <ul className={styles.accounts}>
       {accounts.map((item) => <li key={item.email}>
         <button type="button" aria-label={`Pilih akun ${item.title}: ${item.email}`} onClick={() => onPick({ email: item.email, password: DEMO_PASSWORD })}>

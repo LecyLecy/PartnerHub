@@ -21,6 +21,6 @@ export default function EventBrandingFields({branding,update}:{branding:EventBra
       </div>)}
       <button type="button" className={styles.addSponsor} disabled={branding.sponsors.length >= sponsorLimit} onClick={()=>update({...branding,sponsors:[...branding.sponsors,{id:crypto.randomUUID(),name:"",logo:null}]})}>Tambah sponsor <span>{branding.sponsors.length} / {sponsorLimit}</span></button>
     </section>
-    <p className={styles.hint}>Logo opsional. Gunakan hanya gambar yang kamu berhak tampilkan. Salinan lokal menyimpan gambar di browser; simpan server mengunggahnya setelah draft dibuat.</p>
+    <p className={styles.hint}>Logo opsional. Gunakan hanya gambar yang kamu berhak tampilkan. Gambar diunggah saat kamu menyimpan acara.</p>
   </div>;
 }

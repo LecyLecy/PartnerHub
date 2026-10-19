@@ -16,6 +16,23 @@ const denied = (promise, status) => assert.rejects(promise, (error) => error.sta
 const USER = "demo.user@partnerhub.test";
 const ORGANIZER = "demo.penyelenggara@partnerhub.test";
 
+test("new applications persist only stages actually reached when accepting early", async () => {
+  await login(ORGANIZER);
+  const opening = await call("/api/events/demo-event-2/committee/opening", { method: "PUT", body: { description: "Panitia workshop QA lokal.", divisions: ["Acara"], question: null, stages: [{ id: null, name: "Daftar pendek" }, { id: null, name: "Wawancara" }], open: true } });
+  await login(USER);
+  const application = await call(`/api/committee/openings/${opening.id}/applications`, { method: "POST", body: { divisionIds: [opening.divisions[0].id], motivation: "Saya ingin membantu acara QA sampai selesai." } });
+  assert.deepEqual(application.visitedStageIds, []);
+  await login(ORGANIZER);
+  const url = `/api/events/demo-event-2/committee/applications/${application.id}/decision`;
+  await call(url, { method: "POST", body: { to: opening.stages[0].id, note: null } });
+  await call(url, { method: "POST", body: { to: "ACCEPTED", note: "Silakan hadir untuk briefing panitia." } });
+  await login(USER);
+  const saved = (await call("/api/me/committee-applications")).items.find(item => item.id === application.id);
+  assert.equal(saved.status, "ACCEPTED");
+  assert.deepEqual(saved.visitedStageIds, [opening.stages[0].id]);
+  assert.equal(saved.visitedStageIds.includes(opening.stages[1].id), false);
+});
+
 test("user applies once per opening, validation names the failing field", async () => {
   await login(USER);
   const { items } = await call("/api/committee/openings");

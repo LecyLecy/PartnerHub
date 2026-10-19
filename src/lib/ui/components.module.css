@@ -10,19 +10,6 @@
 .tabPanel[data-fresh=true] { animation: panel-in var(--dur-base) var(--ease-out) both; }
 @keyframes panel-in { from { opacity: 0; transform: translateY(.5rem); } to { opacity: 1; transform: none; } }
 
-/* Accordion */
-.accordion { list-style: none; margin: 0; padding: 0; border-top: var(--border-width) solid var(--line); }
-.accordion > li { border-bottom: var(--border-width) solid var(--line); }
-.accordion h3 { margin: 0; font-family: var(--font-body), sans-serif; font-size: var(--text-body); letter-spacing: normal; }
-.trigger { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: var(--space-4); min-height: var(--touch-min); padding: var(--space-4) 0; border: 0; background: transparent; color: var(--navy); font-weight: var(--weight-label); text-align: left; }
-.trigger:hover .chevron { color: var(--navy); }
-.chevron { flex-shrink: 0; width: var(--space-4); height: var(--space-4); color: var(--muted); transition: transform var(--dur-base) var(--ease-out); }
-.trigger[aria-expanded=true] .chevron { transform: rotate(180deg); }
-.answer { display: grid; grid-template-rows: 0fr; transition: grid-template-rows var(--dur-base) var(--ease-standard); }
-.answer[data-open=true] { grid-template-rows: 1fr; }
-.answer > div { overflow: hidden; min-height: 0; }
-.answer p { margin: 0 0 var(--space-4); color: var(--muted); max-width: var(--reading-width); }
-
 /* Toggle */
 .toggle { position: relative; flex-shrink: 0; width: 2.75rem; height: 1.5rem; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--control-border); transition: background-color var(--dur-fast) var(--ease-standard); }
 .toggle::after { content: ""; position: absolute; top: .1875rem; left: .1875rem; width: 1.125rem; height: 1.125rem; border-radius: 50%; background: var(--surface); box-shadow: var(--shadow-1); transition: transform var(--dur-base) var(--ease-spring); }
@@ -89,7 +76,7 @@
 .sortButton[data-direction=desc] .sortArrow { transform: rotate(180deg); }
 
 @media (prefers-reduced-motion: reduce) {
-  .toggle, .toggle::after, .chevron, .answer, .indicator[data-ready=true], .tab, .table tbody tr { transition: none; }
+  .toggle, .toggle::after, .indicator[data-ready=true], .tab, .table tbody tr { transition: none; }
   .toast, .tabPanel[data-fresh=true], .timeline [data-added=true] { animation: none; }
 }
 

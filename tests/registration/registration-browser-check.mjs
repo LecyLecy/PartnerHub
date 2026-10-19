@@ -1,5 +1,5 @@
 // Browser check for paid events and custom registration forms: organizer sets price and questions, participant fills the
-// form (with an image), the event moves to "Acara saya", and the organizer exports registrants to a real .xlsx file.
+// form (with an image), the event moves to "Tiket saya", and the organizer exports registrants to a real .xlsx file.
 // Needs a demo build and `exceljs` next to Playwright (test tooling only).
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
@@ -27,15 +27,15 @@ const go = (route) => page.goto(`${base}${route}`, { waitUntil: "networkidle" })
 const noOverflow = async (label) => assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false, `overflow: ${label}`);
 async function signIn(email) {
   await go("/login");
-  await page.getByRole("button", { name: "Pilih akun demo", exact: true }).click();
+  await page.getByRole("button", { name: "Pilih akun", exact: true }).click();
   await page.getByRole("button", { name: new RegExp(email.replace(".", "\\.")) }).click();
   await page.waitForFunction((expected) => document.querySelector('input[name="password"]')?.value === expected, PASSWORD, { timeout: 5000 });
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
 }
 async function signOut() {
   await page.waitForLoadState("networkidle");
-  const side = page.locator("#organizer-sidebar");
-  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#organizer-sidebar").getBoundingClientRect().width > 200); }
+  const side = page.locator("#workspace-sidebar");
+  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#workspace-sidebar").getBoundingClientRect().width > 200); }
   await page.getByRole("button", { name: /^Menu akun/ }).first().click();
   await page.getByRole("button", { name: "Keluar", exact: true }).first().click();
   await page.waitForURL("**/login?reason=logout");
@@ -43,7 +43,7 @@ async function signOut() {
 }
 
 try {
-  // 1. Organizer: price and questions for an event that has none yet.
+  // 1. Organizer: edit an existing paid-event form and verify validation before saving.
   await signIn("demo.penyelenggara@partnerhub.test");
   await page.waitForURL("**/organizer");
   // The dashboard row opens its event on a click outside the title text.
@@ -55,7 +55,8 @@ try {
   await page.getByRole("heading", { name: "Pendaftaran peserta.", level: 1 }).waitFor();
   await page.getByRole("link", { name: "Kembali", exact: true }).waitFor();
   await page.getByRole("tab", { name: "Harga dan form" }).click();
-  await page.getByText(/belum punya form sendiri/).waitFor();
+  await page.getByLabel("Cara membayar").fill("");
+  await page.getByLabel("Jenis isian").first().selectOption("text");
   await page.getByLabel("Harga (Rp)").fill("25000");
   await page.getByRole("button", { name: "Simpan harga dan form", exact: true }).click();
   await page.getByText("Jelaskan cara membayar, minimal 10 karakter.").waitFor();
@@ -87,20 +88,22 @@ try {
   await dialog.getByRole("checkbox", { name: /Saya setuju menggunakan profil/ }).check();
   await dialog.getByRole("button", { name: "Daftar acara", exact: true }).click();
   await dialog.getByText("Wajib diisi.").first().waitFor();
-  assert.equal(await page.evaluate(() => document.activeElement?.closest("[data-field]")?.getAttribute("data-field")?.includes("__")), true, "first error field is focused");
-  await dialog.getByLabel("Nama di kartu peserta").fill("Pengguna Demo");
+  await page.waitForFunction(() => document.activeElement?.closest("[data-field]")?.getAttribute("data-field")?.includes("__"));
+  assert.equal(await dialog.getByLabel("Nama di kartu peserta").evaluate(element => element === document.activeElement), true, "first error field is focused");
+  await dialog.getByLabel("Nama di kartu peserta").fill("Nadia Putri");
   await dialog.locator('input[type="file"]').setInputFiles(proof);
   await dialog.getByRole("button", { name: "Daftar acara", exact: true }).click();
   await page.getByText(/Bukti terkirim\. Menunggu konfirmasi penyelenggara\./).waitFor();
   assert.equal(await catalog.getByRole("button", { name: /^Detail Temu Komunitas Relawan/ }).count(), 0, "the joined event leaves the catalog");
-  await page.getByRole("link", { name: "Acara saya", exact: true }).first().click();
+  await page.getByRole("link", { name: "Tiket saya", exact: true }).first().click();
   await page.waitForURL("**/me/events");
   await page.getByRole("link", { name: "Kembali", exact: true }).waitFor();
-  await page.getByRole("heading", { name: "Acara saya", level: 1 }).waitFor();
+  await page.getByRole("heading", { name: "Tiket saya", level: 1 }).waitFor();
   const mine = page.getByRole("region", { name: "Tiket" });
   await mine.getByRole("heading", { name: "Temu Komunitas Relawan", level: 3 }).waitFor();
   await mine.getByText("Rp25.000").first().waitFor();
-  await page.getByRole("region", { name: "Kepanitiaan" }).waitFor();
+  assert.equal(await page.getByRole("region", { name: "Kepanitiaan" }).count(), 0, "committee applications have their own page");
+  await page.getByRole("navigation", { name: "Navigasi utama", exact: true }).getByRole("link", { name: "Lamaran saya", exact: true }).waitFor();
   await page.screenshot({ path: path.join(output, "participant-my-events.png"), fullPage: true });
   for (const width of [390, 320]) { await page.setViewportSize({ width, height: 900 }); await go("/me"); await noOverflow(`catalog ${width}`); await go("/me/events"); await noOverflow(`my events ${width}`); }
   await page.setViewportSize({ width: 1280, height: 1000 });
@@ -110,10 +113,10 @@ try {
   await signIn("demo.penyelenggara@partnerhub.test");
   await page.waitForURL("**/organizer");
   await go("/events/demo-event-3/registration");
-  await page.getByText("Pengguna Demo").first().waitFor();
-  await page.getByRole("button", { name: "Tinjau pendaftaran Pengguna Demo", exact: true }).click();
+  await page.getByText("Nadia Putri").first().waitFor();
+  await page.getByRole("button", { name: "Tinjau pendaftaran Nadia Putri", exact: true }).click();
   await page.getByText("Nama di kartu peserta").waitFor();
-  await page.getByRole("img", { name: "Bukti pembayaran dari Pengguna Demo", exact: true }).waitFor();
+  await page.getByRole("img", { name: "Bukti pembayaran dari Nadia Putri", exact: true }).waitFor();
   await page.getByRole("button", { name: "Konfirmasi", exact: true }).click();
   await page.locator("dialog[open]").waitFor({ state: "hidden" });
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "Ekspor Excel" }).click()]);
@@ -127,7 +130,7 @@ try {
   assert.deepEqual(header.slice(0, 6), ["No", "Nama", "Referensi tiket", "Status", "Waktu daftar", "QR terkirim"]);
   assert.ok(header.includes("Nama di kartu peserta") && header.includes("Bukti pembayaran"), "each form question is a column");
   const names = sheet.getColumn(2).values.slice(2);
-  assert.ok(names.includes("Pengguna Demo"), "the registrant is in the sheet");
+  assert.ok(names.includes("Nadia Putri"), "the registrant is in the sheet");
   const flat = JSON.stringify(sheet.getSheetValues());
   assert.equal(flat.includes("data:image"), false, "image data is not dumped into the spreadsheet");
   assert.equal(flat.includes("@partnerhub.test"), false, "no email in the export");
@@ -145,5 +148,5 @@ try {
   assert.equal(committee.getWorksheet("Panitia").getRow(1).getCell(2).value, "Nama");
   assert.ok(committee.getWorksheet("Panitia").rowCount >= 2, "the accepted applicant is exported");
   assert.deepEqual(errors, []);
-  console.log("PASS registration: dashboard row click, price and payment note validation, custom form with image upload, event moves to Acara saya, registrants and committee export to .xlsx (read back with exceljs), 390/320px, no page errors.");
+  console.log("PASS registration: dashboard row click, price and payment note validation, custom form with image upload, separate tickets/applications, registrants and committee export to .xlsx (read back with exceljs), 390/320px, no page errors.");
 } finally { await browser.close(); }

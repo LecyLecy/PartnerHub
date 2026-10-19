@@ -9,10 +9,11 @@ const participant = z.object({
   checkedOutAt: z.iso.datetime({ offset: true }).nullable().optional(),
   answers: z.array(z.object({ fieldId: z.string(), label: z.string().max(100), type: z.enum(["text", "longtext", "choice", "image"]), value: z.string().max(3_000_000) })).max(10),
 });
-const board = z.object({ eventId: z.string(), eventTitle: z.string().max(100), attendanceEnabled: z.boolean(), attendanceMode: z.enum(["NONE", "ENTRY", "ENTRY_EXIT"]).optional(), items: z.array(participant).max(5000) });
+const board = z.object({ eventId: z.string(), eventTitle: z.string().max(100), attendanceEnabled: z.boolean(), canConfigure: z.boolean().default(false), canScan: z.boolean().default(false), attendanceMode: z.enum(["NONE", "ENTRY", "ENTRY_EXIT"]).optional(), items: z.array(participant).max(5000) });
 const scan = z.object({ eventId: z.string(), eventTitle: z.string().max(100), participant, attendance: z.enum(["RECORDED", "ALREADY_RECORDED", "DISABLED", "EXIT_RECORDED", "ALREADY_EXIT_RECORDED"]) });
 export async function configureAttendance(eventId: string, mode: "NONE" | "ENTRY" | "ENTRY_EXIT"): Promise<void> {
   await apiRequest(`/api/events/${encodeURIComponent(eventId)}/attendance`, { method: "POST", body: { mode } });
+  window.dispatchEvent(new CustomEvent("partnerhub:attendance-changed", { detail: eventId }));
 }
 
 export async function getAttendance(eventId: string, signal?: AbortSignal): Promise<AttendanceBoard> {

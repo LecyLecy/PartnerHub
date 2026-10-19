@@ -30,5 +30,10 @@ export function Icon({ name, size = 20 }: { name: IconName; size?: number }) {
 }
 
 export function LogoMark({ size = 30 }: { size?: number }) {
-  return <svg width={size} height={size} viewBox="0 0 96 96" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M20 12h32c20 0 34 14 34 34S72 80 52 80H38v10H20V12Zm18 19v30h13c10 0 17-6 17-15s-7-15-17-15H38Z" /></svg>;
+  return <svg width={size} height={size} viewBox="68 68 1120 1120" data-brand-logo="mark" aria-hidden="true" focusable="false"><image href="/brand/partnerhub-mark-transparent-hd.png" width="1254" height="1254" /></svg>;
+}
+
+/** Shared transparent artwork, with unused outer space clipped at display time. */
+export function LogoWordmark({ width = 188 }: { width?: number }) {
+  return <svg width={width} height={width * 500 / 2040} viewBox="85 109 2040 500" data-brand-logo="wordmark" aria-hidden="true" focusable="false"><image href="/brand/partnerhub-wordmark-transparent-hd.png" width="2172" height="724" /></svg>;
 }

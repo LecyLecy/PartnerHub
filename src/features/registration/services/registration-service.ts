@@ -1,12 +1,20 @@
 import { z } from "zod";
 import { ApiError, apiRequest } from "@/lib/api-client";
-import type { MyRegistration, QrDelivery, Registrant, RegistrantBoard, RegistrationAnswers, RegistrationDecision, RegistrationForm, RegistrationFormInput, TicketQr } from "@/contracts/participation";
+import type { MyRegistration, MyRegistrationDetail, QrDelivery, Registrant, RegistrantBoard, RegistrationAnswers, RegistrationDecision, RegistrationForm, RegistrationFormInput, TicketQr } from "@/contracts/participation";
 
 const schema = z.object({
   id: z.string().min(1), ticketReference: z.string().regex(/^[A-Z0-9-]{6,40}$/), status: z.enum(["PENDING", "REGISTERED", "REJECTED", "CANCELLED"]), note: z.string().max(200).nullable().default(null),
-  createdAt: z.iso.datetime({ offset: true }), qrIssued: z.boolean().default(false), priceIdr: z.number().int().min(0).default(0),
+  createdAt: z.iso.datetime({ offset: true }), qrIssued: z.boolean().default(false), qrEnabled: z.boolean().default(false), priceIdr: z.number().int().min(0).default(0),
   event: z.object({ id: z.string().min(1), title: z.string().max(100), startsAt: z.iso.datetime({ offset: true }).nullable(), venue: z.string().max(150) }),
 });
+const answerSchema = z.object({ fieldId: z.string(), label: z.string().max(100), type: z.enum(["text", "longtext", "choice", "image"]), value: z.string().max(3_000_000) });
+
+export async function getMyRegistration(id: string, signal: AbortSignal): Promise<MyRegistrationDetail> {
+  // TODO(backend): GET /api/me/registrations/:id -> MyRegistrationDetail. Current participant only, 404 for foreign IDs. Snapshot answers/proof only; never QR secrets. Use Cache-Control: no-store.
+  const result = schema.extend({ answers: z.array(answerSchema).max(10) }).safeParse(await apiRequest<unknown>(`/api/me/registrations/${encodeURIComponent(id)}`, { signal }));
+  if (!result.success) throw new ApiError("Detail pendaftaran tidak dapat dibaca.", 0, "INVALID_RESPONSE");
+  return result.data;
+}
 
 export async function listMyRegistrations(_key: string, signal: AbortSignal): Promise<MyRegistration[]> {
   // TODO(backend): GET /api/me/registrations -> 200 {items:[{id,ticketReference,status,createdAt,event:{id,title,startsAt,venue}}]}. Current account only. ticketReference is display-safe and opaque; the QR secret is never returned here. 401 signed out, 403 for other roles.
@@ -91,11 +99,11 @@ export async function uploadRegistrationImage(eventId: string, file: Blob, name:
 }
 
 const registrantSchema = z.object({
-  eventTitle: z.string().max(100), priceIdr: z.number().int().min(0),
+  eventTitle: z.string().max(100), priceIdr: z.number().int().min(0), qrEnabled: z.boolean().default(false),
   items: z.array(z.object({
     id: z.string().min(1), name: z.string().max(120), ticketReference: z.string().max(40), status: z.enum(["PENDING", "REGISTERED", "REJECTED", "CANCELLED"]), note: z.string().max(200).nullable().default(null), createdAt: z.iso.datetime({ offset: true }), qrIssued: z.boolean(),
     checkedInAt: z.iso.datetime({ offset: true }).nullable().default(null),
-    answers: z.array(z.object({ fieldId: z.string(), label: z.string().max(100), type: z.enum(["text", "longtext", "choice", "image"]), value: z.string().max(3_000_000) })).max(10),
+    answers: z.array(answerSchema).max(10),
   })).max(5000),
 });
 

@@ -1,10 +1,33 @@
 # PartnerHub workspace guide
 
-## Approved production-demo integration task
+Updated: 18 October 2026. This guide consolidates standing owner decisions. Superseded task-by-task permissions and contradictory older product rules are not current instructions.
 
-On 2026-10-16 the owner explicitly authorized merging all member branches into `production`, resolving conflicts, completing the application UI with fictional local data, applying both feedback grids, and hosting the demo. For this specific delivery, scope includes all six frontend features, workspace, shared contracts/utilities/styles, app adapters, demo services/data, tests, build/deployment configuration, scripts, and documentation. The task does not require real backend authentication, payment, email, or a production database. Do not repeat the narrow-feature scope question for this already-authorized delivery. Later unrelated tasks still use the scope rules below.
+## Current documentation task
 
-Read `DEMO-DELIVERY.md` for the feedback source and evidence, and `/guide` for the user-facing demo sequence. `npm run build:demo` creates the explicitly labeled classroom build; normal builds retain their previous non-demo default. Preserve real-backend limitations in documentation and never claim fictional counts as traction.
+The owner explicitly approved documentation-only reconciliation of root product/architecture/agent/readme files, relevant feature READMEs and todobackend.md, plus the Business Idea tab in the existing Google Doc. No application code, schema, records, payment behavior, other Google Doc tabs, push or deployment is authorized by that approval.
+
+## Standing product decisions
+
+- Complete event setup, store it privately in Arsip acara, then upload after coverage validation. Creation alone is not charged. Internal DRAFT is unpublished storage, not a user-facing draft-save feature; internal ARCHIVED is completed-event history.
+- No organization/workspace product, workspace switching/membership, cross-event overview, annual-only duplication, quick-save, browser-copy restoration or persisted signup draft.
+- Per-event purchase and qualifying annual owner-account subscription are alternatives. Starter: Rp149.000/event or Rp699.000/year, 300 participants and 3 managers including owner. Growth: Rp499.000/event or Rp1.499.000/year, 1.500 participants and 10 managers. Single-event upgrade: Rp350.000. src/contracts/billing.ts is price authority.
+- Annual subscriptions allow unlimited qualifying events. Recheck owner, active term, limits and event end at upload. Pin coverage only on successful publication, with no duplicate per-event charge. No stacking, automatic renewal or mid-term annual upgrade. Preserve already-published coverage through event end plus 30 days.
+- Preserve exact historical transaction amounts and legacy records. Removed organization billing is read-only, never silently reactivated. No reset, deletion or migration that discards user work.
+- Published events become public without login; public views hide registrant totals and omit empty sponsor sections. Never infer a sponsor from a pending proposal or a logo.
+- Edit within Ringkasan acara before publication only. Published details stay locked through every edit entry.
+- Stable role sidebars; selected-event links above content. No report/package/edit-detail subsection, global search or command palette. Preserve existing evidence records and compatibility reports.
+- No content accordions or details/summary dropdowns anywhere. Use open sections and concise copy, not hidden content. Keep normal form selects, navigation/account menus, dialogs and confirmation safeguards. Event summary status aligns with its title; registration follows schedule rather than a floating right-hand panel. Publication labels may be shorter in presentation, but must use existing readiness validation.
+- Subscription has exactly three cards: Paket Starter, Paket Growth, Custom. Custom says Kontak PartnerHub and links to /contact. Checkout uses existing services and the local dialog. No extra history or feature-disclosure section.
+- Pengaturan opens through the account popup, not a profile sidebar item. Transaction history is accessed only from settings, with one chronological list. Settings has no Back; existing other page Back controls are accessible arrow-only controls in the header.
+- Terms and privacy links belong only in the shared footer. Preserve /terms and /privacy.
+- Optional QR requires both registration and attendance modules. Confirmed participants show issued QR in Tiket saya. Same-event accepted committee scan from Lamaran saya, without access to proofs, answers, contact details, bulk registrants, payments, issuance or mode configuration. Disabled modules hide actions and reject direct access. Preserve first entry/exit timestamps.
+- Committee selection uses 0 to 5 custom stages and SUBMITTED/IN_SELECTION/ACCEPTED/REJECTED/WITHDRAWN, not fixed shortlist/interview states. Missing legacy history stays unknown. Separate needs/divisions/stages/question visually.
+- Two-way matching is shared-field logic, not real AI. Organizer suggestions live under an event's Ajak sponsor; sponsor suggestions are separate from requests/proposals/benefits progress. Prepared sponsor accounts already have industry fields.
+- Use shared custom asynchronous confirmations; cancel/Escape never mutates and focus returns. Native refresh/tab-close protection is the unavoidable exception.
+- Keep Indonesian product-style UI without prototype/simulation/In progress notices; preserve Ganti peran demo. Technical docs must disclose production gaps. Never invent customers, revenue, real sponsor partnerships, contacts, legal approval or user-study results.
+- Use realistic fictional local fixtures and bundled photography with provenance. No borrowing source/history from the previous PBL project.
+- Never block project work with "siapa nama kamu" or inherited assistant identity/role onboarding. This does not delete necessary account registration/profile fields.
+- Current hosting requests are local only. A previous cloud URL is not evidence the latest changes are deployed.
 
 ## Mandatory scope gate
 
@@ -37,11 +60,11 @@ Before editing, list the intended files. Before finishing, compare `git diff --n
 
 ## Product baseline
 
-PartnerHub is an event operations workspace with sponsorship management as its differentiator. It is not a national ticket marketplace, payment processor, social network, generic CRM, or full HR system.
+PartnerHub is an individual-event operations platform with sponsorship discovery and accountability as its differentiator. Read PRD.md for the consolidated current product rules; do not restore removed behavior from historical chat or verification notes. It is not a national ticket marketplace, payment processor, social network, generic CRM, or full HR system.
 
 The approved Venture Creation direction protects one complete flow: create and publish an event, reuse consented participant profile data, collect event-specific registration, recruit a committee, issue opaque QR tickets, record optional entry attendance, and track sponsor benefits.
 
-Accounts may have different roles across different events. Do not add a permanent account classification field. Minimize personal data, separate reusable profile fields from event-specific answers, and never place personal data in QR payloads. Authentication fields, required profile fields, retention, deletion, and recovery need explicit decisions in `PRD.md` and `ARCHITECTURE.md` before implementation.
+Accounts register as user, organizer or sponsor, with approval status. Participant/committee membership and event-manager access are separate event-scoped relations. Do not infer event authorization from account role alone. Minimize personal data, separate reusable profile fields from event-specific answers, and never place personal data in QR payloads. Authentication fields, required profile fields, retention, deletion, and recovery need explicit decisions in `PRD.md` and `ARCHITECTURE.md` before implementation.
 
 ## Source of truth
 
@@ -50,9 +73,9 @@ Read before planning a change:
 1. `PRD.md` for product intent, scope, and acceptance criteria.
 2. `ARCHITECTURE-ESSETIALS.md` for fast architectural constraints.
 3. `ARCHITECTURE.md` for stack, models, states, security, and testing detail.
-4. `prisma/schema.prisma` for authoritative persistent model.
+4. `prisma/schema.prisma` for implemented persistence only; shared contracts and demo types describe additional local behavior not yet migrated.
 
-`README.md` is portfolio-facing. Keep it concise and claim only committed, verified behavior.
+`README.md` is portfolio-facing. Keep it concise and distinguish local implementation evidence from production availability and market validation.
 
 ## When an idea changes
 
@@ -75,7 +98,7 @@ Do not leave a product decision only in chat. Record it in matching document dur
 - Use opaque ticket secrets in QR payloads. Never place personal data, database URLs, credentials, or secrets in QR, client bundle, or log.
 - Validate all external input server-side. Enforce event management through event-scoped authorization or the approved prepared-demo secret, never request-body IDs.
 - Model state changes explicitly. Do not permit arbitrary status replacement.
-- Keep proposal, portfolio, and evidence attachments as URLs in the first version. File uploads, payments, matching notifications, chat, and sponsor marketplace behavior are deferred.
+- Keep proposal, portfolio, and evidence attachments as URLs in the first version. Production file storage, real payments, automatic matching notifications, chat and broad sponsor marketplace behavior are deferred. Existing browser-local payment/entitlement and two-way rule-based matching flows are approved demo behavior, not production integrations.
 - Do not copy source or Git history from `E:/Projects/PBL-Himti-2`. It is visual and conceptual reference only.
 
 ## Verification and Git

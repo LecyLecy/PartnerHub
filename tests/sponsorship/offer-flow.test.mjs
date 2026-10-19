@@ -15,12 +15,14 @@ const login = (email) => call("/api/auth/login", { method: "POST", body: { email
 const denied = (promise, status) => assert.rejects(promise, (error) => error.status === status);
 const ORGANIZER = "demo.penyelenggara@partnerhub.test";
 const SPONSOR = "demo.sponsor@partnerhub.test";
-const input = { sponsorId: "demo-sponsor", category: "Dana", message: "Kami mengundang Perusahaan Demo mendukung acara ini.", amountLabel: "Rp5 juta", proposalUrl: "https://example.com/proposal" };
+const input = { sponsorId: "demo-sponsor", category: "Dana", message: "Kami mengundang Lentera Sagara Teknologi mendukung acara ini.", amountLabel: "Rp5 juta", proposalUrl: "https://example.com/proposal" };
 
 test("organizer sends a request to a verified sponsor, sponsor answers once and both are notified", async () => {
   await login(ORGANIZER);
   const directory = (await call("/api/sponsors/directory")).items;
-  assert.deepEqual(directory.map((item) => Object.keys(item).sort()), [["companyName", "id", "industry"]]);
+  assert.ok(directory.length >= 6);
+  assert.ok(directory.every(item => JSON.stringify(Object.keys(item).sort()) === JSON.stringify(["companyName", "fields", "id", "imageUrl", "industry", "sharedFields"])));
+  assert.ok(directory.every(item => item.imageUrl?.startsWith("/demo/photos/") && item.sharedFields.length === 0));
   const created = await call("/api/events/demo-event-2/sponsor-offers", { method: "POST", body: input });
   assert.equal(created.status, "SENT");
   assert.equal("ownerId" in created, false);

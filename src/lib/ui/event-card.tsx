@@ -5,7 +5,6 @@ import { formatPrice } from "../money";
 import { eventWhen } from "../public-events";
 import { Icon } from "./icons";
 import { Badge } from "./primitives";
-import { Meter } from "./stats";
 import styles from "./event-card.module.css";
 
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]?.toUpperCase()).join("") || "P";
@@ -89,16 +88,11 @@ export const eventCover = (event: PublicEvent): CardCover => ({ organization: ev
 export function EventCard({ event, tone, badge, actions }: {
   event: PublicEvent; tone: number; badge?: ReactNode; actions: (close: () => void) => ReactNode;
 }) {
-  const full = event.capacity !== null && event.registeredCount >= event.capacity;
   return <InfoCard cover={eventCover(event)} tone={tone} badge={badge}
     summary={<>
       <p className={styles.when}>{eventWhen(event.startsAt)}</p>
       <p className={styles.price} data-free={event.priceIdr <= 0}>{formatPrice(event.priceIdr)}</p>
       <p className={styles.muted}>{event.venue || "Lokasi belum ditentukan"}</p>
-      <div className={styles.capacity}>
-        <p className={styles.muted}>{event.registeredCount}{event.capacity ? ` dari ${event.capacity}` : ""} pendaftar{full ? " (penuh)" : ""}</p>
-        {event.capacity ? <Meter value={event.registeredCount} max={event.capacity} label={`Kapasitas terisi ${event.registeredCount} dari ${event.capacity}`} /> : null}
-      </div>
     </>}
     detail={(close) => <EventDetails event={event} actions={actions(close)} />} />;
 }
@@ -114,7 +108,6 @@ export function EventDetails({ event, actions }: { event: PublicEvent; actions?:
         <div><dt>Jadwal</dt><dd>{eventWhen(event.startsAt)}{event.endsAt ? ` sampai ${eventWhen(event.endsAt)}` : ""}</dd></div>
         <div><dt>Lokasi</dt><dd>{event.venue || "Belum ditentukan"}</dd></div>
         <div><dt>Harga tiket</dt><dd>{formatPrice(event.priceIdr)}{event.priceIdr > 0 && <span className={styles.muted}>Pembayaran dilakukan di luar PartnerHub, sesuai arahan penyelenggara.</span>}</dd></div>
-        <div><dt>Pendaftar</dt><dd>{event.registeredCount}{event.capacity ? ` dari ${event.capacity}` : ""}{event.capacity ? <Meter value={event.registeredCount} max={event.capacity} label={`Kapasitas terisi ${event.registeredCount} dari ${event.capacity}`} /> : null}</dd></div>
       </dl>
       <DetailSection title="Penyelenggara">
         <p className={styles.orgLine}><OrganizerAvatar name={event.organizationName} logoUrl={event.organizationLogoUrl} size="lg" /><strong>{event.organizationName || "Belum dicantumkan"}</strong></p>

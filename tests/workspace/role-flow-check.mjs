@@ -30,8 +30,8 @@ const focusedName = async () => {
 };
 async function signIn(email) {
   await go("/login");
-  await page.getByRole("region", { name: "Pilih akun demo" }).waitFor();
-  await page.getByRole("button", { name: "Pilih akun demo", exact: true }).click();
+  await page.getByRole("region", { name: "Pilih akun" }).waitFor();
+  await page.getByRole("button", { name: "Pilih akun", exact: true }).click();
   if (email === "demo.menunggu@partnerhub.test") {
     await field("email").fill(email);
     await field("password").fill(PASSWORD);
@@ -44,8 +44,8 @@ async function signIn(email) {
 }
 // Keluar and Pengaturan sit behind the profile button. On the organizer rail, hover first so the rail is open.
 async function openAccountMenu() {
-  const side = page.locator("#organizer-sidebar");
-  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#organizer-sidebar").getBoundingClientRect().width > 200); }
+  const side = page.locator("#workspace-sidebar");
+  if (await side.isVisible()) { await side.hover(); await page.waitForFunction(() => document.querySelector("#workspace-sidebar").getBoundingClientRect().width > 200); }
   const trigger = page.getByRole("button", { name: /^Menu akun/ });
   if (page.viewportSize().width >= 768) await trigger.first().waitFor({ state: "visible" });
   if (!(await trigger.first().isVisible())) await page.getByRole("button", { name: "Buka menu" }).click();
@@ -62,10 +62,10 @@ async function signOut() {
 
 try {
   await go("/login");
-  const demoPicker = page.getByRole("region", { name: "Pilih akun demo" });
+  const demoPicker = page.getByRole("region", { name: "Pilih akun" });
   await demoPicker.waitFor();
   assert.equal(await demoPicker.getByRole("button", { name: /Pilih akun .+:/ }).count(), 0);
-  await demoPicker.getByRole("button", { name: "Pilih akun demo", exact: true }).click();
+  await demoPicker.getByRole("button", { name: "Pilih akun", exact: true }).click();
   assert.equal(await demoPicker.getByRole("button", { name: /Pilih akun .+:/ }).count(), 3);
   for (const name of ["Peserta", "Penyelenggara", "Sponsor"]) await demoPicker.getByRole("button", { name: new RegExp(`Pilih akun ${name}:`) }).waitFor();
   assert.equal(await demoPicker.getByRole("button", { name: /demo\.menunggu/ }).count(), 0);
@@ -74,7 +74,7 @@ try {
   await page.getByRole("heading", { name: "Daftar sebagai siapa?" }).waitFor();
   for (const title of ["Peserta", "Penyelenggara", "Perusahaan sponsor"]) await page.getByRole("heading", { name: title, level: 2 }).waitFor();
   await page.getByRole("link", { name: "Sudah punya akun? Masuk" }).waitFor();
-  await page.getByRole("region", { name: "Mode demo" }).waitFor();
+  await page.getByRole("region", { name: "Kontrol aplikasi" }).waitFor();
   for (const width of [1280, 390, 320]) { await page.setViewportSize({ width, height: 1000 }); await noOverflow(`picker ${width}`); await page.screenshot({ path: path.join(output, `picker-${width}.png`), fullPage: true }); }
   await page.setViewportSize({ width: 1280, height: 1000 });
 
@@ -248,7 +248,7 @@ try {
   // A joined event leaves the catalog and shows up under Acara saya with its ticket.
   assert.equal(await page.getByRole("button", { name: /^Detail Seminar Kepemimpinan Mahasiswa/ }).count(), 0, "a joined event leaves the catalog");
   await go("/me/events");
-  await page.getByRole("heading", { name: "Acara saya", level: 1 }).waitFor();
+  await page.getByRole("heading", { name: "Tiket saya", level: 1 }).waitFor();
   await page.getByText(/Referensi tiket\s+PH-/).waitFor();
   for (const blocked of ["/organizer", "/sponsor", "/account/verification"]) { await go(blocked); await page.waitForURL("**/me"); }
   await signOut();
@@ -299,7 +299,7 @@ try {
   await field("category").selectOption("Dana");
   await field("offer").fill("Dukungan dana untuk konsumsi peserta kegiatan ini.");
   await page.getByRole("button", { name: "Kirim proposal", exact: true }).click();
-  await page.waitForURL("**/sponsor?sent=1");
+  await page.waitForURL("**/sponsor/progress?sent=1");
   await page.getByRole("button", { name: /^Detail proposal / }).first().click();
   await page.getByText("Dukungan dana untuk konsumsi peserta kegiatan ini.").waitFor();
   await page.keyboard.press("Escape");
@@ -311,7 +311,7 @@ try {
   await page.getByText("Komunitas Demo Baru").waitFor();
   await page.getByRole("link", { name: /Lihat status verifikasi/ }).count().then((n) => assert.equal(n, 0));
   await page.screenshot({ path: path.join(output, "demo-pending.png"), fullPage: true });
-  await page.getByRole("button", { name: "Simulasikan persetujuan admin", exact: true }).click();
+  await page.getByRole("button", { name: "Lanjutkan ke ruang kerja", exact: true }).click();
   await page.waitForURL("**/organizer");
   await page.getByRole("heading", { name: "Event berikutnya mulai di sini.", exact: true }).waitFor();
   await signOut();
@@ -320,9 +320,9 @@ try {
   await signIn("demo.sponsor@partnerhub.test");
   await page.waitForURL("**/sponsor");
   page.once("dialog", (dialog) => dialog.accept());
-  await page.getByRole("button", { name: "Reset data demo" }).click();
+  await page.getByRole("button", { name: "Reset data" }).click();
   await page.waitForURL("**/login");
-  await page.getByRole("button", { name: "Pilih akun demo", exact: true }).click();
+  await page.getByRole("button", { name: "Pilih akun", exact: true }).click();
   await page.getByRole("button", { name: /demo\.sponsor@partnerhub\.test/ }).click();
   await page.getByRole("button", { name: "Masuk", exact: true }).click();
   await page.waitForURL("**/sponsor");

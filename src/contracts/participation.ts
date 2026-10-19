@@ -27,6 +27,8 @@ export type MyRegistration = {
   createdAt: string;
   /** True once the organizer has issued and sent the QR for this event. The QR secret itself is never part of this list. */
   qrIssued: boolean;
+  /** Current event module flag. Issued secrets remain stored but unavailable when QR is disabled. */
+  qrEnabled: boolean;
   priceIdr: number;
   event: Pick<PublicEvent, "id" | "title" | "startsAt" | "venue">;
 };
@@ -73,8 +75,10 @@ export type RegistrationFormInput = { priceIdr: number; paymentNote: string | nu
 export type RegistrationAnswers = Record<string, string>;
 /** The question text is copied at registration time, so later form edits never rewrite what someone answered. */
 export type RegistrationAnswer = { fieldId: string; label: string; type: FormFieldType; value: string };
+/** Read-only registration receipt, owner only. No QR secret or other participant identities. */
+export type MyRegistrationDetail = MyRegistration & { answers: RegistrationAnswer[] };
 /** Organizer view of one registrant. Only the display name is shared, never the email. */
 export type Registrant = { id: string; name: string; ticketReference: string; status: RegistrationStatus; note: string | null; createdAt: string; qrIssued: boolean; checkedInAt: string | null; checkedOutAt?: string | null; answers: RegistrationAnswer[] };
-export type RegistrantBoard = { eventTitle: string; priceIdr: number; items: Registrant[] };
-export type AttendanceBoard = { eventId: string; eventTitle: string; attendanceEnabled: boolean; attendanceMode?: "NONE" | "ENTRY" | "ENTRY_EXIT"; items: Registrant[] };
+export type RegistrantBoard = { eventTitle: string; priceIdr: number; qrEnabled: boolean; items: Registrant[] };
+export type AttendanceBoard = { eventId: string; eventTitle: string; attendanceEnabled: boolean; attendanceMode?: "NONE" | "ENTRY" | "ENTRY_EXIT"; canConfigure: boolean; canScan: boolean; items: Registrant[] };
 export type TicketScan = { eventId: string; eventTitle: string; participant: Registrant; attendance: "RECORDED" | "ALREADY_RECORDED" | "DISABLED" | "EXIT_RECORDED" | "ALREADY_EXIT_RECORDED" };

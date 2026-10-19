@@ -10,6 +10,7 @@ import {
   type PreviewState,
 } from "./demo-data";
 import { Icon } from "./icon";
+import { LogoWordmark } from "@/lib/ui/icons";
 import styles from "./workspace.module.css";
 
 const displayFont = localFont({
@@ -69,7 +70,7 @@ export default function HomePage({
     <section className={styles.sponsorPanel} aria-labelledby="sponsor-heading">
       <div className={styles.panelHeading}>
         <h2 id="sponsor-heading">Komitmen, bukan cuma logo.</h2>
-        <p>Forum Kolaborasi Kampus · Data demo</p>
+        <p>Forum Kolaborasi Kampus</p>
       </div>
       <ul>
         {demoSponsors.map((sponsor) => (
@@ -87,7 +88,7 @@ export default function HomePage({
       </ul>
       <div className={styles.sponsorFoot}>
         <span>
-          <strong>2 / 4</strong> benefit contoh terverifikasi
+          <strong>2 / 4</strong> benefit terverifikasi
         </span>
         <p>
           Proposal, follow-up, lalu bukti pemenuhan. Verifikasi bukan sekadar
@@ -110,19 +111,7 @@ export default function HomePage({
           onClick={() => navigate("events")}
           aria-label="PartnerHub, kembali ke workspace"
         >
-          <svg
-            viewBox="0 0 96 96"
-            width="35"
-            height="35"
-            fill="currentColor"
-            aria-hidden="true"
-          >
-            <path
-              fillRule="evenodd"
-              d="M20 12h32c20 0 34 14 34 34S72 80 52 80H38v10H20V12Zm18 19v30h13c10 0 17-6 17-15s-7-15-17-15H38Z"
-            />
-          </svg>
-          PartnerHub<span className={styles.brandDot}>.</span>
+          <LogoWordmark width={188} />
         </button>
         <nav aria-label="Workspace utama">
           <button
@@ -135,7 +124,7 @@ export default function HomePage({
             onClick={() => { setPreview("demo"); navigate("sponsors"); }}
             aria-current={view === "sponsors" ? "page" : undefined}
           >
-            Sponsor contoh
+            Sponsor
           </button>
           <button
             onClick={() => navigate("builder")}
@@ -211,15 +200,14 @@ export default function HomePage({
               <div className={styles.demoBar}>
                 <Icon name="info" size={19} />
                 <p>
-                  <strong>Ruang contoh.</strong> Event dan angka di bawah adalah
-                  data demo, bukan aktivitas nyata.
+                  <strong>Ruang kerja acara.</strong> Pantau persiapan, pendaftaran dan komitmen sponsor.
                 </p>
                 <button
                   onClick={() =>
                     setPreview(preview === "demo" ? "empty" : "demo")
                   }
                 >
-                  {preview === "demo" ? "Lihat tanpa data" : "Kembali ke demo"}
+                  {preview === "demo" ? "Lihat tanpa data" : "Kembali ke acara"}
                 </button>
               </div>
             )}
@@ -238,10 +226,10 @@ export default function HomePage({
                 </h2>
                 <p>
                   {preview === "empty"
-                    ? "Susun detail acara, unggah identitas visual, lalu simpan draft di perangkatmu. Penyimpanan server dan publikasi belum terhubung."
+                    ? "Susun detail acara, unggah identitas visual, lalu buat acara untuk melanjutkan persiapan."
                     : preview === "loading"
-                      ? "Ini simulasi loading, tanpa permintaan ke server."
-                      : "Ini simulasi error. Draft lokal dan isian formulir tidak diubah."}
+                      ? "Sedang memuat informasi acara."
+                      : "Informasi acara belum dapat dimuat. Coba lagi; coba muat ulang halaman."}
                 </p>
                 <button
                   className={styles.createButton}
@@ -252,8 +240,8 @@ export default function HomePage({
                   }
                 >
                   {preview === "empty"
-                    ? "Susun draft pertama"
-                    : "Kembali ke data demo"}
+                    ? "Buat acara pertama"
+                    : "Kembali ke acara"}
                   <Icon name="arrow" />
                 </button>
               </section>
@@ -267,7 +255,7 @@ export default function HomePage({
                 >
                   <div className={styles.eventSectionHeading}>
                     <h2 id="events-title">Di meja kerjamu.</h2>
-                    <span>{events.length} event contoh</span>
+                    <span>{events.length} event</span>
                   </div>
                   <div className={styles.filters}>
                     <div
@@ -278,7 +266,7 @@ export default function HomePage({
                       {[
                         ["all", "Semua"],
                         ["PUBLISHED", "Terpublikasi"],
-                        ["DRAFT", "Draft"],
+                        ["DRAFT", "Belum dipublikasikan"],
                       ].map(([value, label]) => (
                         <button
                           key={value}
@@ -291,7 +279,7 @@ export default function HomePage({
                     </div>
                     <label className={styles.search}>
                       <Icon name="search" size={20} />
-                      <span className={styles.srOnly}>Cari event contoh</span>
+                      <span className={styles.srOnly}>Cari event</span>
                       <input
                         type="search"
                         value={query}
@@ -358,8 +346,7 @@ export default function HomePage({
                             <span className={styles.eventStatus}>
                               {event.status === "PUBLISHED"
                                 ? "Terpublikasi"
-                                : "Draft"}{" "}
-                              · Demo
+                                : "Belum dipublikasikan"}
                             </span>
                             <span>
                               {selected.id === event.id
@@ -406,12 +393,12 @@ export default function HomePage({
                       <h2 ref={contextHeading} tabIndex={-1}>
                         {selected.title}
                       </h2>
-                      <span>Yang sedang kamu lihat · Demo</span>
+                      <span>Yang sedang kamu lihat</span>
                     </div>
                     <div className={styles.contextCounts}>
                       <div>
                         <strong>{selected.registrations}</strong>
-                        <span>peserta contoh</span>
+                        <span>peserta</span>
                       </div>
                       <div>
                         <strong>{selected.applications}</strong>
@@ -428,7 +415,7 @@ export default function HomePage({
                       <progress
                         value={selected.registrations}
                         max={selected.capacity}
-                        aria-label={`Kapasitas registrasi ${selected.title}, data demo`}
+                        aria-label={`Kapasitas registrasi ${selected.title}`}
                       />
                     </div>
                     <div className={styles.contextNote}>
@@ -447,8 +434,8 @@ export default function HomePage({
                       </h3>
                       <p>
                         {selected.status === "PUBLISHED"
-                          ? "Dua benefit contoh masih menunggu bukti. Bukan sekadar sponsor tercatat, komitmennya juga perlu terjaga."
-                          : "Event contoh ini belum dipublikasikan. Alur draft lokal bisa kamu coba lewat Susun event baru."}
+                          ? "Dua benefit masih menunggu bukti. Bukan sekadar sponsor tercatat, komitmennya juga perlu terjaga."
+                          : "Event ini belum dipublikasikan. Lengkapi detail melalui halaman edit acara."}
                       </p>
                       <button
                         onClick={() =>
@@ -460,8 +447,8 @@ export default function HomePage({
                         }
                       >
                         {selected.status === "PUBLISHED"
-                          ? "Tinjau sponsor contoh"
-                          : "Coba susun draft"}
+                          ? "Tinjau sponsor"
+                          : "Buat acara"}
                         <Icon name="arrow" size={20} />
                       </button>
                     </div>
@@ -473,10 +460,10 @@ export default function HomePage({
         )}
         <footer className={styles.footer}>
           <p>PartnerHub, dari ide sampai komitmen terpenuhi.</p>
-          <details className={styles.previewOptions}>
-            <summary>Tampilan contoh</summary>
+          <section className={styles.previewOptions} aria-label="Tampilan data">
+            <h2>Tampilan data</h2>
             <label>
-              Simulasi data
+              Status tampilan
               <select
                 aria-label="Mode pratinjau"
                 value={preview}
@@ -484,16 +471,14 @@ export default function HomePage({
                   setPreview(event.target.value as PreviewState)
                 }
               >
-                <option value="demo">Data demo</option>
+                <option value="demo">Daftar acara</option>
                 <option value="empty">Kosong</option>
                 <option value="loading">Memuat</option>
-                <option value="error">Gagal (simulasi)</option>
+                <option value="error">Gagal</option>
               </select>
             </label>
-            <p>
-              Data contoh bukan event milikmu. Sinkronisasi server: In progress.
-            </p>
-          </details>
+
+          </section>
         </footer>
       </main>
 
@@ -513,17 +498,13 @@ export default function HomePage({
         </div>
         <p>
           Susun event, unggah logo acara dan penyelenggara, tambahkan sponsor
-          yang boleh ditampilkan, lalu periksa halaman event sebelum menyimpan
-          draft.
+          yang boleh ditampilkan, lalu periksa halaman event sebelum membuat acara.
         </p>
         <p>
-          Detail dan gambar draft disimpan di browser perangkat ini. Belum
-          terhubung ke database, tidak dipublikasikan, dan belum menerbitkan
-          tiket atau registrasi.
+          Periksa detail dan identitas acara sebelum melanjutkan pendaftaran, panitia, tiket dan sponsorship.
         </p>
         <p>
-          Event serta sponsor yang ditampilkan di workspace adalah contoh
-          berlabel demo. Jangan memasukkan data pribadi peserta.
+          Gunakan informasi yang diperlukan untuk penyelenggaraan acara dan batasi akses pengelola sesuai tanggung jawabnya.
         </p>
         <button
           className={styles.createButton}

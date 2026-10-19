@@ -7,6 +7,7 @@ globalThis.sessionStorage = { getItem: (k) => storage.get(k) ?? null, setItem: (
 globalThis.window = globalThis.window ?? { dispatchEvent() {} };
 const { demoRequest, resetDemoData } = loadTs("src/mocks/demo/router.ts");
 const { DEMO_PASSWORD } = loadTs("src/mocks/demo/seed.ts");
+const { loadDb } = loadTs("src/mocks/demo/store.ts");
 
 beforeEach(() => { resetDemoData(); storage.clear(); });
 
@@ -23,6 +24,7 @@ const decide = (id, body) => call(`/api/events/demo-event-2/registrants/${id}/de
 test("paid events start as PENDING, free events stay REGISTERED", async () => {
   await login(USER);
   assert.equal((await join()).status, "PENDING");
+  delete loadDb().forms["demo-event-3"];
   assert.equal((await call("/api/public/events/demo-event-3/registrations", { method: "POST", body: {} })).status, "REGISTERED");
 });
 

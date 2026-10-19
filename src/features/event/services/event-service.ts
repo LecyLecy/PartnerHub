@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { matchingFields } from "@/contracts/matching";
 import { ApiError, apiRequest } from "@/lib/api-client";
 import type { Asset, AssetSlot, EventInput, EventList, EventRecord } from "@/contracts/event";
 import type { OrganizerSummary } from "@/contracts/participation";
@@ -6,6 +7,7 @@ const safeUrl = z.string().refine((url) => /^\/(?!\/)/.test(url) || /^https:\/\/
 const assetSchema = z.object({ id: z.string().min(1), url: safeUrl, name: z.string().max(255) });
 const date = z.iso.datetime({ offset: true }).nullable();
 const recordSchema = z.object({
+  matchingFields: z.array(z.enum(matchingFields)).max(5).optional(),
   id:z.string().regex(/^[a-zA-Z0-9_-]+$/), title:z.string().min(3).max(100), category:z.enum(["Seminar & diskusi","Workshop","Kegiatan komunitas"]), summary:z.string().max(500), startsAt:date, endsAt:date, timezone:z.literal("Asia/Jakarta"), venue:z.string().max(150), capacity:z.number().int().min(1).max(100000).nullable(), registrationOpensAt:date, registrationClosesAt:date,
   modules:z.object({registration:z.boolean(),committee:z.boolean(),attendance:z.boolean(),sponsorship:z.boolean()}),
   branding:z.object({organizationName:z.string().max(100),eventLogo:assetSchema.nullable(),organizationLogo:assetSchema.nullable(),sponsors:z.array(z.object({id:z.string().min(1),name:z.string().max(100),logo:assetSchema.nullable()})).max(6)}),

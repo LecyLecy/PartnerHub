@@ -1,14 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {
-  initialDraft,
-  parseStoredDraft,
-  validateDraftStep,
-} from "../../src/features/event/draft.ts";
+import { loadTs } from "../helpers/load-ts.mjs";
+const { initialDraft, validateDraftStep } = loadTs("src/features/event/draft.ts");
 
 const validDraft = {
   ...initialDraft,
   title: "Event contoh pengujian",
+  matchingFields: ["Pendidikan"],
   date: "2026-11-14",
   startTime: "09:00",
   endTime: "15:00",
@@ -19,11 +17,18 @@ const validDraft = {
 test("each step rejects missing required input without requiring later-step fields early", () => {
   assert.match(validateDraftStep(initialDraft, 0).title, /minimal 3/);
   assert.deepEqual(
-    validateDraftStep({ ...initialDraft, title: "Acara kampus" }, 0),
+    validateDraftStep({ ...initialDraft, title: "Acara kampus", matchingFields: ["Pendidikan"] }, 0),
     {},
   );
   assert.ok(validateDraftStep(initialDraft, 1).date);
   assert.deepEqual(validateDraftStep(validDraft, 2), {});
+});
+
+test("new events require valid fields, while locked legacy fields are not invented", () => {
+  for (const matchingFields of [[], ["Unknown"], ["Teknologi", "Teknologi"], Array(6).fill("Pendidikan")]) {
+    assert.ok(validateDraftStep({ ...validDraft, matchingFields }, 0).matchingFields);
+  }
+  assert.deepEqual(validateDraftStep({ ...validDraft, matchingFields: [] }, 2, true), {});
 });
 
 test("schedule rejects impossible dates and reversed/same-day times", () => {
@@ -52,31 +57,4 @@ test("capacity and attendance prerequisites are validated", () => {
       2,
     ).modules,
   );
-});
-
-test("restoring only accepts a valid versioned whitelist of non-personal draft fields", () => {
-  assert.deepEqual(
-    parseStoredDraft(JSON.stringify({ version: 1, draft: validDraft })),
-    validDraft,
-  );
-  for (const value of [
-    null,
-    "",
-    "bad json",
-    "x".repeat(10001),
-    JSON.stringify({ version: 0, draft: validDraft }),
-    JSON.stringify({ version: 1, draft: initialDraft }),
-    JSON.stringify({
-      version: 1,
-      draft: { ...validDraft, title: "x".repeat(101) },
-    }),
-  ])
-    assert.equal(parseStoredDraft(value), null);
-  const parsed = parseStoredDraft(
-    JSON.stringify({
-      version: 1,
-      draft: { ...validDraft, secret: "must-not-restore" },
-    }),
-  );
-  assert.equal("secret" in parsed, false);
 });

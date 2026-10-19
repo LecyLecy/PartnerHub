@@ -32,6 +32,8 @@ export type CommitteeOpening = {
 export type CommitteeOpeningInput = { description: string; divisions: string[]; question: string | null; stages: { id: string | null; name: string }[]; open: boolean };
 
 export type CommitteeApplication = {
+  /** Server-computed scan capability for this accepted membership and current event settings. */
+  canScanQr?: boolean;
   id: string;
   openingId: string;
   eventId: string;
@@ -49,6 +51,8 @@ export type CommitteeApplication = {
   stageId: string | null;
   /** The opening's stages, so the applicant can see the whole path. */
   stages: SelectionStage[];
+  /** Stages actually reached, tracked for new applications. Missing means legacy history is unknown, never assume completion. */
+  visitedStageIds?: string[];
   /** Organizer note shown to the applicant: next steps when accepted, otherwise feedback. */
   note: string | null;
   createdAt: string;

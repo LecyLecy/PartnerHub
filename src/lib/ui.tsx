@@ -6,7 +6,6 @@ import styles from "./ui.module.css";
 
 export { SiteFrame };
 export { BackLink, Badge, Breadcrumb, Button, Card, EmptyState, Loading, Notice, PageTitle, Skeleton } from "./ui/primitives";
-export { Accordion, type AccordionItem } from "./ui/accordion";
 export { AvatarStack } from "./ui/avatar-stack";
 export { DataTable, type Column } from "./ui/data-table";
 export { Marquee } from "./ui/marquee";

@@ -1,14 +1,15 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Icon, LogoMark } from "./icons";
+import { Icon, LogoMark, LogoWordmark } from "./icons";
+import { HeaderBackSlot } from "./header-back";
 import styles from "./site-header.module.css";
 
 export type HeaderLink = { href: string; label: string; current?: boolean };
 
 /**
- * Website header shared by the landing page and every signed-in page that is not the organizer workspace.
- * It turns translucent once the page scrolls. Below 48rem the links and secondary actions move into a disclosure menu.
+ * Website header shared by public pages and restricted account screens.
+ * It stays on an opaque separate surface. Below 48rem links and secondary actions use a disclosure menu.
  * - `actions` stay visible at every width (search, bell, sign up).
  * - `desktopActions` show from 48rem (profile, sign out, log in).
  * - `menuExtra` renders inside the small-screen menu after the links.
@@ -40,7 +41,7 @@ export function SiteHeader({ brandHref, links, actions, desktopActions, menuExtr
     <div ref={sentinel} className={styles.sentinel} aria-hidden="true" />
     <header className={styles.header} data-scrolled={scrolled} data-open={open} data-wide={wide}>
       <div className={styles.inner}>
-        <Link className={styles.brand} href={brandHref}><LogoMark />PartnerHub.</Link>
+        <div className={styles.brandGroup}><HeaderBackSlot /><Link className={styles.brand} href={brandHref} aria-label="PartnerHub"><LogoMark size={36} /><LogoWordmark /></Link></div>
         {links.length > 0 && <nav className={styles.links} aria-label="Navigasi utama">{links.map((link) => item(link))}</nav>}
         <div className={styles.actions}>
           {actions}

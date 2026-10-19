@@ -41,7 +41,7 @@ function Committee() {
   const applicationCount = applications.data?.length;
   return <>
     <BackLink href="/me" />
-    <PageHeader title="Jadi panitia.">Lihat lowongan panitia dari penyelenggara dan kirim lamaran. Lamaran yang sudah terkirim ada di <Link href="/me/events">Acara saya</Link>.</PageHeader>
+    <PageHeader title="Jadi panitia.">Lihat lowongan panitia dari penyelenggara dan kirim lamaran. Lamaran yang sudah terkirim ada di <Link href="/me/applications">Lamaran saya</Link>.</PageHeader>
     {openCount !== undefined && applicationCount !== undefined && <StatGrid items={[{ label: "lowongan terbuka", value: openCount }, { label: "lamaran saya", value: applicationCount }]} />}
     <section className={styles.panel} aria-labelledby="openings-title">
       <div className={styles.panelHead}><h2 id="openings-title">Lowongan panitia</h2><p>Acara yang sedang mencari panitia.</p></div>
